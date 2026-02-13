@@ -2,52 +2,74 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title>Шиномонтаж — радио-логика Легковая/Джип</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>Шиномонтаж — iPhone оптимизация</title>
     <style>
+        /* СБРОС И БАЗОВЫЕ НАСТРОЙКИ */
         * {
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
-        }
-        body {
-            background: #dfe8f0;
             margin: 0;
-            padding: 14px;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background: #f2f6fa;
+            padding: 12px;
             display: flex;
             justify-content: center;
             min-height: 100vh;
+            -webkit-tap-highlight-color: transparent;
         }
+
         .form-container {
-            max-width: 700px;
+            max-width: 480px;
             width: 100%;
             background: white;
-            border-radius: 36px 36px 28px 28px;
-            padding: 24px 20px;
-            box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+            border-radius: 32px;
+            padding: 20px 18px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.05);
         }
+
         h1 {
-            font-size: 1.8rem;
+            font-size: 1.7rem;
             font-weight: 700;
-            margin-top: 0;
             margin-bottom: 20px;
             color: #0a2f4a;
             border-left: 8px solid #0d6efd;
-            padding-left: 18px;
+            padding-left: 16px;
+            letter-spacing: -0.5px;
         }
 
-        /* Менеджер + Клиент */
-        .top-row {
-            display: flex;
-            flex-direction: column;
-            gap: 18px;
-            margin-bottom: 24px;
-        }
-        .manager-card, .client-card {
-            background: #f5faff;
+        /* КАРТОЧКИ */
+        .card {
+            background: white;
             border-radius: 28px;
-            padding: 18px 22px;
-            border: 1px solid #d4e1ec;
+            padding: 20px 18px;
+            margin-bottom: 20px;
+            border: 1px solid #e2ebf3;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
         }
+
+        .card-header {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #0b2f4e;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* МЕНЕДЖЕР И КЛИЕНТ */
+        .manager-card, .client-card {
+            background: #f7fcff;
+            border-radius: 24px;
+            padding: 18px 16px;
+            border: 1px solid #d9e6f2;
+            margin-bottom: 16px;
+        }
+
         .manager-card label, .client-card label {
             font-weight: 700;
             color: #1e3a5f;
@@ -55,207 +77,218 @@
             align-items: center;
             gap: 8px;
             margin-bottom: 10px;
-            font-size: 1.05rem;
+            font-size: 1rem;
         }
+
+        /* ПОЛЯ ВВОДА - УВЕЛИЧЕННЫЕ ДЛЯ ТАЧА */
         select, input[type="text"], input[type="tel"] {
             border: 1.8px solid #c2d6e6;
-            border-radius: 60px;
-            padding: 14px 22px;
-            font-size: 1.05rem;
+            border-radius: 50px;
+            padding: 16px 22px;
+            font-size: 1.1rem;
             background: white;
             width: 100%;
             appearance: none;
             -webkit-appearance: none;
+            -webkit-tap-highlight-color: transparent;
         }
+
         select {
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="%232c3e50" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>');
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%232c3e50" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>');
             background-repeat: no-repeat;
             background-position: right 20px center;
-            background-size: 22px;
+            background-size: 24px;
         }
+
         .input-icon {
             position: relative;
             display: flex;
             align-items: center;
         }
+
         .input-icon span {
             position: absolute;
-            left: 18px;
-            font-size: 1.3rem;
+            left: 20px;
+            font-size: 1.4rem;
             color: #0d6efd;
         }
+
         .input-icon input {
-            padding-left: 52px;
+            padding-left: 58px;
         }
 
-        /* ----- БЛОК R: ЧИСТЫЙ СТИЛЬ, ВЫСОТА = 2 СТРОКИ ----- */
+        /* БЛОК R - ОПТИМИЗИРОВАН ДЛЯ IPHONE */
         .r-compact {
             background: white;
-            border: 1px solid #c6d9e6;
-            border-radius: 36px;
-            padding: 22px 22px;
-            margin-bottom: 32px;
-            box-shadow: 0 6px 16px rgba(0,0,0,0.02);
+            border: 1px solid #d0e1ee;
+            border-radius: 32px;
+            padding: 20px 16px;
+            margin-bottom: 24px;
         }
-        .r-compact-header {
-            font-size: 1.35rem;
-            font-weight: 700;
-            color: #0b2f4e;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+
         .r-layout {
             display: flex;
-            flex-direction: row;
-            flex-wrap: wrap;
-            gap: 16px;
-        }
-        /* ЛЕВАЯ ЧАСТЬ - высота 128px (две строки) */
-        .r-left {
-            flex: 0 0 150px;
-            display: flex;
             flex-direction: column;
+            gap: 20px;
         }
+
+        /* РАДИУС - ВО ВСЮ ШИРИНУ НА МОБИЛКЕ */
+        .r-left {
+            width: 100%;
+        }
+
         .r-left select {
             width: 100%;
             font-size: 1.9rem;
             font-weight: 800;
-            padding: 0 8px;
-            height: 128px;
+            padding: 12px 20px;
+            height: auto;
+            min-height: 90px;
             text-align: center;
             text-align-last: center;
             background: white;
-            border: 2px solid #0d6efd;
-            border-radius: 50px;
+            border: 2.5px solid #0d6efd;
+            border-radius: 60px;
             color: #003153;
             letter-spacing: 2px;
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="%230d6efd" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>');
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="%230d6efd" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>');
             background-repeat: no-repeat;
-            background-position: right 16px center;
-            background-size: 28px;
-            background-color: white;
+            background-position: right 20px center;
+            background-size: 32px;
         }
-        /* ПРАВАЯ ЧАСТЬ: ГАЛОЧКИ ДВЕ СТРОКИ */
+
+        /* ГАЛОЧКИ - КРУПНЫЕ, УДОБНЫЕ ДЛЯ ТАЧА */
         .check-right {
-            flex: 1;
             display: flex;
             flex-direction: column;
-            gap: 16px;
-            justify-content: space-between;
+            gap: 14px;
         }
+
         .check-row {
             display: flex;
             flex-wrap: wrap;
             gap: 12px;
         }
+
         .check-row label {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            background: #f0f7fd;
-            padding: 14px 18px;
+            gap: 10px;
+            background: #f5fafd;
+            padding: 16px 12px;
             border-radius: 60px;
-            font-size: 1rem;
+            font-size: 1.1rem;
             font-weight: 600;
             color: #124263;
-            border: 1.5px solid #b8d2e3;
-            flex: 1 1 140px;
-            margin: 0;
+            border: 1.8px solid #c2d9e8;
+            flex: 1 1 130px;
+            min-height: 64px;
             cursor: pointer;
-            transition: 0.1s;
-            min-height: 56px;
+            -webkit-tap-highlight-color: rgba(13,110,253,0.1);
+            transition: background 0.05s;
         }
+
         .check-row label:active {
-            background: #d9e8f2;
+            background: #d9eaf5;
         }
+
         .check-row input[type="checkbox"] {
-            width: 24px;
-            height: 24px;
+            width: 26px;
+            height: 26px;
             accent-color: #0d6efd;
             margin: 0;
             transform: scale(1.1);
-        }
-        .car-icon {
-            font-size: 1.3rem;
-            line-height: 1;
+            pointer-events: none; /* чтобы тап был по всей области */
         }
 
-        /* Кол-во + кнопка */
+        .car-icon {
+            font-size: 1.4rem;
+        }
+
+        /* КОЛ-ВО И КНОПКА - АДАПТИВНЫЙ БЛОК */
         .qty-global {
             display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 18px;
+            flex-direction: column;
+            gap: 16px;
             margin-top: 24px;
             background: #e5f0f7;
-            padding: 16px 24px;
-            border-radius: 60px;
+            padding: 20px 16px;
+            border-radius: 40px;
         }
+
         .qty-item {
             display: flex;
             align-items: center;
-            gap: 14px;
+            justify-content: space-between;
+            width: 100%;
         }
+
         .qty-item label {
             font-weight: 700;
-            font-size: 1.15rem;
+            font-size: 1.2rem;
             color: #12507a;
             margin-bottom: 0;
-            white-space: nowrap;
         }
+
         .carousel-select {
             background: white;
-            border: 1.8px solid #9fb7c7;
-            border-radius: 100px;
-            padding: 12px 32px 12px 24px;
-            font-size: 1.25rem;
+            border: 2px solid #9fb7c7;
+            border-radius: 60px;
+            padding: 14px 40px 14px 24px;
+            font-size: 1.3rem;
             font-weight: 700;
-            width: 130px;
+            width: 140px;
             text-align-last: center;
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%231e3a5f" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>');
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="%231e3a5f" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>');
             background-repeat: no-repeat;
-            background-position: right 14px center;
-            background-size: 24px;
+            background-position: right 16px center;
+            background-size: 28px;
             appearance: none;
         }
+
         .apply-all-btn {
             background: #0d6efd;
             color: white;
             border: none;
-            border-radius: 100px;
-            padding: 14px 32px;
+            border-radius: 60px;
+            padding: 16px 20px;
             font-weight: 700;
-            font-size: 1.15rem;
+            font-size: 1.2rem;
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 12px;
-            flex: 1 0 auto;
-            box-shadow: 0 8px 18px rgba(13,110,253,0.3);
+            width: 100%;
+            box-shadow: 0 8px 18px rgba(13,110,253,0.25);
             cursor: pointer;
-            transition: 0.1s;
+            -webkit-tap-highlight-color: transparent;
         }
-        .apply-all-btn:active { background: #0b5ed7; transform: scale(0.98); }
 
-        /* МАТЕРИАЛЫ И УСЛУГИ */
+        .apply-all-btn:active {
+            background: #0b5ed7;
+            transform: scale(0.98);
+        }
+
+        /* МАТЕРИАЛЫ И УСЛУГИ - ОПТИМИЗАЦИЯ */
         .section-card {
             background: white;
-            border: 1px solid #d6e2ec;
+            border: 1px solid #deecf5;
             border-radius: 32px;
-            padding: 22px 20px;
-            margin-bottom: 28px;
+            padding: 20px 16px;
+            margin-bottom: 24px;
         }
+
         .section-title {
             display: flex;
             align-items: center;
             gap: 12px;
-            font-size: 1.4rem;
+            font-size: 1.3rem;
             font-weight: 700;
             color: #144a70;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
+
         .section-title span {
             background: #0d6efd;
             color: white;
@@ -264,152 +297,193 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 18px;
-            font-size: 1.6rem;
+            border-radius: 20px;
+            font-size: 1.5rem;
         }
+
         .items-grid {
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 14px;
         }
+
         .item-row {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            background: #fafdff;
-            padding: 8px 12px 8px 22px;
-            border-radius: 60px;
+            background: #f8fdff;
+            padding: 12px 16px;
+            border-radius: 100px;
             border: 1px solid #cde0eb;
             flex-wrap: wrap;
+            gap: 12px;
         }
+
         .item-name {
             font-weight: 600;
             color: #1e3f5e;
             display: flex;
             align-items: center;
             gap: 12px;
-            font-size: 1.02rem;
-            flex: 2 1 170px;
+            font-size: 1.05rem;
+            flex: 1 1 160px;
         }
+
         .item-number {
             color: #0d6efd;
             font-weight: 800;
             background: #e2eff9;
-            width: 36px;
-            height: 36px;
-            display: inline-flex;
+            width: 38px;
+            height: 38px;
+            display: flex;
             align-items: center;
             justify-content: center;
             border-radius: 30px;
-            font-size: 0.95rem;
+            font-size: 1rem;
         }
+
         .item-controls {
             display: flex;
             align-items: center;
             gap: 12px;
-            flex-wrap: wrap;
         }
+
         .qty-carousel {
-            border: 1.8px solid #c2d1db;
+            border: 2px solid #c2d1db;
             border-radius: 60px;
-            padding: 10px 32px 10px 22px;
-            font-size: 1.1rem;
+            padding: 12px 36px 12px 20px;
+            font-size: 1.15rem;
             font-weight: 600;
             background: white;
             width: 110px;
             text-align-last: center;
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="%232c3e50" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>');
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%232c3e50" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>');
             background-repeat: no-repeat;
-            background-position: right 12px center;
-            background-size: 22px;
+            background-position: right 14px center;
+            background-size: 24px;
             appearance: none;
         }
+
         .zero-btn {
             background: #ff6b6b;
             color: white;
             border: none;
-            border-radius: 40px;
-            width: 58px;
-            height: 52px;
+            border-radius: 50px;
+            width: 64px;
+            height: 56px;
             font-weight: 800;
-            font-size: 1.4rem;
+            font-size: 1.5rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 10px rgba(255,80,80,0.35);
+            box-shadow: 0 6px 12px rgba(255,80,80,0.25);
             cursor: pointer;
-            transition: 0.1s;
+            -webkit-tap-highlight-color: transparent;
         }
+
         .zero-btn:active {
             background: #e05252;
-            transform: scale(0.9);
+            transform: scale(0.94);
         }
+
+        /* КНОПКИ СБРОС/СОХРАНИТЬ */
         .footer-actions {
             display: flex;
-            gap: 18px;
-            margin-top: 24px;
+            gap: 14px;
+            margin-top: 20px;
         }
+
         .btn {
             border: none;
-            padding: 16px 28px;
-            border-radius: 100px;
+            padding: 18px 20px;
+            border-radius: 60px;
             font-weight: 700;
-            font-size: 1.1rem;
-            background: #e3ecf0;
+            font-size: 1.15rem;
+            background: #ecf3f7;
             color: #1e3a5f;
             cursor: pointer;
             flex: 1;
             text-align: center;
+            -webkit-tap-highlight-color: transparent;
         }
+
+        .btn:active {
+            background: #dbe5ec;
+            transform: scale(0.98);
+        }
+
         .btn-primary {
             background: #0d6efd;
             color: white;
         }
-        .btn-primary:active { background: #0b5ed7; }
-        small { color: #3c6780; font-size: 0.85rem; margin-top: 16px; display: block; }
+
+        .btn-primary:active {
+            background: #0b5ed7;
+        }
+
+        small {
+            color: #3c6780;
+            font-size: 0.85rem;
+            margin-top: 16px;
+            display: block;
+        }
+
+        /* УБИРАЕМ ВЫДЕЛЕНИЕ ПРИ ТАПЕ */
+        input, select, button, label {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        /* ДОПОЛНИТЕЛЬНЫЕ ОТСТУПЫ ДЛЯ IPHONE */
+        @media (max-width: 380px) {
+            .form-container { padding: 16px; }
+            .check-row label { flex: 1 1 100%; }
+        }
     </style>
 </head>
 <body>
 <div class="form-container">
     <h1>🛞 Шиномонтаж</h1>
     
-    <!-- Менеджер + Клиент -->
-    <div class="top-row">
-        <div class="manager-card">
-            <label>👨‍💼 Менеджер</label>
-            <select id="managerSelect">
-                <option value="" disabled selected>— выберите ФИО —</option>
-                <option value="Андреев Андрей Андреевич">Андреев Андрей Андреевич</option>
-                <option value="Борисова Борислава Борисовна">Борисова Борислава Борисовна</option>
-                <option value="Власов Владислав Валерьевич">Власов Владислав Валерьевич</option>
-                <option value="Григорьева Галина Григорьевна">Григорьева Галина Григорьевна</option>
-                <option value="Дмитриев Дмитрий Дмитриевич">Дмитриев Дмитрий Дмитриевич</option>
-                <option value="Екатеринина Екатерина Евгеньевна">Екатеринина Екатерина Евгеньевна</option>
-                <option value="Жуков Жорж Жанович">Жуков Жорж Жанович</option>
-            </select>
-        </div>
-        <div class="client-card">
-            <label style="margin-bottom: 12px;">👥 Клиент</label>
-            <div style="display: flex; flex-direction: column; gap: 14px;">
-                <div class="input-icon">
-                    <span>👤</span>
-                    <input type="text" id="clientName" placeholder="ФИО клиента">
-                </div>
-                <div class="input-icon">
-                    <span>📞</span>
-                    <input type="tel" id="clientPhone" placeholder="Телефон">
-                </div>
+    <!-- МЕНЕДЖЕР -->
+    <div class="manager-card">
+        <label>👨‍💼 Менеджер</label>
+        <select id="managerSelect">
+            <option value="" disabled selected>— выберите ФИО —</option>
+            <option value="Андреев Андрей Андреевич">Андреев Андрей Андреевич</option>
+            <option value="Борисова Борислава Борисовна">Борисова Борислава Борисовна</option>
+            <option value="Власов Владислав Валерьевич">Власов Владислав Валерьевич</option>
+            <option value="Григорьева Галина Григорьевна">Григорьева Галина Григорьевна</option>
+            <option value="Дмитриев Дмитрий Дмитриевич">Дмитриев Дмитрий Дмитриевич</option>
+            <option value="Екатеринина Екатерина Евгеньевна">Екатеринина Екатерина Евгеньевна</option>
+            <option value="Жуков Жорж Жанович">Жуков Жорж Жанович</option>
+        </select>
+    </div>
+    
+    <!-- КЛИЕНТ -->
+    <div class="client-card">
+        <label style="margin-bottom: 12px;">👥 Клиент</label>
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div class="input-icon">
+                <span>👤</span>
+                <input type="text" id="clientName" placeholder="ФИО клиента">
+            </div>
+            <div class="input-icon">
+                <span>📞</span>
+                <input type="tel" id="clientPhone" placeholder="Телефон">
             </div>
         </div>
     </div>
 
-    <!-- ========== БЛОК R: РАДИО-ЛОГИКА МЕЖДУ ЛЕГКОВАЯ И ДЖИП ========== -->
+    <!-- ========== БЛОК R - АДАПТИВ ПОД IPHONE ========== -->
     <div class="r-compact">
-        <div class="r-compact-header">
+        <div class="card-header">
             <span>⚙️</span> Параметры колёс
         </div>
+        
+        <!-- РАДИУС - ВО ВСЮ ШИРИНУ -->
         <div class="r-layout">
-            <!-- ЛЕВО: РАДИУС, чистый белый фон, синяя рамка -->
             <div class="r-left">
                 <select id="diameterSelect">
                     <option value="13">R13</option>
@@ -426,7 +500,8 @@
                     <option value="24">R24</option>
                 </select>
             </div>
-            <!-- ПРАВО: ГАЛОЧКИ С ИКОНКАМИ -->
+            
+            <!-- ГАЛОЧКИ - ДВЕ СТРОКИ, КРУПНЫЕ -->
             <div class="check-right">
                 <div class="check-row">
                     <label>
@@ -451,7 +526,7 @@
             </div>
         </div>
         
-        <!-- Кол-во и кнопка -->
+        <!-- КОЛ-ВО И КНОПКА - ВЕРТИКАЛЬНО НА IPHONE -->
         <div class="qty-global">
             <div class="qty-item">
                 <label>🔢 Кол-во</label>
@@ -508,12 +583,13 @@
         <small>✅ Услуги с кнопкой 0</small>
     </div>
 
+    <!-- КНОПКИ ДЕЙСТВИЙ -->
     <div class="footer-actions">
         <button class="btn" id="resetBtn">Сбросить</button>
         <button class="btn btn-primary" id="saveBtn">Сохранить</button>
     </div>
-    <p style="margin-top: 16px; color: #386282; border-top: 1px solid #c1d6e3; padding-top: 14px;">
-        ✅ Радио-логика: Легковая 🚗 и Джип 🛻 — взаимоисключающие. Иконки: ⚡ низкий профиль, 🛡️ RunFlat.
+    <p style="margin-top: 16px; color: #386282; text-align: center; font-size: 0.85rem;">
+        ✅ Оптимизировано для iPhone
     </p>
 </div>
 
@@ -528,32 +604,27 @@
         const serviceSelects = document.querySelectorAll('.service-qty');
         const allItemSelects = [...materialSelects, ...serviceSelects];
 
-        // ---------- РАДИО-ЛОГИКА ДЛЯ ЛЕГКОВАЯ И ДЖИП ----------
+        // ---------- РАДИО-ЛОГИКА ЛЕГКОВАЯ / ДЖИП ----------
         const carLight = document.getElementById('carLight');
         const carJeep = document.getElementById('carJeep');
         
-        function handleCarTypeChange(changedCheckbox, otherCheckbox) {
-            if (changedCheckbox.checked) {
-                otherCheckbox.checked = false;
+        function handleCarTypeChange(changed, other) {
+            if (changed.checked) {
+                other.checked = false;
             }
         }
         
-        carLight.addEventListener('change', function() {
-            handleCarTypeChange(carLight, carJeep);
-        });
-        
-        carJeep.addEventListener('change', function() {
-            handleCarTypeChange(carJeep, carLight);
-        });
+        carLight.addEventListener('change', function() { handleCarTypeChange(carLight, carJeep); });
+        carJeep.addEventListener('change', function() { handleCarTypeChange(carJeep, carLight); });
 
-        // ---------- Установить для всех ----------
+        // ---------- УСТАНОВИТЬ ДЛЯ ВСЕХ ----------
         function setAllItemsFromWheels() {
             const qty = wheelsQtySelect.value;
             allItemSelects.forEach(select => { select.value = qty; });
         }
         applyBtn.addEventListener('click', setAllItemsFromWheels);
 
-        // ---------- Сброс кол-ва колес при изменении ----------
+        // ---------- СБРОС КОЛ-ВА КОЛЕС ПРИ ИЗМЕНЕНИИ ----------
         function ensureEmptyOption() {
             if (!wheelsQtySelect.querySelector('option[value=""]')) {
                 const emptyOpt = document.createElement('option');
@@ -564,16 +635,18 @@
             }
         }
         ensureEmptyOption();
+        
         function resetWheelsQtyToEmpty() {
             const emptyOpt = wheelsQtySelect.querySelector('option[value=""]');
             if (emptyOpt) emptyOpt.selected = true;
         }
+        
         allItemSelects.forEach(select => {
             select.addEventListener('change', resetWheelsQtyToEmpty);
         });
         wheelsQtySelect.value = '4';
 
-        // ---------- Кнопки 0 для всех ----------
+        // ---------- КНОПКИ 0 ДЛЯ ВСЕХ ----------
         const allZeroButtons = document.querySelectorAll('.item-controls .zero-btn');
         allZeroButtons.forEach(btn => {
             btn.addEventListener('click', function(e) {
@@ -594,13 +667,12 @@
             });
         });
 
-        // ---------- Сброс формы ----------
+        // ---------- СБРОС ФОРМЫ ----------
         function resetAll() {
             document.getElementById('managerSelect').selectedIndex = 0;
             document.getElementById('clientName').value = '';
             document.getElementById('clientPhone').value = '';
             document.getElementById('diameterSelect').value = '17';
-            // Сброс всех галочек
             document.querySelectorAll('.type-check').forEach(cb => cb.checked = false);
             wheelsQtySelect.value = '4';
             allItemSelects.forEach(select => {
@@ -611,7 +683,7 @@
         }
         document.getElementById('resetBtn').addEventListener('click', resetAll);
 
-        // ---------- Сохранить ----------
+        // ---------- СОХРАНИТЬ ----------
         document.getElementById('saveBtn').addEventListener('click', function() {
             let manager = document.getElementById('managerSelect').value || 'не выбран';
             let clientName = document.getElementById('clientName').value || 'не указано';
