@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Шиномонтаж — iPhone оптимизация</title>
+    <title>Шиномонтаж — сводка заказа</title>
     <style>
         /* СБРОС И БАЗОВЫЕ НАСТРОЙКИ */
         * {
@@ -80,7 +80,7 @@
             font-size: 1rem;
         }
 
-        /* ПОЛЯ ВВОДА - УВЕЛИЧЕННЫЕ ДЛЯ ТАЧА */
+        /* ПОЛЯ ВВОДА */
         select, input[type="text"], input[type="tel"] {
             border: 1.8px solid #c2d6e6;
             border-radius: 50px;
@@ -90,7 +90,6 @@
             width: 100%;
             appearance: none;
             -webkit-appearance: none;
-            -webkit-tap-highlight-color: transparent;
         }
 
         select {
@@ -117,7 +116,7 @@
             padding-left: 58px;
         }
 
-        /* БЛОК R - ОПТИМИЗИРОВАН ДЛЯ IPHONE */
+        /* БЛОК R */
         .r-compact {
             background: white;
             border: 1px solid #d0e1ee;
@@ -132,7 +131,6 @@
             gap: 20px;
         }
 
-        /* РАДИУС - ВО ВСЮ ШИРИНУ НА МОБИЛКЕ */
         .r-left {
             width: 100%;
         }
@@ -157,7 +155,6 @@
             background-size: 32px;
         }
 
-        /* ГАЛОЧКИ - КРУПНЫЕ, УДОБНЫЕ ДЛЯ ТАЧА */
         .check-right {
             display: flex;
             flex-direction: column;
@@ -186,7 +183,6 @@
             min-height: 64px;
             cursor: pointer;
             -webkit-tap-highlight-color: rgba(13,110,253,0.1);
-            transition: background 0.05s;
         }
 
         .check-row label:active {
@@ -199,14 +195,14 @@
             accent-color: #0d6efd;
             margin: 0;
             transform: scale(1.1);
-            pointer-events: none; /* чтобы тап был по всей области */
+            pointer-events: none;
         }
 
         .car-icon {
             font-size: 1.4rem;
         }
 
-        /* КОЛ-ВО И КНОПКА - АДАПТИВНЫЙ БЛОК */
+        /* КОЛ-ВО И КНОПКА */
         .qty-global {
             display: flex;
             flex-direction: column;
@@ -228,7 +224,6 @@
             font-weight: 700;
             font-size: 1.2rem;
             color: #12507a;
-            margin-bottom: 0;
         }
 
         .carousel-select {
@@ -262,7 +257,6 @@
             width: 100%;
             box-shadow: 0 8px 18px rgba(13,110,253,0.25);
             cursor: pointer;
-            -webkit-tap-highlight-color: transparent;
         }
 
         .apply-all-btn:active {
@@ -270,7 +264,7 @@
             transform: scale(0.98);
         }
 
-        /* МАТЕРИАЛЫ И УСЛУГИ - ОПТИМИЗАЦИЯ */
+        /* МАТЕРИАЛЫ И УСЛУГИ */
         .section-card {
             background: white;
             border: 1px solid #deecf5;
@@ -378,7 +372,6 @@
             justify-content: center;
             box-shadow: 0 6px 12px rgba(255,80,80,0.25);
             cursor: pointer;
-            -webkit-tap-highlight-color: transparent;
         }
 
         .zero-btn:active {
@@ -386,7 +379,7 @@
             transform: scale(0.94);
         }
 
-        /* КНОПКИ СБРОС/СОХРАНИТЬ */
+        /* КНОПКИ */
         .footer-actions {
             display: flex;
             gap: 14px;
@@ -404,7 +397,6 @@
             cursor: pointer;
             flex: 1;
             text-align: center;
-            -webkit-tap-highlight-color: transparent;
         }
 
         .btn:active {
@@ -421,24 +413,139 @@
             background: #0b5ed7;
         }
 
+        /* МОДАЛЬНОЕ ОКНО СО СВОДКОЙ */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s;
+            backdrop-filter: blur(3px);
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 36px;
+            max-width: 480px;
+            width: 100%;
+            max-height: 85vh;
+            overflow-y: auto;
+            padding: 28px 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            animation: slideUp 0.25s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .modal-header h2 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #0a2f4a;
+        }
+
+        .modal-close {
+            background: #ecf3f7;
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #1e3a5f;
+        }
+
+        .modal-close:active {
+            background: #dbe5ec;
+        }
+
+        .summary-section {
+            margin-bottom: 24px;
+        }
+
+        .summary-title {
+            font-weight: 700;
+            color: #0d6efd;
+            font-size: 1.2rem;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 2px solid #e2ebf3;
+            padding-bottom: 10px;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px dashed #dee9f2;
+            font-size: 1.05rem;
+        }
+
+        .summary-item:last-child {
+            border-bottom: none;
+        }
+
+        .summary-label {
+            color: #2c4e6b;
+            font-weight: 500;
+        }
+
+        .summary-value {
+            font-weight: 700;
+            color: #0a3144;
+        }
+
+        .empty-message {
+            color: #7c95aa;
+            font-style: italic;
+            padding: 10px 0;
+            text-align: center;
+        }
+
+        .modal-footer {
+            margin-top: 24px;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .modal-footer .btn {
+            flex: 0 1 auto;
+            padding: 14px 28px;
+        }
+
         small {
             color: #3c6780;
             font-size: 0.85rem;
             margin-top: 16px;
             display: block;
-        }
-
-        /* УБИРАЕМ ВЫДЕЛЕНИЕ ПРИ ТАПЕ */
-        input, select, button, label {
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            user-select: none;
-        }
-
-        /* ДОПОЛНИТЕЛЬНЫЕ ОТСТУПЫ ДЛЯ IPHONE */
-        @media (max-width: 380px) {
-            .form-container { padding: 16px; }
-            .check-row label { flex: 1 1 100%; }
         }
     </style>
 </head>
@@ -476,13 +583,12 @@
         </div>
     </div>
 
-    <!-- ========== БЛОК R - АДАПТИВ ПОД IPHONE ========== -->
+    <!-- БЛОК R -->
     <div class="r-compact">
         <div class="card-header">
             <span>⚙️</span> Параметры колёс
         </div>
         
-        <!-- РАДИУС - ВО ВСЮ ШИРИНУ -->
         <div class="r-layout">
             <div class="r-left">
                 <select id="diameterSelect">
@@ -501,7 +607,6 @@
                 </select>
             </div>
             
-            <!-- ГАЛОЧКИ - ДВЕ СТРОКИ, КРУПНЫЕ -->
             <div class="check-right">
                 <div class="check-row">
                     <label>
@@ -526,7 +631,6 @@
             </div>
         </div>
         
-        <!-- КОЛ-ВО И КНОПКА - ВЕРТИКАЛЬНО НА IPHONE -->
         <div class="qty-global">
             <div class="qty-item">
                 <label>🔢 Кол-во</label>
@@ -547,7 +651,7 @@
         </div>
     </div>
 
-    <!-- ============ МАТЕРИАЛЫ ============ -->
+    <!-- МАТЕРИАЛЫ -->
     <div class="section-card">
         <div class="section-title">
             <span>🧴</span> Материалы
@@ -563,7 +667,7 @@
         <small>🔴 Кнопка 0 устанавливает количество 0</small>
     </div>
 
-    <!-- ============ УСЛУГИ ============ -->
+    <!-- УСЛУГИ -->
     <div class="section-card">
         <div class="section-title">
             <span>🔧</span> Услуги
@@ -583,28 +687,48 @@
         <small>✅ Услуги с кнопкой 0</small>
     </div>
 
-    <!-- КНОПКИ ДЕЙСТВИЙ -->
+    <!-- КНОПКИ -->
     <div class="footer-actions">
         <button class="btn" id="resetBtn">Сбросить</button>
         <button class="btn btn-primary" id="saveBtn">Сохранить</button>
     </div>
-    <p style="margin-top: 16px; color: #386282; text-align: center; font-size: 0.85rem;">
-        ✅ Оптимизировано для iPhone
-    </p>
+</div>
+
+<!-- МОДАЛЬНОЕ ОКНО СО СВОДКОЙ -->
+<div id="summaryModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>📋 Заказ оформлен</h2>
+            <button class="modal-close" id="closeModalBtn">✕</button>
+        </div>
+        
+        <div id="summaryContent">
+            <!-- Сюда будет вставлена сводка -->
+        </div>
+        
+        <div class="modal-footer">
+            <button class="btn btn-primary" id="closeModalBtn2">OK</button>
+        </div>
+    </div>
 </div>
 
 <script>
     (function() {
         "use strict";
 
+        // Элементы формы
         const wheelsQtySelect = document.getElementById('wheelsQty');
         const applyBtn = document.getElementById('applyAllBtn');
-
         const materialSelects = document.querySelectorAll('.material-qty');
         const serviceSelects = document.querySelectorAll('.service-qty');
         const allItemSelects = [...materialSelects, ...serviceSelects];
-
-        // ---------- РАДИО-ЛОГИКА ЛЕГКОВАЯ / ДЖИП ----------
+        
+        // Модальное окно
+        const modal = document.getElementById('summaryModal');
+        const summaryContent = document.getElementById('summaryContent');
+        const closeBtns = document.querySelectorAll('#closeModalBtn, #closeModalBtn2');
+        
+        // ---------- РАДИО-ЛОГИКА ----------
         const carLight = document.getElementById('carLight');
         const carJeep = document.getElementById('carJeep');
         
@@ -624,7 +748,7 @@
         }
         applyBtn.addEventListener('click', setAllItemsFromWheels);
 
-        // ---------- СБРОС КОЛ-ВА КОЛЕС ПРИ ИЗМЕНЕНИИ ----------
+        // ---------- СБРОС КОЛ-ВА КОЛЕС ----------
         function ensureEmptyOption() {
             if (!wheelsQtySelect.querySelector('option[value=""]')) {
                 const emptyOpt = document.createElement('option');
@@ -646,7 +770,7 @@
         });
         wheelsQtySelect.value = '4';
 
-        // ---------- КНОПКИ 0 ДЛЯ ВСЕХ ----------
+        // ---------- КНОПКИ 0 ----------
         const allZeroButtons = document.querySelectorAll('.item-controls .zero-btn');
         allZeroButtons.forEach(btn => {
             btn.addEventListener('click', function(e) {
@@ -683,21 +807,144 @@
         }
         document.getElementById('resetBtn').addEventListener('click', resetAll);
 
-        // ---------- СОХРАНИТЬ ----------
-        document.getElementById('saveBtn').addEventListener('click', function() {
-            let manager = document.getElementById('managerSelect').value || 'не выбран';
-            let clientName = document.getElementById('clientName').value || 'не указано';
-            let clientPhone = document.getElementById('clientPhone').value || 'не указан';
-            let radius = document.getElementById('diameterSelect').value;
-            let types = [];
-            if (document.getElementById('carLight').checked) types.push('🚗 легковая');
-            if (document.getElementById('carJeep').checked) types.push('🛻 джип');
-            if (document.getElementById('carLowProfile').checked) types.push('⚡ низкий профиль');
+        // ---------- ФОРМИРОВАНИЕ СВОДКИ (ТОЛЬКО ЗАПОЛНЕННЫЕ) ----------
+        function generateSummary() {
+            let html = '';
+            
+            // 1. МЕНЕДЖЕР
+            const manager = document.getElementById('managerSelect').value;
+            html += `<div class="summary-section">`;
+            html += `<div class="summary-title">👨‍💼 Менеджер</div>`;
+            if (manager) {
+                html += `<div class="summary-item"><span class="summary-label">ФИО:</span><span class="summary-value">${manager}</span></div>`;
+            } else {
+                html += `<div class="empty-message">— не выбран —</div>`;
+            }
+            html += `</div>`;
+            
+            // 2. КЛИЕНТ
+            const clientName = document.getElementById('clientName').value.trim();
+            const clientPhone = document.getElementById('clientPhone').value.trim();
+            html += `<div class="summary-section">`;
+            html += `<div class="summary-title">👥 Клиент</div>`;
+            if (clientName || clientPhone) {
+                if (clientName) html += `<div class="summary-item"><span class="summary-label">ФИО:</span><span class="summary-value">${clientName}</span></div>`;
+                if (clientPhone) html += `<div class="summary-item"><span class="summary-label">Телефон:</span><span class="summary-value">${clientPhone}</span></div>`;
+            } else {
+                html += `<div class="empty-message">— не указан —</div>`;
+            }
+            html += `</div>`;
+            
+            // 3. ПАРАМЕТРЫ КОЛЁС
+            const radius = document.getElementById('diameterSelect').value;
+            const types = [];
+            if (document.getElementById('carLight').checked) types.push('🚗 Легковая');
+            if (document.getElementById('carJeep').checked) types.push('🛻 Джип');
+            if (document.getElementById('carLowProfile').checked) types.push('⚡ Низкий профиль');
             if (document.getElementById('carRunflat').checked) types.push('🛡️ RunFlat');
-            let qty = wheelsQtySelect.value || '—';
-            alert(`✅ ЗАКАЗ\nМенеджер: ${manager}\nКлиент: ${clientName}, ${clientPhone}\nR${radius} | ${types.join(' ') || 'без типа'} | Кол-во: ${qty}`);
+            const qty = wheelsQtySelect.value;
+            
+            html += `<div class="summary-section">`;
+            html += `<div class="summary-title">⚙️ Параметры колёс</div>`;
+            html += `<div class="summary-item"><span class="summary-label">Радиус:</span><span class="summary-value">R${radius}</span></div>`;
+            if (types.length > 0) {
+                html += `<div class="summary-item"><span class="summary-label">Тип:</span><span class="summary-value">${types.join(', ')}</span></div>`;
+            }
+            html += `<div class="summary-item"><span class="summary-label">Кол-во:</span><span class="summary-value">${qty}</span></div>`;
+            html += `</div>`;
+            
+            // 4. МАТЕРИАЛЫ (ТОЛЬКО > 0)
+            html += `<div class="summary-section">`;
+            html += `<div class="summary-title">🧴 Материалы</div>`;
+            
+            const materialRows = document.querySelectorAll('#materialsGrid .item-row');
+            let hasMaterials = false;
+            
+            materialRows.forEach(row => {
+                const nameSpan = row.querySelector('.item-name');
+                const numberSpan = row.querySelector('.item-number');
+                const qtySelect = row.querySelector('.qty-carousel');
+                
+                if (nameSpan && qtySelect) {
+                    const number = numberSpan ? numberSpan.textContent : '';
+                    const name = nameSpan.childNodes[1]?.nodeValue?.trim() || nameSpan.innerText.replace(number, '').trim();
+                    const qty = parseInt(qtySelect.value, 10);
+                    
+                    if (qty > 0) {
+                        hasMaterials = true;
+                        html += `<div class="summary-item"><span class="summary-label">${number} ${name}:</span><span class="summary-value">${qty} шт</span></div>`;
+                    }
+                }
+            });
+            
+            if (!hasMaterials) {
+                html += `<div class="empty-message">— нет позиций —</div>`;
+            }
+            html += `</div>`;
+            
+            // 5. УСЛУГИ (ТОЛЬКО > 0)
+            html += `<div class="summary-section">`;
+            html += `<div class="summary-title">🔧 Услуги</div>`;
+            
+            const serviceRows = document.querySelectorAll('#servicesGrid .item-row');
+            let hasServices = false;
+            
+            serviceRows.forEach(row => {
+                const nameSpan = row.querySelector('.item-name');
+                const numberSpan = row.querySelector('.item-number');
+                const qtySelect = row.querySelector('.qty-carousel');
+                
+                if (nameSpan && qtySelect) {
+                    const number = numberSpan ? numberSpan.textContent : '';
+                    const name = nameSpan.childNodes[1]?.nodeValue?.trim() || nameSpan.innerText.replace(number, '').trim();
+                    const qty = parseInt(qtySelect.value, 10);
+                    
+                    if (qty > 0) {
+                        hasServices = true;
+                        html += `<div class="summary-item"><span class="summary-label">${number} ${name}:</span><span class="summary-value">${qty} шт</span></div>`;
+                    }
+                }
+            });
+            
+            if (!hasServices) {
+                html += `<div class="empty-message">— нет позиций —</div>`;
+            }
+            html += `</div>`;
+            
+            return html;
+        }
+
+        // ---------- ПОКАЗ МОДАЛЬНОГО ОКНА ----------
+        function showSummary() {
+            summaryContent.innerHTML = generateSummary();
+            modal.classList.add('active');
+        }
+        
+        // ---------- ЗАКРЫТИЕ МОДАЛКИ ----------
+        function closeModal() {
+            modal.classList.remove('active');
+        }
+        
+        // ---------- СОХРАНИТЬ ----------
+        document.getElementById('saveBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            showSummary();
+        });
+        
+        // Закрытие по кнопкам
+        closeBtns.forEach(btn => {
+            btn.addEventListener('click', closeModal);
+        });
+        
+        // Закрытие по клику на оверлей
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeModal();
+            }
         });
 
+        // Устанавливаем значение по умолчанию
+        wheelsQtySelect.value = '4';
     })();
 </script>
 
