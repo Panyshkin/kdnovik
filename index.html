@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Шиномонтаж — сводка заказа</title>
+    <title>Шиномонтаж — иконка удаления без фона</title>
     <style>
         /* СБРОС И БАЗОВЫЕ НАСТРОЙКИ */
         * {
@@ -41,137 +41,226 @@
             letter-spacing: -0.5px;
         }
 
-        /* КАРТОЧКИ */
-        .card {
-            background: white;
-            border-radius: 28px;
-            padding: 20px 18px;
-            margin-bottom: 20px;
-            border: 1px solid #e2ebf3;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-        }
-
-        .card-header {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: #0b2f4e;
-            margin-bottom: 18px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        /* МЕНЕДЖЕР И КЛИЕНТ */
-        .manager-card, .client-card {
+        /* КЛИКАБЕЛЬНЫЕ КАРТОЧКИ */
+        .clickable-card {
             background: #f7fcff;
             border-radius: 24px;
             padding: 18px 16px;
             border: 1px solid #d9e6f2;
             margin-bottom: 16px;
+            cursor: pointer;
+            transition: background 0.1s;
+            -webkit-tap-highlight-color: rgba(13,110,253,0.1);
         }
 
-        .manager-card label, .client-card label {
+        .clickable-card:active {
+            background: #e6f0f8;
+        }
+
+        .card-label {
             font-weight: 700;
             color: #1e3a5f;
             display: flex;
             align-items: center;
             gap: 8px;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             font-size: 1rem;
         }
 
-        /* ПОЛЯ ВВОДА */
-        select, input[type="text"], input[type="tel"] {
+        .card-content {
+            font-size: 1rem;
+            color: #124263;
+            min-height: 24px;
+            word-break: break-word;
+            line-height: 1.4;
+        }
+
+        .placeholder {
+            color: #7c95aa;
+            font-style: italic;
+        }
+
+        /* МОДАЛЬНЫЕ ОКНА */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s;
+            backdrop-filter: blur(3px);
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 36px;
+            max-width: 480px;
+            width: 100%;
+            max-height: 85vh;
+            overflow-y: auto;
+            padding: 24px 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            animation: slideUp 0.25s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #0a2f4a;
+        }
+
+        .modal-close {
+            background: #ecf3f7;
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #1e3a5f;
+        }
+
+        .modal-close:active {
+            background: #dbe5ec;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+            justify-content: flex-end;
+        }
+
+        .modal-footer .btn {
+            flex: 0 1 auto;
+            padding: 14px 24px;
+        }
+
+        /* СПИСОК МЕХАНИКОВ С ЧЕКБОКСАМИ */
+        .mechanics-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .mechanic-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: #f8fdff;
+            padding: 14px 18px;
+            border-radius: 60px;
+            border: 1px solid #cde0eb;
+        }
+
+        .mechanic-item input[type="checkbox"] {
+            width: 26px;
+            height: 26px;
+            accent-color: #0d6efd;
+        }
+
+        .mechanic-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #124263;
+        }
+
+        /* ПОЛЯ ВВОДА В МОДАЛКЕ КЛИЕНТА */
+        .input-field {
+            margin-bottom: 20px;
+        }
+
+        .input-field label {
+            display: block;
+            font-weight: 700;
+            color: #1e3a5f;
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+
+        .input-field input {
+            width: 100%;
             border: 1.8px solid #c2d6e6;
-            border-radius: 50px;
+            border-radius: 60px;
             padding: 16px 22px;
             font-size: 1.1rem;
             background: white;
-            width: 100%;
-            appearance: none;
-            -webkit-appearance: none;
         }
 
-        select {
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%232c3e50" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>');
-            background-repeat: no-repeat;
-            background-position: right 20px center;
-            background-size: 24px;
-        }
-
-        .input-icon {
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-
-        .input-icon span {
-            position: absolute;
-            left: 20px;
-            font-size: 1.4rem;
-            color: #0d6efd;
-        }
-
-        .input-icon input {
-            padding-left: 58px;
-        }
-
-        /* БЛОК R */
-        .r-compact {
-            background: white;
-            border: 1px solid #d0e1ee;
-            border-radius: 32px;
-            padding: 20px 16px;
-            margin-bottom: 24px;
-        }
-
-        .r-layout {
+        /* БЛОК ПАРАМЕТРОВ КОЛЁС В МОДАЛКЕ */
+        .wheels-modal-content {
             display: flex;
             flex-direction: column;
             gap: 20px;
         }
 
-        .r-left {
+        .radius-select-wrap {
             width: 100%;
         }
 
-        .r-left select {
+        .radius-select-wrap select {
             width: 100%;
             font-size: 1.9rem;
             font-weight: 800;
             padding: 12px 20px;
-            height: auto;
-            min-height: 90px;
             text-align: center;
             text-align-last: center;
             background: white;
             border: 2.5px solid #0d6efd;
             border-radius: 60px;
             color: #003153;
-            letter-spacing: 2px;
             background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="%230d6efd" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>');
             background-repeat: no-repeat;
             background-position: right 20px center;
             background-size: 32px;
+            appearance: none;
         }
 
-        .check-right {
+        .check-group {
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            gap: 12px;
         }
 
         .check-row {
             display: flex;
-            flex-wrap: wrap;
             gap: 12px;
+            flex-wrap: wrap;
         }
 
         .check-row label {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 8px;
             background: #f5fafd;
             padding: 16px 12px;
             border-radius: 60px;
@@ -180,21 +269,13 @@
             color: #124263;
             border: 1.8px solid #c2d9e8;
             flex: 1 1 130px;
-            min-height: 64px;
             cursor: pointer;
-            -webkit-tap-highlight-color: rgba(13,110,253,0.1);
-        }
-
-        .check-row label:active {
-            background: #d9eaf5;
         }
 
         .check-row input[type="checkbox"] {
             width: 26px;
             height: 26px;
             accent-color: #0d6efd;
-            margin: 0;
-            transform: scale(1.1);
             pointer-events: none;
         }
 
@@ -202,25 +283,16 @@
             font-size: 1.4rem;
         }
 
-        /* КОЛ-ВО И КНОПКА */
-        .qty-global {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            margin-top: 24px;
-            background: #e5f0f7;
-            padding: 20px 16px;
-            border-radius: 40px;
-        }
-
-        .qty-item {
+        .qty-wrap {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            width: 100%;
+            background: #e5f0f7;
+            padding: 16px 20px;
+            border-radius: 60px;
         }
 
-        .qty-item label {
+        .qty-wrap label {
             font-weight: 700;
             font-size: 1.2rem;
             color: #12507a;
@@ -242,63 +314,12 @@
             appearance: none;
         }
 
-        .apply-all-btn {
-            background: #0d6efd;
-            color: white;
-            border: none;
-            border-radius: 60px;
-            padding: 16px 20px;
-            font-weight: 700;
-            font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            width: 100%;
-            box-shadow: 0 8px 18px rgba(13,110,253,0.25);
-            cursor: pointer;
-        }
-
-        .apply-all-btn:active {
-            background: #0b5ed7;
-            transform: scale(0.98);
-        }
-
-        /* МАТЕРИАЛЫ И УСЛУГИ */
-        .section-card {
-            background: white;
-            border: 1px solid #deecf5;
-            border-radius: 32px;
-            padding: 20px 16px;
-            margin-bottom: 24px;
-        }
-
-        .section-title {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: #144a70;
-            margin-bottom: 20px;
-        }
-
-        .section-title span {
-            background: #0d6efd;
-            color: white;
-            width: 48px;
-            height: 48px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 20px;
-            font-size: 1.5rem;
-        }
-
-        .items-grid {
+        /* СПИСКИ МАТЕРИАЛОВ/УСЛУГ */
+        .items-list {
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            gap: 12px;
+            margin: 16px 0;
         }
 
         .item-row {
@@ -319,7 +340,7 @@
             display: flex;
             align-items: center;
             gap: 12px;
-            font-size: 1.05rem;
+            font-size: 1rem;
             flex: 1 1 160px;
         }
 
@@ -358,28 +379,53 @@
             appearance: none;
         }
 
-        .zero-btn {
-            background: #ff6b6b;
-            color: white;
+        /* ИКОНКА УДАЛЕНИЯ БЕЗ ФОНА */
+        .delete-icon {
+            background: transparent;
             border: none;
-            border-radius: 50px;
-            width: 64px;
+            width: 56px;
             height: 56px;
-            font-weight: 800;
-            font-size: 1.5rem;
+            font-size: 1.8rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 6px 12px rgba(255,80,80,0.25);
             cursor: pointer;
+            color: #4a6a85;
+            transition: opacity 0.1s;
+            -webkit-tap-highlight-color: transparent;
+            padding: 0;
         }
 
-        .zero-btn:active {
-            background: #e05252;
+        .delete-icon:active {
+            opacity: 0.5;
             transform: scale(0.94);
         }
 
-        /* КНОПКИ */
+        /* КНОПКА УСТАНОВИТЬ ДЛЯ ВСЕХ */
+        .apply-all-btn {
+            background: #0d6efd;
+            color: white;
+            border: none;
+            border-radius: 60px;
+            padding: 16px 20px;
+            font-weight: 700;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            width: 100%;
+            box-shadow: 0 8px 18px rgba(13,110,253,0.25);
+            cursor: pointer;
+            margin-top: 16px;
+        }
+
+        .apply-all-btn:active {
+            background: #0b5ed7;
+            transform: scale(0.98);
+        }
+
+        /* КНОПКИ ДЕЙСТВИЙ */
         .footer-actions {
             display: flex;
             gap: 14px;
@@ -412,279 +458,40 @@
         .btn-primary:active {
             background: #0b5ed7;
         }
-
-        /* МОДАЛЬНОЕ ОКНО СО СВОДКОЙ */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            z-index: 1000;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.2s;
-            backdrop-filter: blur(3px);
-        }
-
-        .modal-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: 36px;
-            max-width: 480px;
-            width: 100%;
-            max-height: 85vh;
-            overflow-y: auto;
-            padding: 28px 24px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-            animation: slideUp 0.25s ease;
-        }
-
-        @keyframes slideUp {
-            from { transform: translateY(30px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
-        }
-
-        .modal-header h2 {
-            font-size: 1.6rem;
-            font-weight: 700;
-            color: #0a2f4a;
-        }
-
-        .modal-close {
-            background: #ecf3f7;
-            border: none;
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            font-size: 1.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            color: #1e3a5f;
-        }
-
-        .modal-close:active {
-            background: #dbe5ec;
-        }
-
-        .summary-section {
-            margin-bottom: 24px;
-        }
-
-        .summary-title {
-            font-weight: 700;
-            color: #0d6efd;
-            font-size: 1.2rem;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            border-bottom: 2px solid #e2ebf3;
-            padding-bottom: 10px;
-        }
-
-        .summary-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px dashed #dee9f2;
-            font-size: 1.05rem;
-        }
-
-        .summary-item:last-child {
-            border-bottom: none;
-        }
-
-        .summary-label {
-            color: #2c4e6b;
-            font-weight: 500;
-        }
-
-        .summary-value {
-            font-weight: 700;
-            color: #0a3144;
-        }
-
-        .empty-message {
-            color: #7c95aa;
-            font-style: italic;
-            padding: 10px 0;
-            text-align: center;
-        }
-
-        .modal-footer {
-            margin-top: 24px;
-            display: flex;
-            justify-content: flex-end;
-        }
-
-        .modal-footer .btn {
-            flex: 0 1 auto;
-            padding: 14px 28px;
-        }
-
-        small {
-            color: #3c6780;
-            font-size: 0.85rem;
-            margin-top: 16px;
-            display: block;
-        }
     </style>
 </head>
 <body>
 <div class="form-container">
     <h1>🛞 Шиномонтаж</h1>
     
-    <!-- МЕНЕДЖЕР -->
-    <div class="manager-card">
-        <label>👨‍💼 Менеджер</label>
-        <select id="managerSelect">
-            <option value="" disabled selected>— выберите ФИО —</option>
-            <option value="Андреев Андрей Андреевич">Андреев Андрей Андреевич</option>
-            <option value="Борисова Борислава Борисовна">Борисова Борислава Борисовна</option>
-            <option value="Власов Владислав Валерьевич">Власов Владислав Валерьевич</option>
-            <option value="Григорьева Галина Григорьевна">Григорьева Галина Григорьевна</option>
-            <option value="Дмитриев Дмитрий Дмитриевич">Дмитриев Дмитрий Дмитриевич</option>
-            <option value="Екатеринина Екатерина Евгеньевна">Екатеринина Екатерина Евгеньевна</option>
-            <option value="Жуков Жорж Жанович">Жуков Жорж Жанович</option>
-        </select>
+    <!-- КАРТОЧКА МЕХАНИКОВ -->
+    <div class="clickable-card" id="mechanicsCard">
+        <div class="card-label"><span>🔧</span> Механики</div>
+        <div class="card-content" id="mechanicsDisplay"><span class="placeholder">Выберите механиков</span></div>
     </div>
     
-    <!-- КЛИЕНТ -->
-    <div class="client-card">
-        <label style="margin-bottom: 12px;">👥 Клиент</label>
-        <div style="display: flex; flex-direction: column; gap: 14px;">
-            <div class="input-icon">
-                <span>👤</span>
-                <input type="text" id="clientName" placeholder="ФИО клиента">
-            </div>
-            <div class="input-icon">
-                <span>📞</span>
-                <input type="tel" id="clientPhone" placeholder="Телефон">
-            </div>
-        </div>
+    <!-- КАРТОЧКА КЛИЕНТА -->
+    <div class="clickable-card" id="clientCard">
+        <div class="card-label"><span>👥</span> Клиент</div>
+        <div class="card-content" id="clientDisplay"><span class="placeholder">Добавить клиента</span></div>
     </div>
 
-    <!-- БЛОК R -->
-    <div class="r-compact">
-        <div class="card-header">
-            <span>⚙️</span> Параметры колёс
-        </div>
-        
-        <div class="r-layout">
-            <div class="r-left">
-                <select id="diameterSelect">
-                    <option value="13">R13</option>
-                    <option value="14">R14</option>
-                    <option value="15">R15</option>
-                    <option value="16">R16</option>
-                    <option value="17" selected>R17</option>
-                    <option value="18">R18</option>
-                    <option value="19">R19</option>
-                    <option value="20">R20</option>
-                    <option value="21">R21</option>
-                    <option value="22">R22</option>
-                    <option value="23">R23</option>
-                    <option value="24">R24</option>
-                </select>
-            </div>
-            
-            <div class="check-right">
-                <div class="check-row">
-                    <label>
-                        <input type="checkbox" id="carLight" class="type-check car-type-group">
-                        <span class="car-icon">🚗</span> Легковая
-                    </label>
-                    <label>
-                        <input type="checkbox" id="carJeep" class="type-check car-type-group">
-                        <span class="car-icon">🛻</span> Джип
-                    </label>
-                </div>
-                <div class="check-row">
-                    <label>
-                        <input type="checkbox" id="carLowProfile" class="type-check">
-                        <span class="car-icon">⚡</span> Низкий профиль
-                    </label>
-                    <label>
-                        <input type="checkbox" id="carRunflat" class="type-check">
-                        <span class="car-icon">🛡️</span> RunFlat
-                    </label>
-                </div>
-            </div>
-        </div>
-        
-        <div class="qty-global">
-            <div class="qty-item">
-                <label>🔢 Кол-во</label>
-                <select id="wheelsQty" class="carousel-select">
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4" selected>4</option>
-                    <option value="5">5</option>
-                    <option value="6">6</option>
-                    <option value="7">7</option>
-                    <option value="8">8</option>
-                </select>
-            </div>
-            <button type="button" id="applyAllBtn" class="apply-all-btn">
-                ⚡ Установить для всех
-            </button>
-        </div>
+    <!-- КАРТОЧКА ПАРАМЕТРОВ КОЛЁС -->
+    <div class="clickable-card" id="wheelsCard">
+        <div class="card-label"><span>⚙️</span> Параметры колёс</div>
+        <div class="card-content" id="wheelsDisplay"><span class="placeholder">Не выбраны</span></div>
     </div>
 
-    <!-- МАТЕРИАЛЫ -->
-    <div class="section-card">
-        <div class="section-title">
-            <span>🧴</span> Материалы
-        </div>
-        <div class="items-grid" id="materialsGrid">
-            <div class="item-row"><span class="item-name"><span class="item-number">1</span> Расходные материалы</span><div class="item-controls"><select class="qty-carousel material-qty"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select><button type="button" class="zero-btn">0</button></div></div>
-            <div class="item-row"><span class="item-name"><span class="item-number">2</span> Грузик набивной</span><div class="item-controls"><select class="qty-carousel material-qty"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select><button type="button" class="zero-btn">0</button></div></div>
-            <div class="item-row"><span class="item-name"><span class="item-number">3</span> Грузик самоклеющийся</span><div class="item-controls"><select class="qty-carousel material-qty"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select><button type="button" class="zero-btn">0</button></div></div>
-            <div class="item-row"><span class="item-name"><span class="item-number">4</span> Вентиль прост.</span><div class="item-controls"><select class="qty-carousel material-qty"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select><button type="button" class="zero-btn">0</button></div></div>
-            <div class="item-row"><span class="item-name"><span class="item-number">5</span> Вентиль хром</span><div class="item-controls"><select class="qty-carousel material-qty"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select><button type="button" class="zero-btn">0</button></div></div>
-            <div class="item-row"><span class="item-name"><span class="item-number">7</span> Жгут</span><div class="item-controls"><select class="qty-carousel material-qty"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select><button type="button" class="zero-btn">0</button></div></div>
-        </div>
-        <small>🔴 Кнопка 0 устанавливает количество 0</small>
+    <!-- КАРТОЧКА МАТЕРИАЛОВ -->
+    <div class="clickable-card" id="materialsCard">
+        <div class="card-label"><span>🧴</span> Материалы</div>
+        <div class="card-content" id="materialsDisplay"><span class="placeholder">Нет позиций</span></div>
     </div>
 
-    <!-- УСЛУГИ -->
-    <div class="section-card">
-        <div class="section-title">
-            <span>🔧</span> Услуги
-        </div>
-        <div class="items-grid" id="servicesGrid">
-            <div class="item-row"><span class="item-name"><span class="item-number">1</span> Съем и установка колеса</span><div class="item-controls"><select class="qty-carousel service-qty"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select><button type="button" class="zero-btn">0</button></div></div>
-            <div class="item-row"><span class="item-name"><span class="item-number">2</span> Демонтаж шины</span><div class="item-controls"><select class="qty-carousel service-qty"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select><button type="button" class="zero-btn">0</button></div></div>
-            <div class="item-row"><span class="item-name"><span class="item-number">3</span> Монтаж шины</span><div class="item-controls"><select class="qty-carousel service-qty"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select><button type="button" class="zero-btn">0</button></div></div>
-            <div class="item-row"><span class="item-name"><span class="item-number">4</span> Балансировка</span><div class="item-controls"><select class="qty-carousel service-qty"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select><button type="button" class="zero-btn">0</button></div></div>
-            <div class="item-row"><span class="item-name"><span class="item-number">5</span> Технологическая мойка</span><div class="item-controls"><select class="qty-carousel service-qty"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select><button type="button" class="zero-btn">0</button></div></div>
-            <div class="item-row"><span class="item-name"><span class="item-number">6</span> Сложность ш/м с датчиком</span><div class="item-controls"><select class="qty-carousel service-qty"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select><button type="button" class="zero-btn">0</button></div></div>
-            <div class="item-row"><span class="item-name"><span class="item-number">7</span> Обработка ступицы/герметик</span><div class="item-controls"><select class="qty-carousel service-qty"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select><button type="button" class="zero-btn">0</button></div></div>
-            <div class="item-row"><span class="item-name"><span class="item-number">8</span> Шиноремонт жгутом</span><div class="item-controls"><select class="qty-carousel service-qty"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select><button type="button" class="zero-btn">0</button></div></div>
-            <div class="item-row"><span class="item-name"><span class="item-number">9</span> Съем и установка камеры</span><div class="item-controls"><select class="qty-carousel service-qty"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select><button type="button" class="zero-btn">0</button></div></div>
-            <div class="item-row"><span class="item-name"><span class="item-number">10</span> Погрузка колесо/сборе</span><div class="item-controls"><select class="qty-carousel service-qty"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select><button type="button" class="zero-btn">0</button></div></div>
-        </div>
-        <small>✅ Услуги с кнопкой 0</small>
+    <!-- КАРТОЧКА УСЛУГ -->
+    <div class="clickable-card" id="servicesCard">
+        <div class="card-label"><span>🔧</span> Услуги</div>
+        <div class="card-content" id="servicesDisplay"><span class="placeholder">Нет позиций</span></div>
     </div>
 
     <!-- КНОПКИ -->
@@ -694,20 +501,114 @@
     </div>
 </div>
 
-<!-- МОДАЛЬНОЕ ОКНО СО СВОДКОЙ -->
-<div id="summaryModal" class="modal-overlay">
+<!-- МОДАЛКА МЕХАНИКОВ -->
+<div id="mechanicsModal" class="modal-overlay">
     <div class="modal-content">
         <div class="modal-header">
-            <h2>📋 Заказ оформлен</h2>
-            <button class="modal-close" id="closeModalBtn">✕</button>
+            <h2>🔧 Выбор механиков</h2>
+            <button class="modal-close" id="closeMechanicsModal">✕</button>
         </div>
-        
-        <div id="summaryContent">
-            <!-- Сюда будет вставлена сводка -->
-        </div>
-        
+        <div class="mechanics-list" id="mechanicsList"></div>
         <div class="modal-footer">
-            <button class="btn btn-primary" id="closeModalBtn2">OK</button>
+            <button class="btn" id="cancelMechanicsBtn">Отмена</button>
+            <button class="btn btn-primary" id="saveMechanicsBtn">Сохранить</button>
+        </div>
+    </div>
+</div>
+
+<!-- МОДАЛКА КЛИЕНТА -->
+<div id="clientModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>👥 Данные клиента</h2>
+            <button class="modal-close" id="closeClientModal">✕</button>
+        </div>
+        <div class="input-field">
+            <label>ФИО</label>
+            <input type="text" id="clientNameInput" placeholder="Иванов Иван Иванович">
+        </div>
+        <div class="input-field">
+            <label>Телефон</label>
+            <input type="tel" id="clientPhoneInput" placeholder="+7 (999) 123-45-67">
+        </div>
+        <div class="input-field">
+            <label>Автомобиль</label>
+            <input type="text" id="clientCarInput" placeholder="Toyota Camry, госномер">
+        </div>
+        <div class="modal-footer">
+            <button class="btn" id="cancelClientBtn">Отмена</button>
+            <button class="btn btn-primary" id="saveClientBtn">Сохранить</button>
+        </div>
+    </div>
+</div>
+
+<!-- МОДАЛКА ПАРАМЕТРОВ КОЛЁС -->
+<div id="wheelsModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>⚙️ Параметры колёс</h2>
+            <button class="modal-close" id="closeWheelsModal">✕</button>
+        </div>
+        <div class="wheels-modal-content">
+            <div class="radius-select-wrap">
+                <select id="modalDiameterSelect">
+                    <option value="13">R13</option><option value="14">R14</option><option value="15">R15</option><option value="16">R16</option>
+                    <option value="17" selected>R17</option><option value="18">R18</option><option value="19">R19</option><option value="20">R20</option>
+                    <option value="21">R21</option><option value="22">R22</option><option value="23">R23</option><option value="24">R24</option>
+                </select>
+            </div>
+            <div class="check-group">
+                <div class="check-row">
+                    <label><input type="checkbox" id="modalCarLight" class="modal-type-check car-type-group"><span class="car-icon">🚗</span> Легковая</label>
+                    <label><input type="checkbox" id="modalCarJeep" class="modal-type-check car-type-group"><span class="car-icon">🛻</span> Джип</label>
+                </div>
+                <div class="check-row">
+                    <label><input type="checkbox" id="modalCarLowProfile" class="modal-type-check"><span class="car-icon">⚡</span> Низкий профиль</label>
+                    <label><input type="checkbox" id="modalCarRunflat" class="modal-type-check"><span class="car-icon">🛡️</span> RunFlat</label>
+                </div>
+            </div>
+            <div class="qty-wrap">
+                <label>🔢 Кол-во</label>
+                <select id="modalWheelsQty" class="carousel-select">
+                    <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+                    <option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option>
+                </select>
+            </div>
+            <button type="button" id="applyAllBtn" class="apply-all-btn">⚡ Установить для всех</button>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" id="cancelWheelsBtn">Отмена</button>
+            <button class="btn btn-primary" id="saveWheelsBtn">Сохранить</button>
+        </div>
+    </div>
+</div>
+
+<!-- МОДАЛКА МАТЕРИАЛОВ -->
+<div id="materialsModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>🧴 Материалы</h2>
+            <button class="modal-close" id="closeMaterialsModal">✕</button>
+        </div>
+        <div class="items-list" id="materialsModalList"></div>
+        <div class="modal-footer">
+            <button class="btn" id="cancelMaterialsBtn">Отмена</button>
+            <button class="btn btn-primary" id="saveMaterialsBtn">Сохранить</button>
+        </div>
+    </div>
+</div>
+
+<!-- МОДАЛКА УСЛУГ -->
+<div id="servicesModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>🔧 Услуги</h2>
+            <button class="modal-close" id="closeServicesModal">✕</button>
+        </div>
+        <div class="items-list" id="servicesModalList"></div>
+        <div class="modal-footer">
+            <button class="btn" id="cancelServicesBtn">Отмена</button>
+            <button class="btn btn-primary" id="saveServicesBtn">Сохранить</button>
         </div>
     </div>
 </div>
@@ -716,235 +617,403 @@
     (function() {
         "use strict";
 
-        // Элементы формы
-        const wheelsQtySelect = document.getElementById('wheelsQty');
-        const applyBtn = document.getElementById('applyAllBtn');
-        const materialSelects = document.querySelectorAll('.material-qty');
-        const serviceSelects = document.querySelectorAll('.service-qty');
-        const allItemSelects = [...materialSelects, ...serviceSelects];
+        // ---------- ДАННЫЕ ----------
+        const mechanicsNames = [
+            'Андреев Андрей', 'Борисова Борислава', 'Власов Владислав', 'Григорьева Галина',
+            'Дмитриев Дмитрий', 'Екатеринина Екатерина', 'Жуков Жорж', 'Зайцев Захар'
+        ];
+
+        const materialsData = [
+            { num: 1, name: 'Расходные материалы' },
+            { num: 2, name: 'Грузик набивной' },
+            { num: 3, name: 'Грузик самоклеющийся' },
+            { num: 4, name: 'Вентиль прост.' },
+            { num: 5, name: 'Вентиль хром' },
+            { num: 7, name: 'Жгут' }
+        ];
+
+        const servicesData = [
+            { num: 1, name: 'Съем и установка колеса' },
+            { num: 2, name: 'Демонтаж шины' },
+            { num: 3, name: 'Монтаж шины' },
+            { num: 4, name: 'Балансировка' },
+            { num: 5, name: 'Технологическая мойка' },
+            { num: 6, name: 'Сложность ш/м с датчиком' },
+            { num: 7, name: 'Обработка ступицы/герметик' },
+            { num: 8, name: 'Шиноремонт жгутом' },
+            { num: 9, name: 'Съем и установка камеры' },
+            { num: 10, name: 'Погрузка колесо/сборе' }
+        ];
+
+        // ---------- СОСТОЯНИЕ ----------
+        let selectedMechanics = [];
+        let clientData = { name: '', phone: '', car: '' };
         
-        // Модальное окно
-        const modal = document.getElementById('summaryModal');
-        const summaryContent = document.getElementById('summaryContent');
-        const closeBtns = document.querySelectorAll('#closeModalBtn, #closeModalBtn2');
-        
-        // ---------- РАДИО-ЛОГИКА ----------
-        const carLight = document.getElementById('carLight');
-        const carJeep = document.getElementById('carJeep');
-        
-        function handleCarTypeChange(changed, other) {
-            if (changed.checked) {
-                other.checked = false;
+        // Параметры колёс
+        let wheelsData = {
+            radius: '17',
+            light: false,
+            jeep: false,
+            lowProfile: false,
+            runflat: false,
+            qty: '4'
+        };
+
+        // Материалы и услуги
+        let materialsState = materialsData.map(item => ({ ...item, qty: 1 }));
+        let servicesState = servicesData.map(item => ({ ...item, qty: 1 }));
+
+        // ---------- ФУНКЦИИ ОБНОВЛЕНИЯ КАРТОЧЕК ----------
+        function updateMechanicsDisplay() {
+            const display = document.getElementById('mechanicsDisplay');
+            if (selectedMechanics.length === 0) {
+                display.innerHTML = '<span class="placeholder">Выберите механиков</span>';
+            } else {
+                display.textContent = selectedMechanics.join(', ');
             }
         }
-        
-        carLight.addEventListener('change', function() { handleCarTypeChange(carLight, carJeep); });
-        carJeep.addEventListener('change', function() { handleCarTypeChange(carJeep, carLight); });
 
-        // ---------- УСТАНОВИТЬ ДЛЯ ВСЕХ ----------
-        function setAllItemsFromWheels() {
-            const qty = wheelsQtySelect.value;
-            allItemSelects.forEach(select => { select.value = qty; });
+        function updateClientDisplay() {
+            const display = document.getElementById('clientDisplay');
+            if (!clientData.name && !clientData.phone && !clientData.car) {
+                display.innerHTML = '<span class="placeholder">Добавить клиента</span>';
+                return;
+            }
+            let parts = [];
+            if (clientData.name) parts.push(clientData.name);
+            if (clientData.phone) parts.push(clientData.phone);
+            if (clientData.car) parts.push(clientData.car);
+            display.textContent = parts.join(' • ');
         }
-        applyBtn.addEventListener('click', setAllItemsFromWheels);
 
-        // ---------- СБРОС КОЛ-ВА КОЛЕС ----------
-        function ensureEmptyOption() {
-            if (!wheelsQtySelect.querySelector('option[value=""]')) {
-                const emptyOpt = document.createElement('option');
-                emptyOpt.value = '';
-                emptyOpt.textContent = '—';
-                emptyOpt.disabled = true;
-                wheelsQtySelect.prepend(emptyOpt);
+        function updateWheelsDisplay() {
+            const display = document.getElementById('wheelsDisplay');
+            let typeParts = [];
+            if (wheelsData.light) typeParts.push('🚗 Легковая');
+            if (wheelsData.jeep) typeParts.push('🛻 Джип');
+            if (wheelsData.lowProfile) typeParts.push('⚡ Низкий');
+            if (wheelsData.runflat) typeParts.push('🛡️ RunFlat');
+            const typeStr = typeParts.length ? typeParts.join(', ') : 'без типа';
+            display.textContent = `R${wheelsData.radius}, ${typeStr}, ${wheelsData.qty} шт`;
+        }
+
+        function updateMaterialsDisplay() {
+            const display = document.getElementById('materialsDisplay');
+            const nonZero = materialsState.filter(item => item.qty > 0);
+            if (nonZero.length === 0) {
+                display.innerHTML = '<span class="placeholder">Нет позиций</span>';
+            } else {
+                const parts = nonZero.map(item => {
+                    let shortName = item.name.length > 15 ? item.name.substring(0, 12) + '…' : item.name;
+                    return `${shortName} (${item.qty})`;
+                });
+                display.textContent = parts.join(' • ');
             }
         }
-        ensureEmptyOption();
-        
-        function resetWheelsQtyToEmpty() {
-            const emptyOpt = wheelsQtySelect.querySelector('option[value=""]');
-            if (emptyOpt) emptyOpt.selected = true;
-        }
-        
-        allItemSelects.forEach(select => {
-            select.addEventListener('change', resetWheelsQtyToEmpty);
-        });
-        wheelsQtySelect.value = '4';
 
-        // ---------- КНОПКИ 0 ----------
-        const allZeroButtons = document.querySelectorAll('.item-controls .zero-btn');
-        allZeroButtons.forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                const row = this.closest('.item-row');
-                if (row) {
-                    const qtySelect = row.querySelector('.qty-carousel');
-                    if (qtySelect) {
-                        if (!qtySelect.querySelector('option[value="0"]')) {
-                            const zeroOpt = document.createElement('option');
-                            zeroOpt.value = '0';
-                            zeroOpt.textContent = '0';
-                            qtySelect.prepend(zeroOpt);
+        function updateServicesDisplay() {
+            const display = document.getElementById('servicesDisplay');
+            const nonZero = servicesState.filter(item => item.qty > 0);
+            if (nonZero.length === 0) {
+                display.innerHTML = '<span class="placeholder">Нет позиций</span>';
+            } else {
+                const parts = nonZero.map(item => {
+                    let shortName = item.name.length > 15 ? item.name.substring(0, 12) + '…' : item.name;
+                    return `${shortName} (${item.qty})`;
+                });
+                display.textContent = parts.join(' • ');
+            }
+        }
+
+        // ---------- РАДИО-ЛОГИКА ДЛЯ ЛЕГКОВАЯ/ДЖИП ----------
+        function setupRadioLogic() {
+            const modalLight = document.getElementById('modalCarLight');
+            const modalJeep = document.getElementById('modalCarJeep');
+            modalLight.addEventListener('change', function() {
+                if (modalLight.checked) modalJeep.checked = false;
+            });
+            modalJeep.addEventListener('change', function() {
+                if (modalJeep.checked) modalLight.checked = false;
+            });
+        }
+
+        // ---------- ЗАПОЛНЕНИЕ МОДАЛОК ТЕКУЩИМИ ДАННЫМИ ----------
+        function openMechanicsModal() {
+            const list = document.getElementById('mechanicsList');
+            list.innerHTML = '';
+            mechanicsNames.forEach(name => {
+                const checked = selectedMechanics.includes(name) ? 'checked' : '';
+                list.innerHTML += `
+                    <div class="mechanic-item">
+                        <input type="checkbox" value="${name}" ${checked}>
+                        <span class="mechanic-name">${name}</span>
+                    </div>
+                `;
+            });
+            document.getElementById('mechanicsModal').classList.add('active');
+        }
+
+        function openClientModal() {
+            document.getElementById('clientNameInput').value = clientData.name || '';
+            document.getElementById('clientPhoneInput').value = clientData.phone || '';
+            document.getElementById('clientCarInput').value = clientData.car || '';
+            document.getElementById('clientModal').classList.add('active');
+        }
+
+        function openWheelsModal() {
+            document.getElementById('modalDiameterSelect').value = wheelsData.radius;
+            document.getElementById('modalCarLight').checked = wheelsData.light;
+            document.getElementById('modalCarJeep').checked = wheelsData.jeep;
+            document.getElementById('modalCarLowProfile').checked = wheelsData.lowProfile;
+            document.getElementById('modalCarRunflat').checked = wheelsData.runflat;
+            document.getElementById('modalWheelsQty').value = wheelsData.qty;
+            document.getElementById('wheelsModal').classList.add('active');
+        }
+
+        function renderMaterialsModal() {
+            const container = document.getElementById('materialsModalList');
+            container.innerHTML = '';
+            materialsState.forEach(item => {
+                const row = document.createElement('div');
+                row.className = 'item-row';
+                row.innerHTML = `
+                    <span class="item-name"><span class="item-number">${item.num}</span> ${item.name}</span>
+                    <div class="item-controls">
+                        <select class="qty-carousel material-qty-modal" data-num="${item.num}">
+                            <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+                            <option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option>
+                        </select>
+                        <button type="button" class="delete-icon" data-num="${item.num}"><span>🗑️</span></button>
+                    </div>
+                `;
+                container.appendChild(row);
+                const select = row.querySelector('.qty-carousel');
+                select.value = item.qty;
+            });
+        }
+
+        function openMaterialsModal() {
+            renderMaterialsModal();
+            document.getElementById('materialsModal').classList.add('active');
+        }
+
+        function renderServicesModal() {
+            const container = document.getElementById('servicesModalList');
+            container.innerHTML = '';
+            servicesState.forEach(item => {
+                const row = document.createElement('div');
+                row.className = 'item-row';
+                row.innerHTML = `
+                    <span class="item-name"><span class="item-number">${item.num}</span> ${item.name}</span>
+                    <div class="item-controls">
+                        <select class="qty-carousel service-qty-modal" data-num="${item.num}">
+                            <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+                            <option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option>
+                        </select>
+                        <button type="button" class="delete-icon" data-num="${item.num}"><span>🗑️</span></button>
+                    </div>
+                `;
+                container.appendChild(row);
+                const select = row.querySelector('.qty-carousel');
+                select.value = item.qty;
+            });
+        }
+
+        function openServicesModal() {
+            renderServicesModal();
+            document.getElementById('servicesModal').classList.add('active');
+        }
+
+        // ---------- СОХРАНЕНИЕ ИЗ МОДАЛОК ----------
+        function saveMechanics() {
+            const checkboxes = document.querySelectorAll('#mechanicsList input[type="checkbox"]');
+            selectedMechanics = [];
+            checkboxes.forEach(cb => { if (cb.checked) selectedMechanics.push(cb.value); });
+            updateMechanicsDisplay();
+            document.getElementById('mechanicsModal').classList.remove('active');
+        }
+
+        function saveClient() {
+            clientData.name = document.getElementById('clientNameInput').value.trim();
+            clientData.phone = document.getElementById('clientPhoneInput').value.trim();
+            clientData.car = document.getElementById('clientCarInput').value.trim();
+            updateClientDisplay();
+            document.getElementById('clientModal').classList.remove('active');
+        }
+
+        function saveWheels() {
+            wheelsData.radius = document.getElementById('modalDiameterSelect').value;
+            wheelsData.light = document.getElementById('modalCarLight').checked;
+            wheelsData.jeep = document.getElementById('modalCarJeep').checked;
+            wheelsData.lowProfile = document.getElementById('modalCarLowProfile').checked;
+            wheelsData.runflat = document.getElementById('modalCarRunflat').checked;
+            wheelsData.qty = document.getElementById('modalWheelsQty').value;
+            updateWheelsDisplay();
+            document.getElementById('wheelsModal').classList.remove('active');
+        }
+
+        function saveMaterials() {
+            const selects = document.querySelectorAll('#materialsModalList .material-qty-modal');
+            selects.forEach(select => {
+                const num = parseInt(select.dataset.num, 10);
+                const item = materialsState.find(m => m.num === num);
+                if (item) item.qty = parseInt(select.value, 10);
+            });
+            updateMaterialsDisplay();
+            document.getElementById('materialsModal').classList.remove('active');
+        }
+
+        function saveServices() {
+            const selects = document.querySelectorAll('#servicesModalList .service-qty-modal');
+            selects.forEach(select => {
+                const num = parseInt(select.dataset.num, 10);
+                const item = servicesState.find(s => s.num === num);
+                if (item) item.qty = parseInt(select.value, 10);
+            });
+            updateServicesDisplay();
+            document.getElementById('servicesModal').classList.remove('active');
+        }
+
+        // ---------- УСТАНОВИТЬ ДЛЯ ВСЕХ (из параметров колёс) ----------
+        function applyAllFromWheels() {
+            const globalQty = parseInt(document.getElementById('modalWheelsQty').value, 10);
+            materialsState.forEach(item => item.qty = globalQty);
+            servicesState.forEach(item => item.qty = globalQty);
+            updateMaterialsDisplay();
+            updateServicesDisplay();
+            if (document.getElementById('materialsModal').classList.contains('active')) {
+                renderMaterialsModal();
+            }
+            if (document.getElementById('servicesModal').classList.contains('active')) {
+                renderServicesModal();
+            }
+        }
+
+        // ---------- КНОПКИ УДАЛЕНИЯ В МОДАЛКАХ ----------
+        function setupModalDeleteListeners(containerId, stateArray) {
+            const container = document.getElementById(containerId);
+            container.addEventListener('click', (e) => {
+                const deleteBtn = e.target.closest('.delete-icon');
+                if (!deleteBtn) return;
+                const num = parseInt(deleteBtn.dataset.num, 10);
+                const item = stateArray.find(i => i.num === num);
+                if (item) {
+                    item.qty = 0;
+                    const row = deleteBtn.closest('.item-row');
+                    const select = row.querySelector('.qty-carousel');
+                    if (select) {
+                        if (!select.querySelector('option[value="0"]')) {
+                            const opt = document.createElement('option');
+                            opt.value = '0';
+                            opt.textContent = '0';
+                            select.prepend(opt);
                         }
-                        qtySelect.value = '0';
-                        resetWheelsQtyToEmpty();
+                        select.value = '0';
                     }
                 }
             });
-        });
+        }
 
         // ---------- СБРОС ФОРМЫ ----------
         function resetAll() {
-            document.getElementById('managerSelect').selectedIndex = 0;
-            document.getElementById('clientName').value = '';
-            document.getElementById('clientPhone').value = '';
-            document.getElementById('diameterSelect').value = '17';
-            document.querySelectorAll('.type-check').forEach(cb => cb.checked = false);
-            wheelsQtySelect.value = '4';
-            allItemSelects.forEach(select => {
-                const zeroOpt = select.querySelector('option[value="0"]');
-                if (zeroOpt) zeroOpt.remove();
-                select.value = '1';
-            });
+            selectedMechanics = [];
+            clientData = { name: '', phone: '', car: '' };
+            wheelsData = { radius: '17', light: false, jeep: false, lowProfile: false, runflat: false, qty: '4' };
+            materialsState = materialsData.map(item => ({ ...item, qty: 1 }));
+            servicesState = servicesData.map(item => ({ ...item, qty: 1 }));
+            updateMechanicsDisplay();
+            updateClientDisplay();
+            updateWheelsDisplay();
+            updateMaterialsDisplay();
+            updateServicesDisplay();
         }
-        document.getElementById('resetBtn').addEventListener('click', resetAll);
 
-        // ---------- ФОРМИРОВАНИЕ СВОДКИ (ТОЛЬКО ЗАПОЛНЕННЫЕ) ----------
-        function generateSummary() {
-            let html = '';
-            
-            // 1. МЕНЕДЖЕР
-            const manager = document.getElementById('managerSelect').value;
-            html += `<div class="summary-section">`;
-            html += `<div class="summary-title">👨‍💼 Менеджер</div>`;
-            if (manager) {
-                html += `<div class="summary-item"><span class="summary-label">ФИО:</span><span class="summary-value">${manager}</span></div>`;
-            } else {
-                html += `<div class="empty-message">— не выбран —</div>`;
-            }
-            html += `</div>`;
-            
-            // 2. КЛИЕНТ
-            const clientName = document.getElementById('clientName').value.trim();
-            const clientPhone = document.getElementById('clientPhone').value.trim();
-            html += `<div class="summary-section">`;
-            html += `<div class="summary-title">👥 Клиент</div>`;
-            if (clientName || clientPhone) {
-                if (clientName) html += `<div class="summary-item"><span class="summary-label">ФИО:</span><span class="summary-value">${clientName}</span></div>`;
-                if (clientPhone) html += `<div class="summary-item"><span class="summary-label">Телефон:</span><span class="summary-value">${clientPhone}</span></div>`;
-            } else {
-                html += `<div class="empty-message">— не указан —</div>`;
-            }
-            html += `</div>`;
-            
-            // 3. ПАРАМЕТРЫ КОЛЁС
-            const radius = document.getElementById('diameterSelect').value;
-            const types = [];
-            if (document.getElementById('carLight').checked) types.push('🚗 Легковая');
-            if (document.getElementById('carJeep').checked) types.push('🛻 Джип');
-            if (document.getElementById('carLowProfile').checked) types.push('⚡ Низкий профиль');
-            if (document.getElementById('carRunflat').checked) types.push('🛡️ RunFlat');
-            const qty = wheelsQtySelect.value;
-            
-            html += `<div class="summary-section">`;
-            html += `<div class="summary-title">⚙️ Параметры колёс</div>`;
-            html += `<div class="summary-item"><span class="summary-label">Радиус:</span><span class="summary-value">R${radius}</span></div>`;
-            if (types.length > 0) {
-                html += `<div class="summary-item"><span class="summary-label">Тип:</span><span class="summary-value">${types.join(', ')}</span></div>`;
-            }
-            html += `<div class="summary-item"><span class="summary-label">Кол-во:</span><span class="summary-value">${qty}</span></div>`;
-            html += `</div>`;
-            
-            // 4. МАТЕРИАЛЫ (ТОЛЬКО > 0)
-            html += `<div class="summary-section">`;
-            html += `<div class="summary-title">🧴 Материалы</div>`;
-            
-            const materialRows = document.querySelectorAll('#materialsGrid .item-row');
-            let hasMaterials = false;
-            
-            materialRows.forEach(row => {
-                const nameSpan = row.querySelector('.item-name');
-                const numberSpan = row.querySelector('.item-number');
-                const qtySelect = row.querySelector('.qty-carousel');
-                
-                if (nameSpan && qtySelect) {
-                    const number = numberSpan ? numberSpan.textContent : '';
-                    const name = nameSpan.childNodes[1]?.nodeValue?.trim() || nameSpan.innerText.replace(number, '').trim();
-                    const qty = parseInt(qtySelect.value, 10);
-                    
-                    if (qty > 0) {
-                        hasMaterials = true;
-                        html += `<div class="summary-item"><span class="summary-label">${number} ${name}:</span><span class="summary-value">${qty} шт</span></div>`;
-                    }
+        // ---------- СОХРАНИТЬ (ПРОСМОТР) ----------
+        function saveForm() {
+            let mechText = selectedMechanics.length ? selectedMechanics.join(', ') : 'не выбраны';
+            let clientText = `${clientData.name || 'не указано'}, ${clientData.phone || 'нет тел.'}, ${clientData.car || 'нет авто'}`;
+            let materialsNonZero = materialsState.filter(m => m.qty > 0).length;
+            let servicesNonZero = servicesState.filter(s => s.qty > 0).length;
+            alert(`✅ Заказ\nМеханики: ${mechText}\nКлиент: ${clientText}\nКолёса: R${wheelsData.radius}, ${wheelsData.qty} шт\nМатериалы: ${materialsNonZero} позиций\nУслуги: ${servicesNonZero} позиций`);
+        }
+
+        // ---------- ОБРАБОТЧИК ENTER ДЛЯ МОДАЛОК ----------
+        function setupEnterHandler() {
+            document.addEventListener('keydown', (e) => {
+                if (e.key !== 'Enter') return;
+                const target = e.target;
+                if (target.closest('button') || target.closest('.btn') || target.closest('.modal-close')) {
+                    return;
+                }
+                const activeModal = document.querySelector('.modal-overlay.active');
+                if (!activeModal) return;
+                const saveBtn = activeModal.querySelector('.btn-primary');
+                if (saveBtn) {
+                    e.preventDefault();
+                    saveBtn.click();
                 }
             });
-            
-            if (!hasMaterials) {
-                html += `<div class="empty-message">— нет позиций —</div>`;
-            }
-            html += `</div>`;
-            
-            // 5. УСЛУГИ (ТОЛЬКО > 0)
-            html += `<div class="summary-section">`;
-            html += `<div class="summary-title">🔧 Услуги</div>`;
-            
-            const serviceRows = document.querySelectorAll('#servicesGrid .item-row');
-            let hasServices = false;
-            
-            serviceRows.forEach(row => {
-                const nameSpan = row.querySelector('.item-name');
-                const numberSpan = row.querySelector('.item-number');
-                const qtySelect = row.querySelector('.qty-carousel');
-                
-                if (nameSpan && qtySelect) {
-                    const number = numberSpan ? numberSpan.textContent : '';
-                    const name = nameSpan.childNodes[1]?.nodeValue?.trim() || nameSpan.innerText.replace(number, '').trim();
-                    const qty = parseInt(qtySelect.value, 10);
-                    
-                    if (qty > 0) {
-                        hasServices = true;
-                        html += `<div class="summary-item"><span class="summary-label">${number} ${name}:</span><span class="summary-value">${qty} шт</span></div>`;
-                    }
-                }
+        }
+
+        // ---------- ИНИЦИАЛИЗАЦИЯ ----------
+        function init() {
+            // Карточки
+            document.getElementById('mechanicsCard').addEventListener('click', openMechanicsModal);
+            document.getElementById('clientCard').addEventListener('click', openClientModal);
+            document.getElementById('wheelsCard').addEventListener('click', openWheelsModal);
+            document.getElementById('materialsCard').addEventListener('click', openMaterialsModal);
+            document.getElementById('servicesCard').addEventListener('click', openServicesModal);
+
+            // Закрытие модалок по крестику и отмене
+            document.querySelectorAll('.modal-close, .btn:not(.btn-primary)').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const modal = e.target.closest('.modal-overlay');
+                    if (modal) modal.classList.remove('active');
+                });
             });
-            
-            if (!hasServices) {
-                html += `<div class="empty-message">— нет позиций —</div>`;
-            }
-            html += `</div>`;
-            
-            return html;
+
+            // Сохранение
+            document.getElementById('saveMechanicsBtn').addEventListener('click', saveMechanics);
+            document.getElementById('saveClientBtn').addEventListener('click', saveClient);
+            document.getElementById('saveWheelsBtn').addEventListener('click', saveWheels);
+            document.getElementById('saveMaterialsBtn').addEventListener('click', saveMaterials);
+            document.getElementById('saveServicesBtn').addEventListener('click', saveServices);
+
+            // Кнопка "Установить для всех"
+            document.getElementById('applyAllBtn').addEventListener('click', applyAllFromWheels);
+
+            // Кнопки удаления
+            setupModalDeleteListeners('materialsModalList', materialsState);
+            setupModalDeleteListeners('servicesModalList', servicesState);
+
+            // Радио-логика
+            setupRadioLogic();
+
+            // Обработчик Enter
+            setupEnterHandler();
+
+            // Сброс
+            document.getElementById('resetBtn').addEventListener('click', resetAll);
+
+            // Сохранить (основная кнопка)
+            document.getElementById('saveBtn').addEventListener('click', saveForm);
+
+            // Закрытие по клику на оверлей
+            document.querySelectorAll('.modal-overlay').forEach(overlay => {
+                overlay.addEventListener('click', (e) => {
+                    if (e.target === overlay) overlay.classList.remove('active');
+                });
+            });
+
+            // Обновить отображение
+            updateMechanicsDisplay();
+            updateClientDisplay();
+            updateWheelsDisplay();
+            updateMaterialsDisplay();
+            updateServicesDisplay();
         }
 
-        // ---------- ПОКАЗ МОДАЛЬНОГО ОКНА ----------
-        function showSummary() {
-            summaryContent.innerHTML = generateSummary();
-            modal.classList.add('active');
-        }
-        
-        // ---------- ЗАКРЫТИЕ МОДАЛКИ ----------
-        function closeModal() {
-            modal.classList.remove('active');
-        }
-        
-        // ---------- СОХРАНИТЬ ----------
-        document.getElementById('saveBtn').addEventListener('click', function(e) {
-            e.preventDefault();
-            showSummary();
-        });
-        
-        // Закрытие по кнопкам
-        closeBtns.forEach(btn => {
-            btn.addEventListener('click', closeModal);
-        });
-        
-        // Закрытие по клику на оверлей
-        modal.addEventListener('click', function(e) {
-            if (e.target === modal) {
-                closeModal();
-            }
-        });
-
-        // Устанавливаем значение по умолчанию
-        wheelsQtySelect.value = '4';
+        init();
     })();
 </script>
 
