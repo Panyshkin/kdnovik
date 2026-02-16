@@ -6,6 +6,7 @@
     <title>Шиномонтаж · заказ</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
+        /* --- все стили из предыдущих версий (без изменений) --- */
         :root {
             --bg: #000000;
             --surface: #1c1c1e;
@@ -497,16 +498,148 @@
     </div>
 </div>
 
-<!-- Modals (сокращённо для экономии места, они уже есть в вашем коде) -->
-<div class="modal-overlay" id="mMechanics"><!-- ... --></div>
-<div class="modal-overlay" id="mClient"><!-- ... --></div>
-<div class="modal-overlay" id="mWheels"><!-- ... --></div>
-<div class="modal-overlay" id="mMaterials"><!-- ... --></div>
-<div class="modal-overlay" id="mServices"><!-- ... --></div>
-<div class="modal-overlay" id="mSettings"><!-- ... --></div>
+<!-- Modals (original) -->
+<div class="modal-overlay" id="mMechanics">
+    <div class="modal">
+        <div class="modal-handle"></div>
+        <div class="modal-head">
+            <h2><i class="fa-solid fa-users"></i> Механики</h2>
+            <button class="modal-close-btn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="mech-list" id="mechList"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-done"><i class="fa-solid fa-check"></i> Готово</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="mClient">
+    <div class="modal">
+        <div class="modal-handle"></div>
+        <div class="modal-head">
+            <h2><i class="fa-solid fa-user"></i> Клиент</h2>
+            <button class="modal-close-btn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="field">
+                <div class="field-label">ФИО</div>
+                <input class="field-input" id="inName" type="text" placeholder="Иванов Иван Иванович">
+            </div>
+            <div class="field">
+                <div class="field-label">Телефон</div>
+                <input class="field-input" id="inPhone" type="tel" placeholder="+7 (999) 123-45-67">
+            </div>
+            <div class="field">
+                <div class="field-label">Автомобиль</div>
+                <input class="field-input" id="inCar" type="text" placeholder="Toyota Camry, А123БВ">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-done"><i class="fa-solid fa-check"></i> Готово</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="mWheels">
+    <div class="modal">
+        <div class="modal-handle"></div>
+        <div class="modal-head">
+            <h2><i class="fa-solid fa-circle-dot"></i> Колёса</h2>
+            <button class="modal-close-btn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="field-label">Радиус</div>
+            <div class="radius-grid" id="radiusGrid"></div>
+            <div class="field-label">Тип</div>
+            <div class="type-grid" id="typeGrid">
+                <div class="type-btn" data-type="light"><i class="fa-solid fa-car"></i> Легковая</div>
+                <div class="type-btn" data-type="jeep"><i class="fa-solid fa-truck-monster"></i> Джип</div>
+                <div class="type-btn" data-type="lowProfile"><i class="fa-solid fa-bolt"></i> Низкий профиль</div>
+                <div class="type-btn" data-type="runflat"><i class="fa-solid fa-shield-halved"></i> RunFlat</div>
+            </div>
+            <div class="qty-row">
+                <div class="qty-row-label"><i class="fa-solid fa-layer-group"></i> Количество</div>
+                <div class="qty-stepper">
+                    <button id="wQtyMinus"><i class="fa-solid fa-minus"></i></button>
+                    <span class="qty-val" id="wQtyVal">4</span>
+                    <button id="wQtyPlus"><i class="fa-solid fa-plus"></i></button>
+                </div>
+            </div>
+            <div class="apply-all-bar" id="applyAll">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <span>Применить ко всем позициям</span>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-done"><i class="fa-solid fa-check"></i> Готово</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="mMaterials">
+    <div class="modal">
+        <div class="modal-handle"></div>
+        <div class="modal-head">
+            <h2><i class="fa-solid fa-box-open"></i> Материалы</h2>
+            <button class="modal-close-btn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="items-list" id="matList"></div>
+        </div>
+        <div class="modal-footer">
+            <div class="modal-footer-sum" id="matFooterSum"></div>
+            <button class="btn-done"><i class="fa-solid fa-check"></i> Готово</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="mServices">
+    <div class="modal">
+        <div class="modal-handle"></div>
+        <div class="modal-head">
+            <h2><i class="fa-solid fa-wrench"></i> Услуги</h2>
+            <button class="modal-close-btn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="items-list" id="svcList"></div>
+        </div>
+        <div class="modal-footer">
+            <div class="modal-footer-sum" id="svcFooterSum"></div>
+            <button class="btn-done"><i class="fa-solid fa-check"></i> Готово</button>
+        </div>
+    </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="mSettings">
+    <div class="modal">
+        <div class="modal-handle"></div>
+        <div class="modal-head">
+            <h2><i class="fa-solid fa-sliders"></i> Настройка списков</h2>
+            <button class="modal-close-btn" id="settingsClose"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body" id="settingsBody"></div>
+        <div class="modal-footer" style="flex-direction: column; gap: 8px;">
+            <button class="btn-done" id="settingsSave"><i class="fa-solid fa-check"></i> Сохранить</button>
+        </div>
+    </div>
+</div>
 
 <div class="toast" id="toast"><i class="fa-solid fa-circle-check"></i> <span id="toastMsg"></span></div>
-<div class="confirm-overlay" id="confirmOverlay"><!-- ... --></div>
+<div class="confirm-overlay" id="confirmOverlay">
+    <div class="confirm-dialog">
+        <div class="confirm-body">
+            <div class="confirm-title" id="confirmTitle"></div>
+            <div class="confirm-text" id="confirmText"></div>
+        </div>
+        <div class="confirm-actions">
+            <button class="confirm-cancel" id="confirmCancel">Отмена</button>
+            <button class="confirm-ok" id="confirmOk">OK</button>
+        </div>
+    </div>
+</div>
 
 <script>
 (function() {
@@ -554,8 +687,12 @@
         if (storedMat) { try { MATERIALS = JSON.parse(storedMat); } catch(e){ MATERIALS = []; } }
         if (!MATERIALS || !MATERIALS.length) {
             MATERIALS = [
-                {id:1, name:'Расходные материалы', price:150},{id:2, name:'Грузик набивной', price:50},{id:3, name:'Грузик самоклеющийся', price:80},
-                {id:4, name:'Вентиль простой', price:100},{id:5, name:'Вентиль хром', price:250},{id:6, name:'Жгут', price:200}
+                {id:1, name:'Расходные материалы', price:150},
+                {id:2, name:'Грузик набивной', price:50},
+                {id:3, name:'Грузик самоклеющийся', price:80},
+                {id:4, name:'Вентиль простой', price:100},
+                {id:5, name:'Вентиль хром', price:250},
+                {id:6, name:'Жгут', price:200}
             ];
         }
 
@@ -732,12 +869,14 @@
         const body = document.getElementById('settingsBody');
         let html = '';
 
+        // Механики
         html += `<div class="settings-section"><div class="settings-section-title"><i class="fa-solid fa-users"></i> Механики</div>`;
         MECHANICS.forEach((name) => {
             html += `<div class="settings-item" data-type="mech"><input type="text" class="mech-input" value="${name.replace(/"/g, '&quot;')}" placeholder="ФИО"><button class="settings-delete" data-type="mech"><i class="fa-solid fa-trash-can"></i></button></div>`;
         });
         html += `<button class="settings-add-btn" id="addMech"><i class="fa-solid fa-plus"></i> Добавить механика</button></div>`;
 
+        // Материалы
         html += `<div class="settings-section"><div class="settings-section-title"><i class="fa-solid fa-box-open"></i> Материалы</div>`;
         MATERIALS.forEach((mat) => {
             html += `<div class="settings-item" data-type="mat" data-id="${mat.id}">
@@ -748,6 +887,7 @@
         });
         html += `<button class="settings-add-btn" id="addMat"><i class="fa-solid fa-plus"></i> Добавить материал</button></div>`;
 
+        // Услуги с параметрами
         html += `<div class="settings-section"><div class="settings-section-title"><i class="fa-solid fa-wrench"></i> Услуги (параметры)</div>`;
         SERVICES.forEach((svc) => {
             const radiusOptions = '<option value="">Любой</option>' + RADII.map(r => `<option value="${r}"${svc.radius===r?' selected':''}>R${r}</option>`).join('');
@@ -769,16 +909,164 @@
         html += `<button class="settings-reset-defaults" id="resetDefaults"><i class="fa-solid fa-rotate-left"></i> Сбросить к заводским настройкам</button>`;
         body.innerHTML = html;
 
-        // Обработчики кнопок удаления и добавления (сокращённо)
-        // ... (ваш существующий код)
+        // обработчики удаления
+        body.querySelectorAll('.settings-delete').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                btn.closest('.settings-item')?.remove();
+            });
+        });
+
+        // добавление механика
+        document.getElementById('addMech')?.addEventListener('click', () => {
+            const section = document.querySelector('[data-type="mech"]')?.closest('.settings-section') || body.querySelector('.settings-section');
+            const newItem = document.createElement('div');
+            newItem.className = 'settings-item';
+            newItem.dataset.type = 'mech';
+            newItem.innerHTML = `<input type="text" class="mech-input" value="Новый механик" placeholder="ФИО"><button class="settings-delete" data-type="mech"><i class="fa-solid fa-trash-can"></i></button>`;
+            section.insertBefore(newItem, document.getElementById('addMech'));
+            newItem.querySelector('.settings-delete').addEventListener('click', (e) => { e.stopPropagation(); newItem.remove(); });
+        });
+
+        // добавление материала
+        document.getElementById('addMat')?.addEventListener('click', () => {
+            const section = document.querySelector('[data-type="mat"]')?.closest('.settings-section') || body.querySelectorAll('.settings-section')[1];
+            const newId = Date.now() + Math.floor(Math.random()*1000);
+            const newItem = document.createElement('div');
+            newItem.className = 'settings-item';
+            newItem.dataset.type = 'mat';
+            newItem.dataset.id = newId;
+            newItem.innerHTML = `<input type="text" class="mat-name" value="Новый материал" placeholder="Название"><input type="number" class="price-input mat-price" value="100" min="0" step="1" placeholder="Цена"><button class="settings-delete" data-type="mat"><i class="fa-solid fa-trash-can"></i></button>`;
+            section.insertBefore(newItem, document.getElementById('addMat'));
+            newItem.querySelector('.settings-delete').addEventListener('click', (e) => { e.stopPropagation(); newItem.remove(); });
+        });
+
+        // добавление услуги
+        document.getElementById('addSvc')?.addEventListener('click', () => {
+            const section = document.querySelector('[data-type="svc"]')?.closest('.settings-section') || body.querySelectorAll('.settings-section')[2];
+            const newId = Date.now() + Math.floor(Math.random()*1000) + 1000;
+            const newItem = document.createElement('div');
+            newItem.className = 'settings-item';
+            newItem.dataset.type = 'svc';
+            newItem.dataset.id = newId;
+            newItem.innerHTML = `
+                <input type="text" class="svc-name" value="Новая услуга" placeholder="Название">
+                <input type="number" class="price-input svc-price" value="200" min="0" step="1" placeholder="Цена">
+                <select class="svc-radius"><option value="">Любой</option>${RADII.map(r => `<option value="${r}">R${r}</option>`).join('')}</select>
+                <select class="svc-car-type"><option value="">Любой</option><option value="light">Легковая</option><option value="jeep">Джип</option></select>
+                <select class="svc-low-profile"><option value="">Любой</option><option value="1">Да</option><option value="0">Нет</option></select>
+                <select class="svc-runflat"><option value="">Любой</option><option value="1">Да</option><option value="0">Нет</option></select>
+                <button class="settings-delete" data-type="svc"><i class="fa-solid fa-trash-can"></i></button>`;
+            section.insertBefore(newItem, document.getElementById('addSvc'));
+            newItem.querySelector('.settings-delete').addEventListener('click', (e) => { e.stopPropagation(); newItem.remove(); });
+        });
+
+        // сброс к заводским
+        document.getElementById('resetDefaults')?.addEventListener('click', () => {
+            MECHANICS = ['Андреев Андрей','Борисов Борис','Власов Владислав','Григорьев Григорий','Дмитриев Дмитрий','Егоров Егор','Жуков Жорж','Зайцев Захар'];
+            MATERIALS = [
+                {id:1, name:'Расходные материалы', price:150},
+                {id:2, name:'Грузик набивной', price:50},
+                {id:3, name:'Грузик самоклеющийся', price:80},
+                {id:4, name:'Вентиль простой', price:100},
+                {id:5, name:'Вентиль хром', price:250},
+                {id:6, name:'Жгут', price:200}
+            ];
+            SERVICES = [
+                {id:1, name:'Съём и установка колеса', price:300, radius:null, carType:null, lowProfile:null, runflat:null},
+                {id:2, name:'Демонтаж шины', price:250, radius:null, carType:null, lowProfile:null, runflat:null},
+                {id:3, name:'Монтаж шины', price:250, radius:null, carType:null, lowProfile:null, runflat:null},
+                {id:4, name:'Балансировка', price:350, radius:null, carType:null, lowProfile:null, runflat:null},
+                {id:5, name:'Технологическая мойка', price:200, radius:null, carType:null, lowProfile:null, runflat:null},
+                {id:6, name:'Сложность с датчиком', price:500, radius:null, carType:null, lowProfile:null, runflat:null},
+                {id:7, name:'Обработка ступицы', price:150, radius:null, carType:null, lowProfile:null, runflat:null},
+                {id:8, name:'Шиноремонт жгутом', price:400, radius:null, carType:null, lowProfile:null, runflat:null},
+                {id:9, name:'Съём и установка камеры', price:350, radius:null, carType:null, lowProfile:null, runflat:null},
+                {id:10, name:'Погрузка колеса в сборе', price:100, radius:null, carType:null, lowProfile:null, runflat:null}
+            ];
+            buildSettingsModal();
+        });
     }
 
     function saveSettings() {
-        // ... (ваш существующий код сохранения настроек)
+        const newMech = [];
+        document.querySelectorAll('#settingsBody .settings-item[data-type="mech"] .mech-input').forEach(inp => {
+            const val = inp.value.trim();
+            if (val) newMech.push(val);
+        });
+        MECHANICS = newMech;
+
+        const newMats = [];
+        document.querySelectorAll('#settingsBody .settings-item[data-type="mat"]').forEach(row => {
+            const name = row.querySelector('.mat-name')?.value.trim();
+            const price = parseInt(row.querySelector('.mat-price')?.value, 10);
+            const id = row.dataset.id ? Number(row.dataset.id) : Date.now() + Math.random();
+            if (name && !isNaN(price) && price >= 0) newMats.push({ id, name, price });
+        });
+        MATERIALS = newMats;
+
+        const newSvcs = [];
+        document.querySelectorAll('#settingsBody .settings-item[data-type="svc"]').forEach(row => {
+            const name = row.querySelector('.svc-name')?.value.trim();
+            const price = parseInt(row.querySelector('.svc-price')?.value, 10);
+            const id = row.dataset.id ? Number(row.dataset.id) : Date.now() + Math.random() + 1000;
+            if (!name || isNaN(price) || price < 0) return;
+
+            const radiusVal = row.querySelector('.svc-radius')?.value;
+            const radius = radiusVal === '' ? null : parseInt(radiusVal, 10);
+
+            const carTypeVal = row.querySelector('.svc-car-type')?.value;
+            const carType = carTypeVal === '' ? null : carTypeVal;
+
+            const lowVal = row.querySelector('.svc-low-profile')?.value;
+            const lowProfile = lowVal === '' ? null : lowVal === '1';
+
+            const runVal = row.querySelector('.svc-runflat')?.value;
+            const runflat = runVal === '' ? null : runVal === '1';
+
+            newSvcs.push({ id, name, price, radius, carType, lowProfile, runflat });
+        });
+        SERVICES = newSvcs;
+
+        saveListsToStorage();
+        reconcileStateWithLists();
+        saveStateToStorage();
+        updateAllDisplays();
     }
 
     function saveCurrentModal(overlay) {
-        // ... (ваш существующий код сохранения модалок)
+        const id = overlay.id;
+        if (id === 'mMechanics') {
+            state.mechanics = [...document.querySelectorAll('#mechList .mech-item.selected')].map(el=>el.dataset.name);
+            updateMechanicsDisp();
+        } else if (id === 'mClient') {
+            state.client.name = document.getElementById('inName').value.trim();
+            state.client.phone = document.getElementById('inPhone').value.trim();
+            state.client.car = document.getElementById('inCar').value.trim();
+            updateClientDisp();
+        } else if (id === 'mWheels') {
+            const activeR = document.querySelector('#radiusGrid .radius-btn.active');
+            if (activeR) state.wheels.radius = parseInt(activeR.dataset.r);
+            document.querySelectorAll('#typeGrid .type-btn').forEach(btn => {
+                state.wheels.types[btn.dataset.type] = btn.classList.contains('active');
+            });
+            state.wheels.qty = parseInt(document.getElementById('wQtyVal').textContent);
+            updateWheelsDisp();
+        } else if (id === 'mMaterials') {
+            document.querySelectorAll('#matList .item-row').forEach(row => {
+                const idx = parseInt(row.dataset.idx);
+                state.materials[idx].qty = parseInt(row.querySelector('.item-select').value);
+            });
+            updateItemsDisp('dMaterials', state.materials, 'Нет позиций');
+        } else if (id === 'mServices') {
+            document.querySelectorAll('#svcList .item-row').forEach(row => {
+                const idx = parseInt(row.dataset.idx);
+                state.services[idx].qty = parseInt(row.querySelector('.item-select').value);
+            });
+            updateItemsDisp('dServices', state.services, 'Нет позиций');
+        }
+        updateSaveBtn();
+        saveStateToStorage();
     }
 
     const modalMap = {
@@ -895,7 +1183,7 @@
             
             if (result.success) {
                 showToast(`✅ Заказ №${result.orderNumber || 'создан'}`);
-                // Опционально: очистить форму
+                // Опционально: можно сбросить форму
                 // resetForm();
             } else {
                 showToast(`❌ Ошибка: ${result.error || result.message || 'Неизвестная ошибка'}`);
@@ -906,24 +1194,189 @@
         }
     }
 
-    // ========== Инициализация ==========
+    // ========== Инициализация и слушатели ==========
     function init() {
         loadListsFromStorage();
         loadStateFromStorage();
         reconcileStateWithLists();
         updateAllDisplays();
 
+        // кнопка настроек
         document.getElementById('btnSettings').addEventListener('click', () => openModal('settings'));
-        document.getElementById('btnCreateOrder').addEventListener('click', createOrder);
 
+        // карточки
         document.querySelectorAll('.card[data-modal]').forEach(card => {
             card.addEventListener('click', () => openModal(card.dataset.modal));
         });
 
-        // Остальные обработчики (закрытие модалок, кнопки готово, etc.)
-        // ... ваш существующий код
-        
-        // Toast функция
+        // Кнопка создания заказа
+        document.getElementById('btnCreateOrder').addEventListener('click', createOrder);
+
+        // закрытие по оверлею
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', e => {
+                if (e.target === overlay) {
+                    if (overlay.id === 'mSettings') closeModal(overlay);
+                    else { saveCurrentModal(overlay); closeModal(overlay); }
+                }
+            });
+        });
+
+        // кнопки закрытия
+        document.querySelectorAll('.modal-close-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const overlay = btn.closest('.modal-overlay');
+                if (overlay.id === 'mSettings') closeModal(overlay);
+                else { saveCurrentModal(overlay); closeModal(overlay); }
+            });
+        });
+
+        // кнопки "Готово"
+        document.querySelectorAll('.modal-footer .btn-done').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const overlay = btn.closest('.modal-overlay');
+                if (overlay.id === 'mSettings') {
+                    saveSettings();
+                    closeModal(overlay);
+                    showToast('Списки сохранены');
+                } else {
+                    saveCurrentModal(overlay);
+                    closeModal(overlay);
+                    showToast('Сохранено');
+                }
+            });
+        });
+
+        // Enter (кроме настроек)
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Enter' && !e.target.closest('button') && !e.target.closest('select') && !e.target.closest('.settings-item')) {
+                const active = document.querySelector('.modal-overlay.active');
+                if (active && active.id !== 'mSettings') {
+                    e.preventDefault();
+                    saveCurrentModal(active);
+                    closeModal(active);
+                    showToast('Сохранено');
+                }
+            }
+        });
+
+        // обработчики внутри модалок
+        document.getElementById('mechList')?.addEventListener('click', e => {
+            const item = e.target.closest('.mech-item');
+            if (item) item.classList.toggle('selected');
+        });
+
+        document.getElementById('inPhone')?.addEventListener('input', function() {
+            let d = this.value.replace(/\D/g, '');
+            if (d.startsWith('8') && d.length>1) d='7'+d.substring(1);
+            if (!d.startsWith('7') && d.length>0) d='7'+d;
+            let out = '';
+            if (d.length>0) out='+'+d[0];
+            if (d.length>1) out+=' ('+d.substring(1,Math.min(4,d.length));
+            if (d.length>=4) out+=') ';
+            if (d.length>4) out+=d.substring(4,Math.min(7,d.length));
+            if (d.length>7) out+='-'+d.substring(7,Math.min(9,d.length));
+            if (d.length>9) out+='-'+d.substring(9,Math.min(11,d.length));
+            this.value = out;
+        });
+
+        document.getElementById('radiusGrid')?.addEventListener('click', e => {
+            const btn = e.target.closest('.radius-btn');
+            if (!btn) return;
+            document.querySelectorAll('#radiusGrid .radius-btn').forEach(b=>b.classList.remove('active'));
+            btn.classList.add('active');
+        });
+
+        document.getElementById('typeGrid')?.addEventListener('click', e => {
+            const btn = e.target.closest('.type-btn');
+            if (!btn) return;
+            const type = btn.dataset.type;
+            if (type==='light' || type==='jeep') {
+                const other = document.querySelector(`#typeGrid .type-btn[data-type="${type==='light'?'jeep':'light'}"]`);
+                if (btn.classList.contains('active')) btn.classList.remove('active');
+                else { btn.classList.add('active'); other?.classList.remove('active'); }
+            } else btn.classList.toggle('active');
+        });
+
+        document.getElementById('wQtyMinus')?.addEventListener('click', ()=>{
+            const el = document.getElementById('wQtyVal');
+            let v = parseInt(el.textContent);
+            if (v>1) el.textContent = --v;
+        });
+        document.getElementById('wQtyPlus')?.addEventListener('click', ()=>{
+            const el = document.getElementById('wQtyVal');
+            let v = parseInt(el.textContent);
+            if (v<20) el.textContent = ++v;
+        });
+
+        document.getElementById('applyAll')?.addEventListener('click', async () => {
+            const qty = parseInt(document.getElementById('wQtyVal').textContent);
+            state.materials.forEach(m => m.qty = qty);
+            state.services.forEach(s => s.qty = qty);
+            buildItemsModal('matList', state.materials);
+            buildItemsModal('svcList', filterServicesByWheels(state.services, state.wheels));
+            updateItemsDisp('dMaterials', state.materials, 'Нет позиций');
+            updateItemsDisp('dServices', state.services, 'Нет позиций');
+            updateSaveBtn();
+            showToast(`Количество ${qty} применено`);
+        });
+
+        // слушатели изменения select в материалах/услугах
+        ['matList','svcList'].forEach(listId => {
+            const items = listId === 'matList' ? state.materials : state.services;
+            const footerId = listId === 'matList' ? 'matFooterSum' : 'svcFooterSum';
+            document.getElementById(listId)?.addEventListener('change', e => {
+                if (e.target.classList.contains('item-select')) {
+                    const idx = parseInt(e.target.dataset.idx);
+                    items[idx].qty = parseInt(e.target.value);
+                    e.target.closest('.item-row').classList.toggle('zero', items[idx].qty===0);
+                    updateModalFooterSum(footerId, items);
+                }
+            });
+            document.getElementById(listId)?.addEventListener('click', e => {
+                if (e.target.closest('.item-delete')) {
+                    const idx = parseInt(e.target.closest('.item-delete').dataset.idx);
+                    items[idx].qty = 0;
+                    const row = e.target.closest('.item-row');
+                    row.querySelector('.item-select').value = '0';
+                    row.classList.add('zero');
+                    updateModalFooterSum(footerId, items);
+                }
+            });
+        });
+
+        // сброс формы
+        document.getElementById('btnReset').addEventListener('click', async () => {
+            if (await showConfirm('Сбросить форму?', 'Все введённые данные будут удалены.')) {
+                state = {
+                    mechanics: [],
+                    client: {name:'',phone:'',car:''},
+                    wheels: {radius:17, types:{light:false,jeep:false,lowProfile:false,runflat:false}, qty:4},
+                    materials: MATERIALS.map(m=>({...m, qty:1})),
+                    services: SERVICES.map(s=>({...s, qty:1}))
+                };
+                updateAllDisplays();
+                saveStateToStorage();
+                showToast('Форма сброшена');
+            }
+        });
+
+        // свайп вниз
+        let touchStartY = 0;
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; }, {passive: true});
+            modal.addEventListener('touchend', e => {
+                const dy = e.changedTouches[0].clientY - touchStartY;
+                const body = modal.querySelector('.modal-body');
+                if (dy > 80 && (!body || body.scrollTop <= 0)) {
+                    const overlay = modal.closest('.modal-overlay');
+                    if (overlay.id === 'mSettings') closeModal(overlay);
+                    else { saveCurrentModal(overlay); closeModal(overlay); }
+                }
+            }, {passive: true});
+        });
+
+        // toast
         let toastTimer;
         function showToast(msg) {
             const t = document.getElementById('toast');
@@ -934,7 +1387,7 @@
         }
         window.showToast = showToast;
 
-        // Confirm функция
+        // confirm
         async function showConfirm(title, text) {
             return new Promise(resolve => {
                 document.getElementById('confirmTitle').textContent = title;
