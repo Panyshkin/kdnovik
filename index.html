@@ -6,7 +6,6 @@
     <title>Шиномонтаж · заказ</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        /* все стили без изменений, можно оставить как в предыдущем ответе */
         :root {
             --bg: #000000;
             --surface: #1c1c1e;
@@ -33,7 +32,9 @@
             --shadow-lg: 0 16px 48px rgba(0,0,0,0.6);
             --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', sans-serif;
             background: var(--bg);
@@ -43,6 +44,7 @@
             -webkit-tap-highlight-color: transparent;
             -webkit-font-smoothing: antialiased;
         }
+
         .app {
             max-width: 520px;
             margin: 0 auto;
@@ -50,6 +52,7 @@
             padding-top: calc(env(safe-area-inset-top, 0px) + 12px);
             padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
         }
+
         .header {
             display: flex;
             align-items: center;
@@ -59,6 +62,7 @@
             background: var(--surface);
             border-radius: var(--radius-xl);
         }
+
         .header-icon {
             width: 46px; height: 46px;
             background: linear-gradient(135deg, #0a84ff, #5e5ce6);
@@ -66,8 +70,10 @@
             display: flex; align-items: center; justify-content: center;
             font-size: 1.2rem; color: white; flex-shrink: 0;
         }
+
         .header h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.3px; line-height: 1.2; }
         .header-sub { font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px; }
+
         .settings-btn {
             width: 40px; height: 40px;
             background: var(--surface-2);
@@ -84,12 +90,14 @@
             flex-shrink: 0;
         }
         .settings-btn:active { background: var(--surface-3); color: var(--primary); transform: scale(0.92); }
+
         .card-group {
             background: var(--surface);
             border-radius: var(--radius-lg);
             overflow: hidden;
             margin-bottom: 6px;
         }
+
         .card {
             display: flex; align-items: center;
             padding: 14px 16px;
@@ -97,44 +105,55 @@
             transition: background var(--transition);
             min-height: 56px;
         }
+
         .card:active { background: var(--surface-2); }
         .card + .card { border-top: 0.5px solid var(--border); }
+
         .card-icon {
             width: 32px; height: 32px; border-radius: 8px;
             display: flex; align-items: center; justify-content: center;
             font-size: 0.85rem; color: white; flex-shrink: 0; margin-right: 12px;
         }
+
         .card-icon.blue { background: #0a84ff; }
         .card-icon.orange { background: #ff9f0a; }
         .card-icon.green { background: #30d158; }
         .card-icon.purple { background: #bf5af2; }
         .card-icon.red { background: #ff453a; }
+
         .card-content { flex: 1; min-width: 0; }
         .card-title { font-size: 0.95rem; font-weight: 500; color: var(--text); line-height: 1.3; }
+
         .card-subtitle {
             font-size: 0.8rem; color: var(--text-secondary);
             margin-top: 2px; line-height: 1.3;
             overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
         }
+
         .card-subtitle.has-tags {
             white-space: normal; display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;
         }
+
         .mini-tag {
             display: inline-flex; align-items: center; gap: 3px;
             background: var(--surface-2); padding: 2px 8px; border-radius: 20px;
             font-size: 0.75rem; color: var(--text-secondary); white-space: nowrap;
         }
+
         .mini-tag .cnt {
             background: var(--primary-soft); color: var(--primary);
             font-weight: 700; padding: 0 5px; border-radius: 8px; font-size: 0.7rem;
         }
+
         .card-chevron { color: var(--text-muted); font-size: 0.75rem; margin-left: 8px; flex-shrink: 0; }
+
         .footer-actions {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 10px;
             margin-top: 20px;
         }
+
         .btn {
             padding: 15px; border-radius: var(--radius); border: none;
             font-size: 0.95rem; font-weight: 600; cursor: pointer;
@@ -142,18 +161,25 @@
             display: flex; align-items: center; justify-content: center;
             gap: 8px; font-family: inherit;
         }
+
         .btn:active { transform: scale(0.97); }
+
         .btn-reset { background: var(--surface); color: var(--text-secondary); }
         .btn-reset:active { background: var(--surface-2); }
+
         .btn-submit { background: var(--primary); color: white; flex-direction: column; gap: 2px; }
         .btn-submit:active { background: var(--primary-hover); }
+
         .btn-submit-main {
             display: flex; align-items: center; gap: 8px;
             font-size: 0.95rem; font-weight: 600;
         }
+
         .btn-submit-sum {
             font-size: 0.78rem; font-weight: 500; opacity: 0.8;
         }
+
+        /* MODAL base */
         .modal-overlay {
             position: fixed; inset: 0;
             background: rgba(0,0,0,0.5);
@@ -162,7 +188,9 @@
             display: flex; align-items: flex-end; justify-content: center;
             opacity: 0; visibility: hidden; transition: all 0.3s ease;
         }
+
         .modal-overlay.active { opacity: 1; visibility: visible; }
+
         .modal {
             background: var(--surface);
             border-radius: var(--radius-xl) var(--radius-xl) 0 0;
@@ -172,20 +200,26 @@
             transform: translateY(100%);
             transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
+
         .modal-overlay.active .modal { transform: translateY(0); }
+
         .modal-handle {
             width: 36px; height: 5px; background: var(--surface-3);
             border-radius: 3px; margin: 8px auto 0; flex-shrink: 0;
         }
+
         .modal-head {
             display: flex; align-items: center; justify-content: space-between;
             padding: 14px 20px 10px; flex-shrink: 0;
         }
+
         .modal-head h2 {
             font-size: 1.15rem; font-weight: 700;
             display: flex; align-items: center; gap: 8px;
         }
+
         .modal-head h2 i { color: var(--primary); font-size: 1rem; }
+
         .modal-close-btn {
             width: 32px; height: 32px; border-radius: 50%; border: none;
             background: var(--surface-3); color: var(--text-secondary);
@@ -193,17 +227,21 @@
             display: flex; align-items: center; justify-content: center;
             transition: all var(--transition);
         }
+
         .modal-close-btn:active { background: var(--border-hover); transform: scale(0.9); }
+
         .modal-body {
             flex: 1; overflow-y: auto; padding: 0 16px 16px;
             overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
         }
+
         .modal-footer {
             padding: 10px 16px;
             padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
             border-top: 0.5px solid var(--border);
             flex-shrink: 0;
         }
+
         .modal-footer .btn-done {
             width: 100%; padding: 14px;
             background: var(--primary); color: white;
@@ -212,8 +250,13 @@
             transition: all var(--transition);
             display: flex; align-items: center; justify-content: center; gap: 8px;
         }
+
         .modal-footer .btn-done:active { background: var(--primary-hover); transform: scale(0.98); }
-        .settings-section { margin-bottom: 24px; }
+
+        /* settings specific styles */
+        .settings-section {
+            margin-bottom: 24px;
+        }
         .settings-section-title {
             font-size: 0.9rem;
             font-weight: 700;
@@ -304,6 +347,7 @@
         .settings-reset-defaults:active {
             background: var(--surface-2);
         }
+
         .modal-footer-sum {
             display: flex;
             align-items: center;
@@ -320,6 +364,8 @@
             font-weight: 700;
             color: var(--success);
         }
+
+        /* other styles */
         .mech-list { display: flex; flex-direction: column; background: var(--surface-2); border-radius: var(--radius); overflow: hidden; }
         .mech-item { display: flex; align-items: center; gap: 12px; padding: 13px 14px; cursor: pointer; transition: background var(--transition); user-select: none; }
         .mech-item + .mech-item { border-top: 0.5px solid var(--border); }
@@ -327,22 +373,27 @@
         .mech-check { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--text-muted); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all var(--transition); font-size: 0.65rem; color: transparent; }
         .mech-item.selected .mech-check { background: var(--primary); border-color: var(--primary); color: white; }
         .mech-name { font-weight: 500; font-size: 0.95rem; }
+
         .radius-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 16px; }
         .radius-btn { padding: 12px 0; border-radius: var(--radius); border: none; background: var(--surface-2); color: var(--text); font-size: 1rem; font-weight: 600; cursor: pointer; text-align: center; transition: all var(--transition); }
         .radius-btn:active { transform: scale(0.94); }
         .radius-btn.active { background: var(--primary); color: white; }
+
         .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 16px; }
         .type-btn { padding: 12px 10px; border-radius: var(--radius); border: none; background: var(--surface-2); color: var(--text-secondary); font-size: 0.85rem; font-weight: 600; cursor: pointer; text-align: center; transition: all var(--transition); display: flex; align-items: center; justify-content: center; gap: 6px; }
         .type-btn:active { transform: scale(0.96); }
         .type-btn.active { background: var(--primary-soft); color: var(--primary); }
+
         .qty-row { display: flex; align-items: center; justify-content: space-between; background: var(--surface-2); border-radius: var(--radius); padding: 10px 14px; margin-bottom: 12px; }
         .qty-row-label { font-weight: 600; font-size: 0.9rem; color: var(--text); display: flex; align-items: center; gap: 8px; }
         .qty-stepper { display: flex; align-items: center; background: var(--surface-3); border-radius: 10px; overflow: hidden; }
         .qty-stepper button { width: 38px; height: 38px; border: none; background: transparent; color: var(--primary); font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background var(--transition); }
         .qty-stepper button:active { background: var(--primary-soft); }
         .qty-stepper .qty-val { width: 40px; text-align: center; font-size: 1.1rem; font-weight: 700; color: var(--text); }
+
         .apply-all-bar { display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: var(--primary-soft); border-radius: var(--radius); cursor: pointer; transition: all var(--transition); }
         .apply-all-bar:active { transform: scale(0.98); opacity: 0.8; }
+
         .items-list { display: flex; flex-direction: column; background: var(--surface-2); border-radius: var(--radius); overflow: hidden; }
         .item-row { display: flex; align-items: center; padding: 10px 14px; transition: opacity var(--transition); gap: 10px; }
         .item-row + .item-row { border-top: 0.5px solid var(--border); }
@@ -356,8 +407,10 @@
         .item-select-arrow { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 0.6rem; color: var(--text-muted); pointer-events: none; }
         .item-delete { width: 32px; height: 32px; border: none; background: transparent; color: var(--text-muted); font-size: 0.8rem; cursor: pointer; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all var(--transition); }
         .item-delete:active { color: var(--danger); background: var(--danger-soft); }
+
         .toast { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 16px); left: 50%; transform: translateX(-50%) translateY(-80px); background: var(--surface-2); color: var(--text); padding: 13px 22px; border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); z-index: 2000; opacity: 0; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 0.9rem; white-space: nowrap; backdrop-filter: blur(20px); border: 0.5px solid var(--border); }
         .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
         .confirm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(20px); z-index: 3000; display: flex; align-items: center; justify-content: center; padding: 40px; opacity: 0; visibility: hidden; transition: all 0.25s ease; }
         .confirm-overlay.active { opacity: 1; visibility: visible; }
         .confirm-dialog { background: var(--surface-2); border-radius: 14px; width: 100%; max-width: 300px; text-align: center; overflow: hidden; transform: scale(0.9); transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
@@ -370,6 +423,7 @@
         .confirm-actions button:active { background: var(--surface-3); }
         .confirm-actions .confirm-cancel { color: var(--primary); font-weight: 400; border-right: 0.5px solid var(--border); }
         .confirm-actions .confirm-ok { color: var(--primary); font-weight: 700; }
+
         @media (min-width: 520px) {
             .modal { border-radius: var(--radius-xl); margin: auto; max-height: 85vh; }
             .modal-overlay { align-items: center; padding: 20px; }
@@ -387,6 +441,7 @@
         <button class="settings-btn" id="btnSettings" title="Настроить списки"><i class="fa-solid fa-sliders"></i></button>
     </div>
 
+    <!-- main cards -->
     <div class="card-group">
         <div class="card" data-modal="mechanics">
             <div class="card-icon blue"><i class="fa-solid fa-users"></i></div>
@@ -442,16 +497,148 @@
     </div>
 </div>
 
-<!-- Модальные окна (сокращённо для краткости, в реальном проекте они полные) -->
-<div class="modal-overlay" id="mMechanics"><!-- ... --></div>
-<div class="modal-overlay" id="mClient"><!-- ... --></div>
-<div class="modal-overlay" id="mWheels"><!-- ... --></div>
-<div class="modal-overlay" id="mMaterials"><!-- ... --></div>
-<div class="modal-overlay" id="mServices"><!-- ... --></div>
-<div class="modal-overlay" id="mSettings"><!-- ... --></div>
+<!-- Modals (оригинальные) -->
+<div class="modal-overlay" id="mMechanics">
+    <div class="modal">
+        <div class="modal-handle"></div>
+        <div class="modal-head">
+            <h2><i class="fa-solid fa-users"></i> Механики</h2>
+            <button class="modal-close-btn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="mech-list" id="mechList"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-done"><i class="fa-solid fa-check"></i> Готово</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="mClient">
+    <div class="modal">
+        <div class="modal-handle"></div>
+        <div class="modal-head">
+            <h2><i class="fa-solid fa-user"></i> Клиент</h2>
+            <button class="modal-close-btn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="field">
+                <div class="field-label">ФИО</div>
+                <input class="field-input" id="inName" type="text" placeholder="Иванов Иван Иванович">
+            </div>
+            <div class="field">
+                <div class="field-label">Телефон</div>
+                <input class="field-input" id="inPhone" type="tel" placeholder="+7 (999) 123-45-67">
+            </div>
+            <div class="field">
+                <div class="field-label">Автомобиль</div>
+                <input class="field-input" id="inCar" type="text" placeholder="Toyota Camry, А123БВ">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-done"><i class="fa-solid fa-check"></i> Готово</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="mWheels">
+    <div class="modal">
+        <div class="modal-handle"></div>
+        <div class="modal-head">
+            <h2><i class="fa-solid fa-circle-dot"></i> Колёса</h2>
+            <button class="modal-close-btn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="field-label">Радиус</div>
+            <div class="radius-grid" id="radiusGrid"></div>
+            <div class="field-label">Тип</div>
+            <div class="type-grid" id="typeGrid">
+                <div class="type-btn" data-type="light"><i class="fa-solid fa-car"></i> Легковая</div>
+                <div class="type-btn" data-type="jeep"><i class="fa-solid fa-truck-monster"></i> Джип</div>
+                <div class="type-btn" data-type="lowProfile"><i class="fa-solid fa-bolt"></i> Низкий профиль</div>
+                <div class="type-btn" data-type="runflat"><i class="fa-solid fa-shield-halved"></i> RunFlat</div>
+            </div>
+            <div class="qty-row">
+                <div class="qty-row-label"><i class="fa-solid fa-layer-group"></i> Количество</div>
+                <div class="qty-stepper">
+                    <button id="wQtyMinus"><i class="fa-solid fa-minus"></i></button>
+                    <span class="qty-val" id="wQtyVal">4</span>
+                    <button id="wQtyPlus"><i class="fa-solid fa-plus"></i></button>
+                </div>
+            </div>
+            <div class="apply-all-bar" id="applyAll">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <span>Применить ко всем позициям</span>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-done"><i class="fa-solid fa-check"></i> Готово</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="mMaterials">
+    <div class="modal">
+        <div class="modal-handle"></div>
+        <div class="modal-head">
+            <h2><i class="fa-solid fa-box-open"></i> Материалы</h2>
+            <button class="modal-close-btn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="items-list" id="matList"></div>
+        </div>
+        <div class="modal-footer">
+            <div class="modal-footer-sum" id="matFooterSum"></div>
+            <button class="btn-done"><i class="fa-solid fa-check"></i> Готово</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="mServices">
+    <div class="modal">
+        <div class="modal-handle"></div>
+        <div class="modal-head">
+            <h2><i class="fa-solid fa-wrench"></i> Услуги</h2>
+            <button class="modal-close-btn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="items-list" id="svcList"></div>
+        </div>
+        <div class="modal-footer">
+            <div class="modal-footer-sum" id="svcFooterSum"></div>
+            <button class="btn-done"><i class="fa-solid fa-check"></i> Готово</button>
+        </div>
+    </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="mSettings">
+    <div class="modal">
+        <div class="modal-handle"></div>
+        <div class="modal-head">
+            <h2><i class="fa-solid fa-sliders"></i> Настройка списков</h2>
+            <button class="modal-close-btn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body" id="settingsBody"></div>
+        <div class="modal-footer" style="flex-direction: column; gap: 8px;">
+            <button class="btn-done" id="settingsSave"><i class="fa-solid fa-check"></i> Сохранить</button>
+        </div>
+    </div>
+</div>
 
 <div class="toast" id="toast"><i class="fa-solid fa-circle-check"></i> <span id="toastMsg"></span></div>
-<div class="confirm-overlay" id="confirmOverlay"><!-- ... --></div>
+<div class="confirm-overlay" id="confirmOverlay">
+    <div class="confirm-dialog">
+        <div class="confirm-body">
+            <div class="confirm-title" id="confirmTitle"></div>
+            <div class="confirm-text" id="confirmText"></div>
+        </div>
+        <div class="confirm-actions">
+            <button class="confirm-cancel" id="confirmCancel">Отмена</button>
+            <button class="confirm-ok" id="confirmOk">OK</button>
+        </div>
+    </div>
+</div>
 
 <script>
 (function() {
@@ -459,10 +646,16 @@
 
     const RADII = [13,14,15,16,17,18,19,20,21,22,23,24];
 
+    // ------------------------------------------------------------------
+    //  переменные для хранения редактируемых списков
+    // ------------------------------------------------------------------
     let MECHANICS = [];
     let MATERIALS = [];
     let SERVICES = [];
 
+    // ------------------------------------------------------------------
+    //  состояние заказа
+    // ------------------------------------------------------------------
     let state = {
         mechanics: [],
         client: { name: '', phone: '', car: '' },
@@ -471,6 +664,9 @@
         services: []
     };
 
+    // ------------------------------------------------------------------
+    //  загрузка / сохранение в localStorage
+    // ------------------------------------------------------------------
     const STORAGE_KEYS = {
         mechanics: 'tireShop_mechanics',
         materials: 'tireShop_materials',
@@ -618,7 +814,6 @@
 
     function buildMechanicsModal() {
         const el = document.getElementById('mechList');
-        if (!el) return;
         el.innerHTML = MECHANICS.map(name => {
             const sel = state.mechanics.includes(name);
             return `<div class="mech-item${sel?' selected':''}" data-name="${name}"><div class="mech-check"><i class="fa-solid fa-check"></i></div><span class="mech-name">${name}</span></div>`;
@@ -631,7 +826,6 @@
     }
     function buildWheelsModal() {
         const grid = document.getElementById('radiusGrid');
-        if (!grid) return;
         grid.innerHTML = RADII.map(r => `<div class="radius-btn${r===state.wheels.radius?' active':''}" data-r="${r}">R${r}</div>`).join('');
         document.querySelectorAll('#typeGrid .type-btn').forEach(btn => {
             btn.classList.toggle('active', state.wheels.types[btn.dataset.type]);
@@ -640,7 +834,6 @@
     }
     function buildItemsModal(listId, items) {
         const el = document.getElementById(listId);
-        if (!el) return;
         el.innerHTML = items.map((item, idx) => `
             <div class="item-row${item.qty===0?' zero':''}" data-idx="${idx}">
                 <div class="item-name-block">
@@ -667,11 +860,162 @@
     }
 
     function buildSettingsModal() {
-        // ... (реализация как в вашем коде, для краткости опущена)
+        const body = document.getElementById('settingsBody');
+        let html = '';
+
+        html += `<div class="settings-section"><div class="settings-section-title"><i class="fa-solid fa-users"></i> Механики</div>`;
+        MECHANICS.forEach((name) => {
+            html += `<div class="settings-item" data-type="mech"><input type="text" class="mech-input" value="${name.replace(/"/g, '&quot;')}" placeholder="ФИО"><button class="settings-delete" data-type="mech"><i class="fa-solid fa-trash-can"></i></button></div>`;
+        });
+        html += `<button class="settings-add-btn" id="addMech"><i class="fa-solid fa-plus"></i> Добавить механика</button></div>`;
+
+        html += `<div class="settings-section"><div class="settings-section-title"><i class="fa-solid fa-box-open"></i> Материалы</div>`;
+        MATERIALS.forEach((mat) => {
+            html += `<div class="settings-item" data-type="mat" data-id="${mat.id}">
+                <input type="text" class="mat-name" value="${mat.name.replace(/"/g, '&quot;')}" placeholder="Название">
+                <input type="number" class="price-input mat-price" value="${mat.price}" min="0" step="1" placeholder="Цена">
+                <button class="settings-delete" data-type="mat"><i class="fa-solid fa-trash-can"></i></button>
+            </div>`;
+        });
+        html += `<button class="settings-add-btn" id="addMat"><i class="fa-solid fa-plus"></i> Добавить материал</button></div>`;
+
+        html += `<div class="settings-section"><div class="settings-section-title"><i class="fa-solid fa-wrench"></i> Услуги (параметры)</div>`;
+        SERVICES.forEach((svc) => {
+            const radiusOptions = '<option value="">Любой</option>' + RADII.map(r => `<option value="${r}"${svc.radius===r?' selected':''}>R${r}</option>`).join('');
+            const carTypeOptions = `<option value="" ${svc.carType===null?'selected':''}>Любой</option><option value="light" ${svc.carType==='light'?'selected':''}>Легковая</option><option value="jeep" ${svc.carType==='jeep'?'selected':''}>Джип</option>`;
+            const boolOptions = (val) => `<option value="" ${val===null?'selected':''}>Любой</option><option value="1" ${val===true?'selected':''}>Да</option><option value="0" ${val===false?'selected':''}>Нет</option>`;
+
+            html += `<div class="settings-item" data-type="svc" data-id="${svc.id}">
+                <input type="text" class="svc-name" value="${svc.name.replace(/"/g, '&quot;')}" placeholder="Название">
+                <input type="number" class="price-input svc-price" value="${svc.price}" min="0" step="1" placeholder="Цена">
+                <select class="svc-radius">${radiusOptions}</select>
+                <select class="svc-car-type">${carTypeOptions}</select>
+                <select class="svc-low-profile">${boolOptions(svc.lowProfile)}</select>
+                <select class="svc-runflat">${boolOptions(svc.runflat)}</select>
+                <button class="settings-delete" data-type="svc"><i class="fa-solid fa-trash-can"></i></button>
+            </div>`;
+        });
+        html += `<button class="settings-add-btn" id="addSvc"><i class="fa-solid fa-plus"></i> Добавить услугу</button></div>`;
+
+        html += `<button class="settings-reset-defaults" id="resetDefaults"><i class="fa-solid fa-rotate-left"></i> Сбросить к заводским настройкам</button>`;
+        body.innerHTML = html;
+
+        body.querySelectorAll('.settings-delete').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                btn.closest('.settings-item')?.remove();
+            });
+        });
+
+        document.getElementById('addMech')?.addEventListener('click', () => {
+            const section = document.querySelector('[data-type="mech"]')?.closest('.settings-section') || body.querySelector('.settings-section');
+            const newItem = document.createElement('div');
+            newItem.className = 'settings-item';
+            newItem.dataset.type = 'mech';
+            newItem.innerHTML = `<input type="text" class="mech-input" value="Новый механик" placeholder="ФИО"><button class="settings-delete" data-type="mech"><i class="fa-solid fa-trash-can"></i></button>`;
+            section.insertBefore(newItem, document.getElementById('addMech'));
+            newItem.querySelector('.settings-delete').addEventListener('click', (e) => { e.stopPropagation(); newItem.remove(); });
+        });
+
+        document.getElementById('addMat')?.addEventListener('click', () => {
+            const section = document.querySelector('[data-type="mat"]')?.closest('.settings-section') || body.querySelectorAll('.settings-section')[1];
+            const newId = Date.now() + Math.floor(Math.random()*1000);
+            const newItem = document.createElement('div');
+            newItem.className = 'settings-item';
+            newItem.dataset.type = 'mat';
+            newItem.dataset.id = newId;
+            newItem.innerHTML = `<input type="text" class="mat-name" value="Новый материал" placeholder="Название"><input type="number" class="price-input mat-price" value="100" min="0" step="1" placeholder="Цена"><button class="settings-delete" data-type="mat"><i class="fa-solid fa-trash-can"></i></button>`;
+            section.insertBefore(newItem, document.getElementById('addMat'));
+            newItem.querySelector('.settings-delete').addEventListener('click', (e) => { e.stopPropagation(); newItem.remove(); });
+        });
+
+        document.getElementById('addSvc')?.addEventListener('click', () => {
+            const section = document.querySelector('[data-type="svc"]')?.closest('.settings-section') || body.querySelectorAll('.settings-section')[2];
+            const newId = Date.now() + Math.floor(Math.random()*1000) + 1000;
+            const newItem = document.createElement('div');
+            newItem.className = 'settings-item';
+            newItem.dataset.type = 'svc';
+            newItem.dataset.id = newId;
+            newItem.innerHTML = `
+                <input type="text" class="svc-name" value="Новая услуга" placeholder="Название">
+                <input type="number" class="price-input svc-price" value="200" min="0" step="1" placeholder="Цена">
+                <select class="svc-radius"><option value="">Любой</option>${RADII.map(r => `<option value="${r}">R${r}</option>`).join('')}</select>
+                <select class="svc-car-type"><option value="">Любой</option><option value="light">Легковая</option><option value="jeep">Джип</option></select>
+                <select class="svc-low-profile"><option value="">Любой</option><option value="1">Да</option><option value="0">Нет</option></select>
+                <select class="svc-runflat"><option value="">Любой</option><option value="1">Да</option><option value="0">Нет</option></select>
+                <button class="settings-delete" data-type="svc"><i class="fa-solid fa-trash-can"></i></button>`;
+            section.insertBefore(newItem, document.getElementById('addSvc'));
+            newItem.querySelector('.settings-delete').addEventListener('click', (e) => { e.stopPropagation(); newItem.remove(); });
+        });
+
+        document.getElementById('resetDefaults')?.addEventListener('click', () => {
+            MECHANICS = ['Андреев Андрей','Борисов Борис','Власов Владислав','Григорьев Григорий','Дмитриев Дмитрий','Егоров Егор','Жуков Жорж','Зайцев Захар'];
+            MATERIALS = [
+                {id:1, name:'Расходные материалы', price:150},{id:2, name:'Грузик набивной', price:50},{id:3, name:'Грузик самоклеющийся', price:80},
+                {id:4, name:'Вентиль простой', price:100},{id:5, name:'Вентиль хром', price:250},{id:6, name:'Жгут', price:200}
+            ];
+            SERVICES = [
+                {id:1, name:'Съём и установка колеса', price:300, radius:null, carType:null, lowProfile:null, runflat:null},
+                {id:2, name:'Демонтаж шины', price:250, radius:null, carType:null, lowProfile:null, runflat:null},
+                {id:3, name:'Монтаж шины', price:250, radius:null, carType:null, lowProfile:null, runflat:null},
+                {id:4, name:'Балансировка', price:350, radius:null, carType:null, lowProfile:null, runflat:null},
+                {id:5, name:'Технологическая мойка', price:200, radius:null, carType:null, lowProfile:null, runflat:null},
+                {id:6, name:'Сложность с датчиком', price:500, radius:null, carType:null, lowProfile:null, runflat:null},
+                {id:7, name:'Обработка ступицы', price:150, radius:null, carType:null, lowProfile:null, runflat:null},
+                {id:8, name:'Шиноремонт жгутом', price:400, radius:null, carType:null, lowProfile:null, runflat:null},
+                {id:9, name:'Съём и установка камеры', price:350, radius:null, carType:null, lowProfile:null, runflat:null},
+                {id:10, name:'Погрузка колеса в сборе', price:100, radius:null, carType:null, lowProfile:null, runflat:null}
+            ];
+            buildSettingsModal();
+        });
     }
+
     function saveSettings() {
-        // ...
+        const newMech = [];
+        document.querySelectorAll('#settingsBody .settings-item[data-type="mech"] .mech-input').forEach(inp => {
+            const val = inp.value.trim();
+            if (val) newMech.push(val);
+        });
+        MECHANICS = newMech;
+
+        const newMats = [];
+        document.querySelectorAll('#settingsBody .settings-item[data-type="mat"]').forEach(row => {
+            const name = row.querySelector('.mat-name')?.value.trim();
+            const price = parseInt(row.querySelector('.mat-price')?.value, 10);
+            const id = row.dataset.id ? Number(row.dataset.id) : Date.now() + Math.random();
+            if (name && !isNaN(price) && price >= 0) newMats.push({ id, name, price });
+        });
+        MATERIALS = newMats;
+
+        const newSvcs = [];
+        document.querySelectorAll('#settingsBody .settings-item[data-type="svc"]').forEach(row => {
+            const name = row.querySelector('.svc-name')?.value.trim();
+            const price = parseInt(row.querySelector('.svc-price')?.value, 10);
+            const id = row.dataset.id ? Number(row.dataset.id) : Date.now() + Math.random() + 1000;
+            if (!name || isNaN(price) || price < 0) return;
+
+            const radiusVal = row.querySelector('.svc-radius')?.value;
+            const radius = radiusVal === '' ? null : parseInt(radiusVal, 10);
+
+            const carTypeVal = row.querySelector('.svc-car-type')?.value;
+            const carType = carTypeVal === '' ? null : carTypeVal;
+
+            const lowVal = row.querySelector('.svc-low-profile')?.value;
+            const lowProfile = lowVal === '' ? null : lowVal === '1';
+
+            const runVal = row.querySelector('.svc-runflat')?.value;
+            const runflat = runVal === '' ? null : runVal === '1';
+
+            newSvcs.push({ id, name, price, radius, carType, lowProfile, runflat });
+        });
+        SERVICES = newSvcs;
+
+        saveListsToStorage();
+        reconcileStateWithLists();
+        saveStateToStorage();
+        updateAllDisplays();
     }
+
     function saveCurrentModal(overlay) {
         const id = overlay.id;
         if (id === 'mMechanics') {
@@ -733,11 +1077,12 @@
         document.body.style.overflow = '';
     }
 
-    // URL вашего Google Apps Script
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxkkCaw1QULg4vkCJjnoGlPzQqpyEToA16iuiDByqflM4NobEWRuMfBDcOt-SUOkow63Q/exec';
+    // ========== URL для отправки в GAS ==========
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxkkCaw1QULg4vkCJjnoGlPzQqpyEToA16iuiDByqflM4NobEWRuMfBDcOt-SUOkow63Q/exec'; 
 
-    // ========== Функция отправки заказа с режимом no-cors ==========
+    // ========== Функция отправки заказа ==========
     async function createOrder() {
+        // Валидация
         if (state.mechanics.length === 0) {
             showToast('Выберите хотя бы одного механика');
             return;
@@ -756,10 +1101,36 @@
 
         const orderData = {
             manager: state.mechanics.join(', '),
-            client: state.client,
-            wheels: state.wheels,
-            materials: state.materials.filter(m => m.qty > 0),
-            services: state.services.filter(s => s.qty > 0)
+            client: {
+                name: state.client.name,
+                phone: state.client.phone,
+                car: state.client.car
+            },
+            wheels: {
+                radius: state.wheels.radius,
+                types: state.wheels.types,
+                qty: state.wheels.qty
+            },
+            materials: state.materials
+                .filter(m => m.qty > 0)
+                .map(m => ({
+                    id: m.id,
+                    name: m.name,
+                    price: m.price,
+                    qty: m.qty
+                })),
+            services: state.services
+                .filter(s => s.qty > 0)
+                .map(s => ({
+                    id: s.id,
+                    name: s.name,
+                    price: s.price,
+                    qty: s.qty,
+                    radius: s.radius,
+                    carType: s.carType,
+                    lowProfile: s.lowProfile,
+                    runflat: s.runflat
+                }))
         };
 
         const payload = {
@@ -768,23 +1139,33 @@
         };
 
         showToast('Отправка...');
+        
         try {
-            // Используем no-cors для обхода CORS
+            // Используем no-cors для обхода CORS (не получим ответ, но данные уйдут)
             await fetch(GAS_URL, {
                 method: 'POST',
                 mode: 'no-cors',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-            // При no-cors мы не получаем ответ, но считаем что запрос ушёл
+            
             showToast('✅ Заказ отправлен');
+            
+            // Можно сохранить факт отправки в localStorage
+            const lastOrder = {
+                date: new Date().toISOString(),
+                manager: state.mechanics.join(', '),
+                client: state.client.name,
+                amount: calcTotal()
+            };
+            localStorage.setItem('lastOrder', JSON.stringify(lastOrder));
+            
         } catch (error) {
             console.error('Ошибка отправки:', error);
-            showToast('❌ Ошибка соединения с сервером');
+            showToast('❌ Ошибка отправки');
         }
     }
 
-    // Инициализация
     function init() {
         loadListsFromStorage();
         loadStateFromStorage();
