@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
-    <title>Шиномонтаж · настройка</title>
+    <title>Шиномонтаж · заказ</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         :root {
@@ -490,8 +490,8 @@
     </div>
     <div class="footer-actions">
         <button class="btn btn-reset" id="btnReset"><i class="fa-solid fa-rotate-left"></i> Сбросить</button>
-        <button class="btn btn-submit" id="btnSave">
-            <span class="btn-submit-main"><i class="fa-solid fa-check"></i> Сохранить</span>
+        <button class="btn btn-submit" id="btnCreateOrder">
+            <span class="btn-submit-main"><i class="fa-solid fa-check"></i> Создать заказ</span>
             <span class="btn-submit-sum" id="btnSaveSum"></span>
         </button>
     </div>
@@ -504,7 +504,7 @@
 <div class="modal-overlay" id="mMaterials"><div class="modal"><div class="modal-handle"></div><div class="modal-head"><h2><i class="fa-solid fa-box-open"></i> Материалы</h2><button class="modal-close-btn"><i class="fa-solid fa-xmark"></i></button></div><div class="modal-body"><div class="items-list" id="matList"></div></div><div class="modal-footer"><div class="modal-footer-sum" id="matFooterSum"></div><button class="btn-done"><i class="fa-solid fa-check"></i> Готово</button></div></div></div>
 <div class="modal-overlay" id="mServices"><div class="modal"><div class="modal-handle"></div><div class="modal-head"><h2><i class="fa-solid fa-wrench"></i> Услуги</h2><button class="modal-close-btn"><i class="fa-solid fa-xmark"></i></button></div><div class="modal-body"><div class="items-list" id="svcList"></div></div><div class="modal-footer"><div class="modal-footer-sum" id="svcFooterSum"></div><button class="btn-done"><i class="fa-solid fa-check"></i> Готово</button></div></div></div>
 
-<!-- SETTINGS MODAL (with extended service options) -->
+<!-- SETTINGS MODAL -->
 <div class="modal-overlay" id="mSettings">
     <div class="modal">
         <div class="modal-handle"></div>
@@ -534,7 +534,7 @@
     // ------------------------------------------------------------------
     let MECHANICS = [];
     let MATERIALS = [];
-    let SERVICES = [];   // теперь каждый объект содержит radius, carType, lowProfile, runflat (могут быть null)
+    let SERVICES = [];
 
     // ------------------------------------------------------------------
     //  состояние заказа
@@ -553,19 +553,17 @@
     const STORAGE_KEYS = {
         mechanics: 'tireShop_mechanics',
         materials: 'tireShop_materials',
-        services: 'tireShop_services_v2',  // новая версия
+        services: 'tireShop_services_v2',
         state: 'tireShop_state'
     };
 
     function loadListsFromStorage() {
-        // механики
         const storedMech = localStorage.getItem(STORAGE_KEYS.mechanics);
         if (storedMech) { try { MECHANICS = JSON.parse(storedMech); } catch(e){ MECHANICS = []; } }
         if (!MECHANICS || !MECHANICS.length) {
             MECHANICS = ['Андреев Андрей','Борисов Борис','Власов Владислав','Григорьев Григорий','Дмитриев Дмитрий','Егоров Егор','Жуков Жорж','Зайцев Захар'];
         }
 
-        // материалы
         const storedMat = localStorage.getItem(STORAGE_KEYS.materials);
         if (storedMat) { try { MATERIALS = JSON.parse(storedMat); } catch(e){ MATERIALS = []; } }
         if (!MATERIALS || !MATERIALS.length) {
@@ -575,7 +573,6 @@
             ];
         }
 
-        // услуги (с расширенными полями)
         const storedSvc = localStorage.getItem(STORAGE_KEYS.services);
         if (storedSvc) {
             try { SERVICES = JSON.parse(storedSvc); } catch(e){ SERVICES = []; }
@@ -613,18 +610,15 @@
         localStorage.setItem(STORAGE_KEYS.state, JSON.stringify(state));
     }
 
-    // синхронизация state с актуальными списками
     function reconcileStateWithLists() {
         state.mechanics = state.mechanics.filter(name => MECHANICS.includes(name));
 
-        // материалы
         const materialMap = new Map(state.materials.map(m => [m.id, m]));
         state.materials = MATERIALS.map(src => ({
             ...src,
             qty: materialMap.has(src.id) ? materialMap.get(src.id).qty : 1
         }));
 
-        // услуги: фильтруем по текущим параметрам колёс, но сохраняем количества только для тех, что ещё существуют
         const serviceMap = new Map(state.services.map(s => [s.id, s]));
         state.services = SERVICES.map(src => ({
             ...src,
@@ -632,9 +626,6 @@
         }));
     }
 
-    // ------------------------------------------------------------------
-    //  фильтр услуг по параметрам колёс
-    // ------------------------------------------------------------------
     function filterServicesByWheels(services, wheels) {
         return services.filter(svc => {
             if (svc.radius !== null && svc.radius !== wheels.radius) return false;
@@ -650,9 +641,6 @@
         });
     }
 
-    // ------------------------------------------------------------------
-    //  вспомогательные функции
-    // ------------------------------------------------------------------
     function fmtPrice(n) { return n.toLocaleString('ru-RU') + ' ₽'; }
     function calcTotal() {
         return state.materials.reduce((s,i)=>s + (i.qty>0?i.price*i.qty:0),0) +
@@ -664,7 +652,6 @@
         document.getElementById('btnSaveSum').textContent = sum > 0 ? fmtPrice(sum) : '';
     }
 
-    // обновление отображений на главном экране
     function updateMechanicsDisp() {
         const el = document.getElementById('dMechanics');
         if (!state.mechanics.length) { el.className = 'card-subtitle'; el.textContent = 'Выберите механиков'; }
@@ -708,9 +695,6 @@
         updateSaveBtn();
     }
 
-    // ------------------------------------------------------------------
-    //  строители модалок
-    // ------------------------------------------------------------------
     function buildMechanicsModal() {
         const el = document.getElementById('mechList');
         el.innerHTML = MECHANICS.map(name => {
@@ -758,21 +742,16 @@
         el.innerHTML = sum>0 ? `<span class="modal-footer-sum-label">Сумма:</span><span class="modal-footer-sum-value">${fmtPrice(sum)}</span>` : '';
     }
 
-    // ------------------------------------------------------------------
-    //  модалка настроек (с расширенными полями для услуг)
-    // ------------------------------------------------------------------
     function buildSettingsModal() {
         const body = document.getElementById('settingsBody');
         let html = '';
 
-        // Механики
         html += `<div class="settings-section"><div class="settings-section-title"><i class="fa-solid fa-users"></i> Механики</div>`;
         MECHANICS.forEach((name, idx) => {
             html += `<div class="settings-item" data-type="mech"><input type="text" class="mech-input" value="${name.replace(/"/g, '&quot;')}" placeholder="ФИО"><button class="settings-delete" data-type="mech"><i class="fa-solid fa-trash-can"></i></button></div>`;
         });
         html += `<button class="settings-add-btn" id="addMech"><i class="fa-solid fa-plus"></i> Добавить механика</button></div>`;
 
-        // Материалы
         html += `<div class="settings-section"><div class="settings-section-title"><i class="fa-solid fa-box-open"></i> Материалы</div>`;
         MATERIALS.forEach((mat, idx) => {
             html += `<div class="settings-item" data-type="mat" data-id="${mat.id}">
@@ -783,7 +762,6 @@
         });
         html += `<button class="settings-add-btn" id="addMat"><i class="fa-solid fa-plus"></i> Добавить материал</button></div>`;
 
-        // Услуги с параметрами
         html += `<div class="settings-section"><div class="settings-section-title"><i class="fa-solid fa-wrench"></i> Услуги (параметры)</div>`;
         SERVICES.forEach((svc, idx) => {
             const radiusOptions = '<option value="">Любой</option>' + RADII.map(r => `<option value="${r}"${svc.radius===r?' selected':''}>R${r}</option>`).join('');
@@ -805,7 +783,6 @@
         html += `<button class="settings-reset-defaults" id="resetDefaults"><i class="fa-solid fa-rotate-left"></i> Сбросить к заводским настройкам</button>`;
         body.innerHTML = html;
 
-        // обработчики удаления
         body.querySelectorAll('.settings-delete').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -813,7 +790,6 @@
             });
         });
 
-        // добавление механика
         document.getElementById('addMech')?.addEventListener('click', () => {
             const section = document.querySelector('[data-type="mech"]')?.closest('.settings-section') || body.querySelector('.settings-section');
             const newItem = document.createElement('div');
@@ -824,7 +800,6 @@
             newItem.querySelector('.settings-delete').addEventListener('click', (e) => { e.stopPropagation(); newItem.remove(); });
         });
 
-        // добавление материала
         document.getElementById('addMat')?.addEventListener('click', () => {
             const section = document.querySelector('[data-type="mat"]')?.closest('.settings-section') || body.querySelectorAll('.settings-section')[1];
             const newId = Date.now() + Math.floor(Math.random()*1000);
@@ -837,7 +812,6 @@
             newItem.querySelector('.settings-delete').addEventListener('click', (e) => { e.stopPropagation(); newItem.remove(); });
         });
 
-        // добавление услуги
         document.getElementById('addSvc')?.addEventListener('click', () => {
             const section = document.querySelector('[data-type="svc"]')?.closest('.settings-section') || body.querySelectorAll('.settings-section')[2];
             const newId = Date.now() + Math.floor(Math.random()*1000) + 1000;
@@ -857,7 +831,6 @@
             newItem.querySelector('.settings-delete').addEventListener('click', (e) => { e.stopPropagation(); newItem.remove(); });
         });
 
-        // сброс к заводским
         document.getElementById('resetDefaults')?.addEventListener('click', () => {
             MECHANICS = ['Андреев Андрей','Борисов Борис','Власов Владислав','Григорьев Григорий','Дмитриев Дмитрий','Егоров Егор','Жуков Жорж','Зайцев Захар'];
             MATERIALS = [
@@ -880,11 +853,7 @@
         });
     }
 
-    // ------------------------------------------------------------------
-    //  сохранение настроек
-    // ------------------------------------------------------------------
     function saveSettings() {
-        // механики
         const newMech = [];
         document.querySelectorAll('#settingsBody .settings-item[data-type="mech"] .mech-input').forEach(inp => {
             const val = inp.value.trim();
@@ -892,7 +861,6 @@
         });
         MECHANICS = newMech;
 
-        // материалы
         const newMats = [];
         document.querySelectorAll('#settingsBody .settings-item[data-type="mat"]').forEach(row => {
             const name = row.querySelector('.mat-name')?.value.trim();
@@ -902,7 +870,6 @@
         });
         MATERIALS = newMats;
 
-        // услуги
         const newSvcs = [];
         document.querySelectorAll('#settingsBody .settings-item[data-type="svc"]').forEach(row => {
             const name = row.querySelector('.svc-name')?.value.trim();
@@ -932,9 +899,6 @@
         updateAllDisplays();
     }
 
-    // ------------------------------------------------------------------
-    //  сохранение из обычных модалок
-    // ------------------------------------------------------------------
     function saveCurrentModal(overlay) {
         const id = overlay.id;
         if (id === 'mMechanics') {
@@ -970,9 +934,6 @@
         saveStateToStorage();
     }
 
-    // ------------------------------------------------------------------
-    //  открытие модалок
-    // ------------------------------------------------------------------
     const modalMap = {
         mechanics: 'mMechanics', client: 'mClient', wheels: 'mWheels',
         materials: 'mMaterials', services: 'mServices', settings: 'mSettings'
@@ -985,7 +946,6 @@
         if (name === 'wheels') buildWheelsModal();
         if (name === 'materials') { buildItemsModal('matList', state.materials); updateModalFooterSum('matFooterSum', state.materials); }
         if (name === 'services') {
-            // фильтруем услуги по текущим параметрам колёс
             const filtered = filterServicesByWheels(state.services, state.wheels);
             buildItemsModal('svcList', filtered);
             updateModalFooterSum('svcFooterSum', filtered);
@@ -1000,24 +960,106 @@
         document.body.style.overflow = '';
     }
 
-    // ------------------------------------------------------------------
-    //  инициализация и слушатели
-    // ------------------------------------------------------------------
+    // ========== URL для отправки в GAS ==========
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycby_8N-Rm7K6nY2QlCgN0Z3Z7W9X5Y1V4B8D2F6H9J3K5M7N1P4Q7/exec'; // ЗАМЕНИТЕ НА РЕАЛЬНЫЙ
+
+    // ========== Функция отправки заказа с получением ответа ==========
+    async function createOrder() {
+        // Валидация
+        if (state.mechanics.length === 0) {
+            showToast('Выберите хотя бы одного механика');
+            return;
+        }
+        if (!state.client.name || !state.client.phone || !state.client.car) {
+            showToast('Заполните ФИО, телефон и авто клиента');
+            return;
+        }
+        if (!state.services.some(s => s.qty > 0)) {
+            showToast('Добавьте хотя бы одну услугу');
+            return;
+        }
+
+        const confirmed = await showConfirm('Создать заказ?', 'Данные будут отправлены в 1С.');
+        if (!confirmed) return;
+
+        const orderData = {
+            manager: state.mechanics.join(', '),
+            client: {
+                name: state.client.name,
+                phone: state.client.phone,
+                car: state.client.car
+            },
+            wheels: {
+                radius: state.wheels.radius,
+                types: state.wheels.types,
+                qty: state.wheels.qty
+            },
+            materials: state.materials.map(m => ({
+                id: m.id,
+                name: m.name,
+                price: m.price,
+                qty: m.qty
+            })),
+            services: state.services.map(s => ({
+                id: s.id,
+                name: s.name,
+                price: s.price,
+                qty: s.qty,
+                radius: s.radius,
+                carType: s.carType,
+                lowProfile: s.lowProfile,
+                runflat: s.runflat
+            }))
+        };
+
+        const payload = {
+            action: 'create_order_tyre',
+            data: orderData
+        };
+
+        showToast('Отправка...');
+        try {
+            const response = await fetch(GAS_URL, {
+                method: 'POST',
+                mode: 'cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            
+            let result;
+            try {
+                result = await response.json();
+            } catch (e) {
+                const text = await response.text();
+                result = { success: false, error: text };
+            }
+            
+            if (response.ok && result.success) {
+                showToast(`✅ Заказ №${result.orderNumber} создан`);
+                // Опционально: сбросить форму
+                // await resetForm();
+            } else {
+                showToast(`❌ Ошибка: ${result.error || 'Неизвестная ошибка'}`);
+            }
+        } catch (error) {
+            console.error('Ошибка отправки:', error);
+            showToast('❌ Ошибка соединения с сервером');
+        }
+    }
+
     function init() {
         loadListsFromStorage();
         loadStateFromStorage();
         reconcileStateWithLists();
         updateAllDisplays();
 
-        // кнопка настроек
         document.getElementById('btnSettings').addEventListener('click', () => openModal('settings'));
+        document.getElementById('btnCreateOrder').addEventListener('click', createOrder);
 
-        // карточки
         document.querySelectorAll('.card[data-modal]').forEach(card => {
             card.addEventListener('click', () => openModal(card.dataset.modal));
         });
 
-        // закрытие по оверлею
         document.querySelectorAll('.modal-overlay').forEach(overlay => {
             overlay.addEventListener('click', e => {
                 if (e.target === overlay) {
@@ -1027,7 +1069,6 @@
             });
         });
 
-        // кнопки закрытия
         document.querySelectorAll('.modal-close-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const overlay = btn.closest('.modal-overlay');
@@ -1036,7 +1077,6 @@
             });
         });
 
-        // кнопки "Готово"
         document.querySelectorAll('.modal-footer .btn-done').forEach(btn => {
             btn.addEventListener('click', () => {
                 const overlay = btn.closest('.modal-overlay');
@@ -1052,7 +1092,6 @@
             });
         });
 
-        // Enter (кроме настроек)
         document.addEventListener('keydown', e => {
             if (e.key === 'Enter' && !e.target.closest('button') && !e.target.closest('select') && !e.target.closest('.settings-item')) {
                 const active = document.querySelector('.modal-overlay.active');
@@ -1065,7 +1104,6 @@
             }
         });
 
-        // обработчики внутри модалок
         document.getElementById('mechList')?.addEventListener('click', e => {
             const item = e.target.closest('.mech-item');
             if (item) item.classList.toggle('selected');
@@ -1114,7 +1152,6 @@
             if (v<20) el.textContent = ++v;
         });
 
-        // При изменении параметров колёс сбрасываем выбранные услуги с подтверждением
         document.getElementById('applyAll')?.addEventListener('click', async () => {
             const qty = parseInt(document.getElementById('wQtyVal').textContent);
             state.materials.forEach(m => m.qty = qty);
@@ -1127,7 +1164,6 @@
             showToast(`Количество ${qty} применено`);
         });
 
-        // слушатели изменения select в материалах/услугах
         ['matList','svcList'].forEach(listId => {
             const items = listId === 'matList' ? state.materials : state.services;
             const footerId = listId === 'matList' ? 'matFooterSum' : 'svcFooterSum';
@@ -1151,7 +1187,6 @@
             });
         });
 
-        // сброс формы
         document.getElementById('btnReset').addEventListener('click', async () => {
             if (await showConfirm('Сбросить форму?', 'Все введённые данные будут удалены.')) {
                 state = {
@@ -1167,24 +1202,6 @@
             }
         });
 
-        // сохранение заказа
-        document.getElementById('btnSave').addEventListener('click', async () => {
-            const mech = state.mechanics.length ? state.mechanics.join(', ') : 'не выбраны';
-            const cl = state.client;
-            const clParts = [cl.name||'—', cl.phone||'—', cl.car||'—'].join(', ');
-            const matActive = state.materials.filter(m=>m.qty>0);
-            const svcActive = state.services.filter(s=>s.qty>0);
-            const types = Object.entries(state.wheels.types).filter(([,v])=>v).map(([k])=>({light:'Легковая',jeep:'Джип',lowProfile:'Низкий профиль',runflat:'RunFlat'}[k]));
-            const totalSum = calcTotal();
-            const summaryText = `Механики: ${mech}\nКлиент: ${clParts}\nКолёса: R${state.wheels.radius}, ${types.join(', ')||'без типа'}, ${state.wheels.qty} шт\nМатериалы: ${matActive.length} поз.\nУслуги: ${svcActive.length} поз.\n\nСумма: ${fmtPrice(totalSum)}`;
-
-            if (await showConfirm('Сохранить заказ?', summaryText)) {
-                console.log('ORDER:', JSON.stringify(state, null, 2));
-                showToast('Заказ сохранён');
-            }
-        });
-
-        // свайп вниз
         let touchStartY = 0;
         document.querySelectorAll('.modal').forEach(modal => {
             modal.addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; }, {passive: true});
@@ -1199,7 +1216,6 @@
             }, {passive: true});
         });
 
-        // toast
         let toastTimer;
         function showToast(msg) {
             const t = document.getElementById('toast');
@@ -1210,7 +1226,6 @@
         }
         window.showToast = showToast;
 
-        // confirm
         async function showConfirm(title, text) {
             return new Promise(resolve => {
                 document.getElementById('confirmTitle').textContent = title;
