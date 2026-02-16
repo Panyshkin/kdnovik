@@ -1082,7 +1082,7 @@
 
     // ========== Функция отправки заказа ==========
     async function createOrder() {
-        // Валидация
+        // Валидация (как и раньше)
         if (state.mechanics.length === 0) {
             showToast('Выберите хотя бы одного механика');
             return;
@@ -1111,26 +1111,22 @@
                 types: state.wheels.types,
                 qty: state.wheels.qty
             },
-            materials: state.materials
-                .filter(m => m.qty > 0)
-                .map(m => ({
-                    id: m.id,
-                    name: m.name,
-                    price: m.price,
-                    qty: m.qty
-                })),
-            services: state.services
-                .filter(s => s.qty > 0)
-                .map(s => ({
-                    id: s.id,
-                    name: s.name,
-                    price: s.price,
-                    qty: s.qty,
-                    radius: s.radius,
-                    carType: s.carType,
-                    lowProfile: s.lowProfile,
-                    runflat: s.runflat
-                }))
+            materials: state.materials.filter(m => m.qty > 0).map(m => ({
+                id: m.id,
+                name: m.name,
+                price: m.price,
+                qty: m.qty
+            })),
+            services: state.services.filter(s => s.qty > 0).map(s => ({
+                id: s.id,
+                name: s.name,
+                price: s.price,
+                qty: s.qty,
+                radius: s.radius,
+                carType: s.carType,
+                lowProfile: s.lowProfile,
+                runflat: s.runflat
+            }))
         };
 
         const payload = {
@@ -1139,30 +1135,27 @@
         };
 
         showToast('Отправка...');
-        
+
         try {
-            // Используем no-cors для обхода CORS (не получим ответ, но данные уйдут)
-            await fetch(GAS_URL, {
+            const response = await fetch(GAS_URL, {
                 method: 'POST',
-                mode: 'no-cors',
+                mode: 'cors',                // ВАЖНО: используем cors
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-            
-            showToast('✅ Заказ отправлен');
-            
-            // Можно сохранить факт отправки в localStorage
-            const lastOrder = {
-                date: new Date().toISOString(),
-                manager: state.mechanics.join(', '),
-                client: state.client.name,
-                amount: calcTotal()
-            };
-            localStorage.setItem('lastOrder', JSON.stringify(lastOrder));
-            
+
+            const result = await response.json();
+
+            if (result.success) {
+                showToast(`✅ Заказ №${result.orderNumber || 'создан'} успешно отправлен`);
+                // Можно сбросить форму или сохранить номер
+                localStorage.setItem('lastOrderNumber', result.orderNumber);
+            } else {
+                showToast(`❌ Ошибка: ${result.error || result.message || 'Неизвестная ошибка'}`);
+            }
         } catch (error) {
-            console.error('Ошибка отправки:', error);
-            showToast('❌ Ошибка отправки');
+            console.error('Ошибка:', error);
+            showToast('❌ Ошибка соединения с сервером');
         }
     }
 
