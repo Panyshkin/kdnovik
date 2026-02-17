@@ -1108,7 +1108,10 @@
             },
             wheels: {
                 radius: state.wheels.radius,
-                types: state.wheels.types,
+                light: state.wheels.types.light || false,
+                jeep: state.wheels.types.jeep || false,
+                lowProfile: state.wheels.types.lowProfile || false,
+                runflat: state.wheels.types.runflat || false,
                 qty: state.wheels.qty
             },
             materials: state.materials.filter(m => m.qty > 0).map(m => ({
