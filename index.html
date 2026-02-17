@@ -1306,20 +1306,22 @@
 
     // Добавление нового заказа
     function addOrder(orderData) {
-        const newOrder = {
-            id: Date.now().toString(),
-            date: new Date().toISOString(),
-            clientName: orderData.client.name,
-            mechanics: orderData.manager.split(', '),
-            orderNumber1C: orderData.orderNumber,
-            amount: orderData.amount || 0,
-            paid: false,
-            lastCheckDate: null
-        };
-        orders.unshift(newOrder);
-        saveOrdersToStorage();
-        return newOrder;
-    }
+    const newOrder = {
+        id: Date.now().toString(),
+        date: new Date().toISOString(),
+        clientName: orderData.client.name,
+        mechanics: orderData.manager.split(', '),
+        orderNumber1C: orderData.orderNumber,
+        amount: orderData.amount || 0,
+        paid: false,
+        lastCheckDate: null,
+        services: orderData.services || '',      // строка с услугами
+        materials: orderData.materials || ''     // строка с материалами
+    };
+    orders.unshift(newOrder);
+    saveOrdersToStorage();
+    return newOrder;
+}
 
     // Обновление статуса оплаты
     function updatePaymentStatus(orderNumbers) {
