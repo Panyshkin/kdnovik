@@ -69,12 +69,25 @@
             border-radius: 13px;
             display: flex; align-items: center; justify-content: center;
             font-size: 1.2rem; color: white; flex-shrink: 0;
+            cursor: pointer;
         }
 
-        .header h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.3px; line-height: 1.2; }
+        .header h1 { 
+            font-size: 1.4rem; 
+            font-weight: 700; 
+            letter-spacing: -0.3px; 
+            line-height: 1.2; 
+            flex: 1;
+        }
         .header-sub { font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px; }
 
-        .settings-btn {
+        .header-actions {
+            display: flex;
+            gap: 8px;
+            margin-left: auto;
+        }
+
+        .icon-btn {
             width: 40px; height: 40px;
             background: var(--surface-2);
             border: none;
@@ -86,10 +99,9 @@
             justify-content: center;
             cursor: pointer;
             transition: all var(--transition);
-            margin-left: auto;
             flex-shrink: 0;
         }
-        .settings-btn:active { background: var(--surface-3); color: var(--primary); transform: scale(0.92); }
+        .icon-btn:active { background: var(--surface-3); color: var(--primary); transform: scale(0.92); }
 
         .card-group {
             background: var(--surface);
@@ -240,18 +252,47 @@
             padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
             border-top: 0.5px solid var(--border);
             flex-shrink: 0;
+            display: flex;
+            gap: 8px;
         }
 
         .modal-footer .btn-done {
-            width: 100%; padding: 14px;
-            background: var(--primary); color: white;
-            border: none; border-radius: var(--radius);
-            font-size: 1rem; font-weight: 600; cursor: pointer;
+            flex: 1;
+            padding: 12px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
             transition: all var(--transition);
-            display: flex; align-items: center; justify-content: center; gap: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
         }
 
         .modal-footer .btn-done:active { background: var(--primary-hover); transform: scale(0.98); }
+
+        .modal-footer .btn-secondary {
+            flex: 1;
+            padding: 12px;
+            background: var(--surface-2);
+            color: var(--text-secondary);
+            border: none;
+            border-radius: var(--radius);
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .modal-footer .btn-secondary:active { background: var(--surface-3); transform: scale(0.98); }
 
         /* Стили для полей ввода на форме клиента */
         .field-input {
@@ -283,6 +324,99 @@
             text-transform: uppercase;
             letter-spacing: 0.3px;
             padding-left: 4px;
+        }
+
+        /* Стили для истории заказов */
+        .history-filters {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            padding: 0 4px;
+        }
+        .filter-btn {
+            flex: 1;
+            padding: 8px;
+            background: var(--surface-2);
+            border: none;
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+        .filter-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+        .filter-btn:active { transform: scale(0.95); }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .history-item {
+            background: var(--surface-2);
+            border-radius: var(--radius);
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .history-item-paid {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+        .history-item-paid.paid {
+            background: var(--success-soft);
+            color: var(--success);
+        }
+        .history-item-paid.unpaid {
+            background: var(--danger-soft);
+            color: var(--danger);
+        }
+        .history-item-content {
+            flex: 1;
+        }
+        .history-item-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .history-item-number {
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .history-item-date {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+        .history-item-client {
+            font-weight: 500;
+            font-size: 0.9rem;
+            margin-bottom: 2px;
+        }
+        .history-item-mechanics {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+        .history-item-amount {
+            font-weight: 700;
+            color: var(--text);
+            font-size: 0.95rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
         }
 
         /* settings specific styles */
@@ -465,12 +599,18 @@
 <body>
 <div class="app">
     <div class="header">
-        <div class="header-icon"><i class="fa-solid fa-gear"></i></div>
-        <div style="flex:1">
+        <div class="header-icon" id="btnSettings">
+            <i class="fa-solid fa-gear"></i>
+        </div>
+        <div>
             <h1>Шиномонтаж</h1>
             <div class="header-sub">Оформление заказа</div>
         </div>
-        <button class="settings-btn" id="btnSettings" title="Настроить списки"><i class="fa-solid fa-sliders"></i></button>
+        <div class="header-actions">
+            <button class="icon-btn" id="btnHistory" title="История заказов">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+            </button>
+        </div>
     </div>
 
     <!-- main cards -->
@@ -658,6 +798,36 @@
     </div>
 </div>
 
+<!-- HISTORY MODAL -->
+<div class="modal-overlay" id="mHistory">
+    <div class="modal">
+        <div class="modal-handle"></div>
+        <div class="modal-head">
+            <h2><i class="fa-solid fa-clock-rotate-left"></i> История заказов</h2>
+            <button class="modal-close-btn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="history-filters">
+                <button class="filter-btn active" data-filter="today">Сегодня</button>
+                <button class="filter-btn" data-filter="week">Неделя</button>
+                <button class="filter-btn" data-filter="month">Месяц</button>
+                <button class="filter-btn" data-filter="all">Все</button>
+            </div>
+            <div class="history-list" id="historyList">
+                <!-- Заказы будут загружаться сюда -->
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-done" id="checkPaymentsBtn">
+                <i class="fa-solid fa-rotate"></i> Проверить оплату
+            </button>
+            <button class="btn-secondary" id="clearHistoryBtn">
+                <i class="fa-solid fa-trash"></i> Очистить
+            </button>
+        </div>
+    </div>
+</div>
+
 <div class="toast" id="toast"><i class="fa-solid fa-circle-check"></i> <span id="toastMsg"></span></div>
 <div class="confirm-overlay" id="confirmOverlay">
     <div class="confirm-dialog">
@@ -703,7 +873,8 @@
         mechanics: 'tireShop_mechanics',
         materials: 'tireShop_materials',
         services: 'tireShop_services_v2',
-        state: 'tireShop_state'
+        state: 'tireShop_state',
+        orders: 'tireShop_orders' // для хранения истории заказов
     };
 
     function loadListsFromStorage() {
@@ -1085,8 +1256,10 @@
 
     const modalMap = {
         mechanics: 'mMechanics', client: 'mClient', wheels: 'mWheels',
-        materials: 'mMaterials', services: 'mServices', settings: 'mSettings'
+        materials: 'mMaterials', services: 'mServices', settings: 'mSettings',
+        history: 'mHistory'
     };
+    
     function openModal(name) {
         const id = modalMap[name];
         if (!id) return;
@@ -1100,6 +1273,8 @@
             updateModalFooterSum('svcFooterSum', filtered);
         }
         if (name === 'settings') buildSettingsModal();
+        if (name === 'history') renderHistoryList('today');
+        
         document.getElementById(id).classList.add('active');
         document.body.style.overflow = 'hidden';
     }
@@ -1107,6 +1282,144 @@
     function closeModal(overlay) {
         overlay.classList.remove('active');
         document.body.style.overflow = '';
+    }
+
+    // ========== ИСТОРИЯ ЗАКАЗОВ ==========
+    let orders = [];
+
+    // Загрузка заказов из localStorage
+    function loadOrdersFromStorage() {
+        const stored = localStorage.getItem(STORAGE_KEYS.orders);
+        if (stored) {
+            try {
+                orders = JSON.parse(stored);
+            } catch(e) {
+                orders = [];
+            }
+        }
+    }
+
+    // Сохранение заказов в localStorage
+    function saveOrdersToStorage() {
+        localStorage.setItem(STORAGE_KEYS.orders, JSON.stringify(orders));
+    }
+
+    // Добавление нового заказа
+    function addOrder(orderData) {
+        const newOrder = {
+            id: Date.now().toString(),
+            date: new Date().toISOString(),
+            clientName: orderData.client.name,
+            mechanics: orderData.manager.split(', '),
+            orderNumber1C: orderData.orderNumber,
+            amount: orderData.amount || 0,
+            paid: false,
+            lastCheckDate: null
+        };
+        orders.unshift(newOrder);
+        saveOrdersToStorage();
+        return newOrder;
+    }
+
+    // Обновление статуса оплаты
+    function updatePaymentStatus(orderNumbers) {
+        orderNumbers.forEach(number => {
+            const order = orders.find(o => o.orderNumber1C === number);
+            if (order) {
+                order.paid = true;
+                order.lastCheckDate = new Date().toISOString();
+            }
+        });
+        saveOrdersToStorage();
+        renderHistoryList(currentFilter);
+    }
+
+    // Фильтрация заказов
+    let currentFilter = 'today';
+    
+    function filterOrders(filter) {
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        
+        switch(filter) {
+            case 'today':
+                return orders.filter(o => new Date(o.date) >= today);
+            case 'week':
+                const weekAgo = new Date(today);
+                weekAgo.setDate(weekAgo.getDate() - 7);
+                return orders.filter(o => new Date(o.date) >= weekAgo);
+            case 'month':
+                const monthAgo = new Date(today);
+                monthAgo.setMonth(monthAgo.getMonth() - 1);
+                return orders.filter(o => new Date(o.date) >= monthAgo);
+            default:
+                return orders;
+        }
+    }
+
+    // Отображение списка заказов
+    function renderHistoryList(filter = 'today') {
+        currentFilter = filter;
+        const listEl = document.getElementById('historyList');
+        const filtered = filterOrders(filter);
+        
+        // Обновляем активный фильтр
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.filter === filter);
+        });
+        
+        if (filtered.length === 0) {
+            listEl.innerHTML = '<div class="empty-state">Нет заказов</div>';
+            return;
+        }
+        
+        listEl.innerHTML = filtered.map(order => `
+            <div class="history-item">
+                <div class="history-item-paid ${order.paid ? 'paid' : 'unpaid'}">
+                    <i class="fa-solid ${order.paid ? 'fa-check' : 'fa-xmark'}"></i>
+                </div>
+                <div class="history-item-content">
+                    <div class="history-item-header">
+                        <span class="history-item-number">${order.orderNumber1C}</span>
+                        <span class="history-item-date">${new Date(order.date).toLocaleString()}</span>
+                    </div>
+                    <div class="history-item-client">${order.clientName}</div>
+                    <div class="history-item-mechanics">${order.mechanics.join(', ')}</div>
+                </div>
+                <div class="history-item-amount">${order.amount.toLocaleString()} ₽</div>
+            </div>
+        `).join('');
+    }
+
+    // Проверка оплаты (заглушка)
+    async function checkPayments() {
+        const unpaidOrders = orders.filter(o => !o.paid).map(o => o.orderNumber1C);
+        
+        if (unpaidOrders.length === 0) {
+            showToast('Нет заказов для проверки');
+            return;
+        }
+        
+        showToast('Проверка оплаты...');
+        
+        // Имитация запроса к серверу
+        setTimeout(() => {
+            // Для теста случайным образом отмечаем некоторые заказы как оплаченные
+            const paidCount = Math.floor(Math.random() * 3) + 1;
+            const paidOrders = unpaidOrders.slice(0, paidCount);
+            updatePaymentStatus(paidOrders);
+            showToast(`✅ Найдено ${paidCount} оплаченных заказов`);
+        }, 1500);
+    }
+
+    // Очистка истории (заглушка)
+    function clearHistory() {
+        showConfirm('Очистить историю?', 'Будут удалены все заказы старше сегодняшнего дня.')
+            .then(confirmed => {
+                if (confirmed) {
+                    showToast('Заглушка: очистка истории');
+                }
+            });
     }
 
     // ========== URL для отправки на Vercel ==========
@@ -1131,7 +1444,31 @@
         const confirmed = await showConfirm('Создать заказ?', 'Данные будут отправлены в 1С.');
         if (!confirmed) return;
 
-        // ✅ Правильная структура для 1С (с types)
+        // Формируем строку услуг
+        const servicesString = state.services
+            .filter(s => s.qty > 0)
+            .map(s => {
+                let serviceStr = `${s.name} x${s.qty}`;
+                const params = [];
+                if (s.radius) params.push(`R${s.radius}`);
+                if (s.carType === 'light') params.push('легковая');
+                if (s.carType === 'jeep') params.push('джип');
+                if (s.lowProfile === true) params.push('низкий профиль');
+                if (s.runflat === true) params.push('runflat');
+                
+                if (params.length > 0) {
+                    serviceStr += ` (${params.join(', ')})`;
+                }
+                return serviceStr;
+            })
+            .join(', ');
+
+        // Формируем строку материалов
+        const materialsString = state.materials
+            .filter(m => m.qty > 0)
+            .map(m => `${m.name} x${m.qty}`)
+            .join(', ');
+
         const orderData = {
             manager: state.mechanics.join(', '),
             client: {
@@ -1149,26 +1486,8 @@
                 },
                 qty: state.wheels.qty
             },
-            materials: state.materials
-                .filter(m => m.qty > 0)
-                .map(m => ({
-                    id: m.id,
-                    name: m.name,
-                    price: m.price,
-                    qty: m.qty
-                })),
-            services: state.services
-                .filter(s => s.qty > 0)
-                .map(s => ({
-                    id: s.id,
-                    name: s.name,
-                    price: s.price,
-                    qty: s.qty,
-                    radius: s.radius,
-                    carType: s.carType,
-                    lowProfile: s.lowProfile,
-                    runflat: s.runflat
-                }))
+            materials: materialsString,
+            services: servicesString
         };
 
         const payload = {
@@ -1190,6 +1509,14 @@
             if (result.success) {
                 showToast(`✅ Заказ №${result.orderNumber} создан`);
                 localStorage.setItem('lastOrderNumber', result.orderNumber);
+                
+                // Сохраняем заказ в историю
+                addOrder({
+                    client: state.client,
+                    manager: state.mechanics.join(', '),
+                    orderNumber: result.orderNumber,
+                    amount: calcTotal()
+                });
             } else {
                 showToast(`❌ Ошибка: ${result.error || result.message || 'Неизвестная ошибка'}`);
             }
@@ -1202,10 +1529,16 @@
     function init() {
         loadListsFromStorage();
         loadStateFromStorage();
+        loadOrdersFromStorage();
         reconcileStateWithLists();
         updateAllDisplays();
 
+        // Настройки (левая иконка)
         document.getElementById('btnSettings').addEventListener('click', () => openModal('settings'));
+        
+        // История (правая иконка)
+        document.getElementById('btnHistory').addEventListener('click', () => openModal('history'));
+        
         document.getElementById('btnCreateOrder').addEventListener('click', createOrder);
 
         document.querySelectorAll('.card[data-modal]').forEach(card => {
@@ -1215,7 +1548,7 @@
         document.querySelectorAll('.modal-overlay').forEach(overlay => {
             overlay.addEventListener('click', e => {
                 if (e.target === overlay) {
-                    if (overlay.id === 'mSettings') closeModal(overlay);
+                    if (overlay.id === 'mSettings' || overlay.id === 'mHistory') closeModal(overlay);
                     else { saveCurrentModal(overlay); closeModal(overlay); }
                 }
             });
@@ -1224,7 +1557,7 @@
         document.querySelectorAll('.modal-close-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const overlay = btn.closest('.modal-overlay');
-                if (overlay.id === 'mSettings') closeModal(overlay);
+                if (overlay.id === 'mSettings' || overlay.id === 'mHistory') closeModal(overlay);
                 else { saveCurrentModal(overlay); closeModal(overlay); }
             });
         });
@@ -1236,6 +1569,8 @@
                     saveSettings();
                     closeModal(overlay);
                     showToast('Списки сохранены');
+                } else if (overlay.id === 'mHistory') {
+                    closeModal(overlay);
                 } else {
                     saveCurrentModal(overlay);
                     closeModal(overlay);
@@ -1244,10 +1579,23 @@
             });
         });
 
+        // Фильтры в истории
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                renderHistoryList(btn.dataset.filter);
+            });
+        });
+
+        // Кнопка проверки оплаты
+        document.getElementById('checkPaymentsBtn')?.addEventListener('click', checkPayments);
+
+        // Кнопка очистки истории
+        document.getElementById('clearHistoryBtn')?.addEventListener('click', clearHistory);
+
         document.addEventListener('keydown', e => {
             if (e.key === 'Enter' && !e.target.closest('button') && !e.target.closest('select') && !e.target.closest('.settings-item')) {
                 const active = document.querySelector('.modal-overlay.active');
-                if (active && active.id !== 'mSettings') {
+                if (active && active.id !== 'mSettings' && active.id !== 'mHistory') {
                     e.preventDefault();
                     saveCurrentModal(active);
                     closeModal(active);
@@ -1362,7 +1710,7 @@
                 const body = modal.querySelector('.modal-body');
                 if (dy > 80 && (!body || body.scrollTop <= 0)) {
                     const overlay = modal.closest('.modal-overlay');
-                    if (overlay.id === 'mSettings') closeModal(overlay);
+                    if (overlay.id === 'mSettings' || overlay.id === 'mHistory') closeModal(overlay);
                     else { saveCurrentModal(overlay); closeModal(overlay); }
                 }
             }, {passive: true});
