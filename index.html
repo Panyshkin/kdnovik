@@ -659,7 +659,7 @@
     let state = {
         mechanics: [],
         client: { name: '', phone: '', car: '' },
-        wheels: { radius: 17, types: { light: false, jeep: false, lowProfile: false, runflat: false }, qty: 4 },
+         { radius: 17, types: { light: false, jeep: false, lowProfile: false, runflat: false }, qty: 4 },
         materials: [],
         services: []
     };
@@ -1082,88 +1082,92 @@
 
     // ========== Функция отправки заказа ==========
     async function createOrder() {
-        // Валидация
-        if (state.mechanics.length === 0) {
-            showToast('Выберите хотя бы одного механика');
-            return;
-        }
-        if (!state.client.name || !state.client.phone || !state.client.car) {
-            showToast('Заполните ФИО, телефон и авто клиента');
-            return;
-        }
-        if (!state.services.some(s => s.qty > 0)) {
-            showToast('Добавьте хотя бы одну услугу');
-            return;
-        }
+    // Валидация
+    if (state.mechanics.length === 0) {
+        showToast('Выберите хотя бы одного механика');
+        return;
+    }
+    if (!state.client.name || !state.client.phone || !state.client.car) {
+        showToast('Заполните ФИО, телефон и авто клиента');
+        return;
+    }
+    if (!state.services.some(s => s.qty > 0)) {
+        showToast('Добавьте хотя бы одну услугу');
+        return;
+    }
 
-        const confirmed = await showConfirm('Создать заказ?', 'Данные будут отправлены в 1С.');
-        if (!confirmed) return;
+    const confirmed = await showConfirm('Создать заказ?', 'Данные будут отправлены в 1С.');
+    if (!confirmed) return;
 
-        // ✅ Правильная структура для 1С
-        const orderData = {
-            manager: state.mechanics.join(', '),
-            client: {
-                name: state.client.name,
-                phone: state.client.phone,
-                car: state.client.car
-            },
-            wheels: {
-                radius: state.wheels.radius,
+    // ✅ Правильная структура для 1С (с types)
+    const orderData = {
+        manager: state.mechanics.join(', '),
+        client: {
+            name: state.client.name,
+            phone: state.client.phone,
+            car: state.client.car
+        },
+        wheels: {
+            radius: state.wheels.radius,
+            types: {
                 light: state.wheels.types.light || false,
                 jeep: state.wheels.types.jeep || false,
                 lowProfile: state.wheels.types.lowProfile || false,
-                runflat: state.wheels.types.runflat || false,
-                qty: state.wheels.qty
+                runflat: state.wheels.types.runflat || false
             },
-            materials: state.materials
-                .filter(m => m.qty > 0)
-                .map(m => ({
-                    id: m.id,
-                    name: m.name,
-                    price: m.price,
-                    qty: m.qty
-                })),
-            services: state.services
-                .filter(s => s.qty > 0)
-                .map(s => ({
-                    id: s.id,
-                    name: s.name,
-                    price: s.price,
-                    qty: s.qty,
-                    radius: s.radius,
-                    carType: s.carType,
-                    lowProfile: s.lowProfile,
-                    runflat: s.runflat
-                }))
-        };
+            qty: state.wheels.qty
+        },
+        materials: state.materials
+            .filter(m => m.qty > 0)
+            .map(m => ({
+                id: m.id,
+                name: m.name,
+                price: m.price,
+                qty: m.qty
+            })),
+        services: state.services
+            .filter(s => s.qty > 0)
+            .map(s => ({
+                id: s.id,
+                name: s.name,
+                price: s.price,
+                qty: s.qty,
+                radius: s.radius,
+                carType: s.carType,
+                lowProfile: s.lowProfile,
+                runflat: s.runflat
+            }))
+    };
 
-        const payload = {
-            action: 'create_order_tyre',
-            data: orderData
-        };
+    const payload = {
+        action: 'create_order_tyre',
+        data: orderData
+    };
 
-        showToast('Отправка...');
+    const PROXY_URL = 'https://1c-proxy-vercel.vercel.app/api/create-order';
 
-        try {
-            const response = await fetch(PROXY_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
+    showToast('Отправка...');
 
-            const result = await response.json();
+    try {
+        const response = await fetch(PROXY_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
 
-            if (result.success) {
-                showToast(`✅ Заказ №${result.orderNumber} создан`);
-                localStorage.setItem('lastOrderNumber', result.orderNumber);
-            } else {
-                showToast(`❌ Ошибка: ${result.error || result.message || 'Неизвестная ошибка'}`);
-            }
-        } catch (error) {
-            console.error('Ошибка:', error);
-            showToast('❌ Ошибка соединения с сервером');
+        const result = await response.json();
+
+        if (result.success) {
+            showToast(`✅ Заказ №${result.orderNumber} создан`);
+            localStorage.setItem('lastOrderNumber', result.orderNumber);
+        } else {
+            showToast(`❌ Ошибка: ${result.error || result.message || 'Неизвестная ошибка'}`);
         }
+    } catch (error) {
+        console.error('Ошибка:', error);
+        showToast('❌ Ошибка соединения с сервером');
     }
+}
 
     function init() {
         loadListsFromStorage();
