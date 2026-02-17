@@ -1082,45 +1082,50 @@
 
     // ========== Функция отправки заказа ==========
     async function createOrder() {
-        // Валидация (как и раньше)
-        if (state.mechanics.length === 0) {
-            showToast('Выберите хотя бы одного механика');
-            return;
-        }
-        if (!state.client.name || !state.client.phone || !state.client.car) {
-            showToast('Заполните ФИО, телефон и авто клиента');
-            return;
-        }
-        if (!state.services.some(s => s.qty > 0)) {
-            showToast('Добавьте хотя бы одну услугу');
-            return;
-        }
+    // Валидация
+    if (state.mechanics.length === 0) {
+        showToast('Выберите хотя бы одного механика');
+        return;
+    }
+    if (!state.client.name || !state.client.phone || !state.client.car) {
+        showToast('Заполните ФИО, телефон и авто клиента');
+        return;
+    }
+    if (!state.services.some(s => s.qty > 0)) {
+        showToast('Добавьте хотя бы одну услугу');
+        return;
+    }
 
-        const confirmed = await showConfirm('Создать заказ?', 'Данные будут отправлены в 1С.');
-        if (!confirmed) return;
+    const confirmed = await showConfirm('Создать заказ?', 'Данные будут отправлены в 1С.');
+    if (!confirmed) return;
 
-        const orderData = {
-            manager: state.mechanics.join(', '),
-            client: {
-                name: state.client.name,
-                phone: state.client.phone,
-                car: state.client.car
-            },
-            wheels: {
-                radius: state.wheels.radius,
-                light: state.wheels.types.light || false,
-                jeep: state.wheels.types.jeep || false,
-                lowProfile: state.wheels.types.lowProfile || false,
-                runflat: state.wheels.types.runflat || false,
-                qty: state.wheels.qty
-            },
-            materials: state.materials.filter(m => m.qty > 0).map(m => ({
+    // ✅ ИСПРАВЛЕНО: правильная структура для 1С
+    const orderData = {
+        manager: state.mechanics.join(', '),
+        client: {
+            name: state.client.name,
+            phone: state.client.phone,
+            car: state.client.car
+        },
+        wheels: {
+            radius: state.wheels.radius,
+            light: state.wheels.types.light || false,
+            jeep: state.wheels.types.jeep || false,
+            lowProfile: state.wheels.types.lowProfile || false,
+            runflat: state.wheels.types.runflat || false,
+            qty: state.wheels.qty
+        },
+        materials: state.materials
+            .filter(m => m.qty > 0)
+            .map(m => ({
                 id: m.id,
                 name: m.name,
                 price: m.price,
                 qty: m.qty
             })),
-            services: state.services.filter(s => s.qty > 0).map(s => ({
+        services: state.services
+            .filter(s => s.qty > 0)
+            .map(s => ({
                 id: s.id,
                 name: s.name,
                 price: s.price,
@@ -1130,37 +1135,38 @@
                 lowProfile: s.lowProfile,
                 runflat: s.runflat
             }))
-        };
+    };
 
-        const payload = {
-            action: 'create_order_tyre',
-            data: orderData
-        };
+    const payload = {
+        action: 'create_order_tyre',
+        data: orderData
+    };
 
-        showToast('Отправка...');
+    // URL вашего прокси на Vercel
+    const PROXY_URL = 'https://1c-proxy-vercel.vercel.app/api/create-order';
 
-        try {
-            const response = await fetch(GAS_URL, {
-                method: 'POST',
-                mode: 'cors',                // ВАЖНО: используем cors
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
+    showToast('Отправка...');
 
-            const result = await response.json();
+    try {
+        const response = await fetch(PROXY_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
 
-            if (result.success) {
-                showToast(`✅ Заказ №${result.orderNumber || 'создан'} успешно отправлен`);
-                // Можно сбросить форму или сохранить номер
-                localStorage.setItem('lastOrderNumber', result.orderNumber);
-            } else {
-                showToast(`❌ Ошибка: ${result.error || result.message || 'Неизвестная ошибка'}`);
-            }
-        } catch (error) {
-            console.error('Ошибка:', error);
-            showToast('❌ Ошибка соединения с сервером');
+        const result = await response.json();
+
+        if (result.success) {
+            showToast(`✅ Заказ №${result.orderNumber} создан`);
+            localStorage.setItem('lastOrderNumber', result.orderNumber);
+        } else {
+            showToast(`❌ Ошибка: ${result.error || result.message || 'Неизвестная ошибка'}`);
         }
+    } catch (error) {
+        console.error('Ошибка:', error);
+        showToast('❌ Ошибка соединения с сервером');
     }
+}
 
     function init() {
         loadListsFromStorage();
