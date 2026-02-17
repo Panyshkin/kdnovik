@@ -497,7 +497,7 @@
     </div>
 </div>
 
-<!-- Modals (оригинальные) -->
+<!-- Modals -->
 <div class="modal-overlay" id="mMechanics">
     <div class="modal">
         <div class="modal-handle"></div>
@@ -1077,96 +1077,93 @@
         document.body.style.overflow = '';
     }
 
-    // ========== URL для отправки в GAS ==========
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxkkCaw1QULg4vkCJjnoGlPzQqpyEToA16iuiDByqflM4NobEWRuMfBDcOt-SUOkow63Q/exec'; 
+    // ========== URL для отправки на Vercel ==========
+    const PROXY_URL = 'https://1c-proxy-vercel.vercel.app/api/create-order';
 
     // ========== Функция отправки заказа ==========
     async function createOrder() {
-    // Валидация
-    if (state.mechanics.length === 0) {
-        showToast('Выберите хотя бы одного механика');
-        return;
-    }
-    if (!state.client.name || !state.client.phone || !state.client.car) {
-        showToast('Заполните ФИО, телефон и авто клиента');
-        return;
-    }
-    if (!state.services.some(s => s.qty > 0)) {
-        showToast('Добавьте хотя бы одну услугу');
-        return;
-    }
-
-    const confirmed = await showConfirm('Создать заказ?', 'Данные будут отправлены в 1С.');
-    if (!confirmed) return;
-
-    // ✅ ИСПРАВЛЕНО: правильная структура для 1С
-    const orderData = {
-        manager: state.mechanics.join(', '),
-        client: {
-            name: state.client.name,
-            phone: state.client.phone,
-            car: state.client.car
-        },
-        wheels: {
-            radius: state.wheels.radius,
-            light: state.wheels.types.light || false,
-            jeep: state.wheels.types.jeep || false,
-            lowProfile: state.wheels.types.lowProfile || false,
-            runflat: state.wheels.types.runflat || false,
-            qty: state.wheels.qty
-        },
-        materials: state.materials
-            .filter(m => m.qty > 0)
-            .map(m => ({
-                id: m.id,
-                name: m.name,
-                price: m.price,
-                qty: m.qty
-            })),
-        services: state.services
-            .filter(s => s.qty > 0)
-            .map(s => ({
-                id: s.id,
-                name: s.name,
-                price: s.price,
-                qty: s.qty,
-                radius: s.radius,
-                carType: s.carType,
-                lowProfile: s.lowProfile,
-                runflat: s.runflat
-            }))
-    };
-
-    const payload = {
-        action: 'create_order_tyre',
-        data: orderData
-    };
-
-    // URL вашего прокси на Vercel
-    const PROXY_URL = 'https://1c-proxy-vercel.vercel.app/api/create-order';
-
-    showToast('Отправка...');
-
-    try {
-        const response = await fetch(PROXY_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-            showToast(`✅ Заказ №${result.orderNumber} создан`);
-            localStorage.setItem('lastOrderNumber', result.orderNumber);
-        } else {
-            showToast(`❌ Ошибка: ${result.error || result.message || 'Неизвестная ошибка'}`);
+        // Валидация
+        if (state.mechanics.length === 0) {
+            showToast('Выберите хотя бы одного механика');
+            return;
         }
-    } catch (error) {
-        console.error('Ошибка:', error);
-        showToast('❌ Ошибка соединения с сервером');
+        if (!state.client.name || !state.client.phone || !state.client.car) {
+            showToast('Заполните ФИО, телефон и авто клиента');
+            return;
+        }
+        if (!state.services.some(s => s.qty > 0)) {
+            showToast('Добавьте хотя бы одну услугу');
+            return;
+        }
+
+        const confirmed = await showConfirm('Создать заказ?', 'Данные будут отправлены в 1С.');
+        if (!confirmed) return;
+
+        // ✅ Правильная структура для 1С
+        const orderData = {
+            manager: state.mechanics.join(', '),
+            client: {
+                name: state.client.name,
+                phone: state.client.phone,
+                car: state.client.car
+            },
+            wheels: {
+                radius: state.wheels.radius,
+                light: state.wheels.types.light || false,
+                jeep: state.wheels.types.jeep || false,
+                lowProfile: state.wheels.types.lowProfile || false,
+                runflat: state.wheels.types.runflat || false,
+                qty: state.wheels.qty
+            },
+            materials: state.materials
+                .filter(m => m.qty > 0)
+                .map(m => ({
+                    id: m.id,
+                    name: m.name,
+                    price: m.price,
+                    qty: m.qty
+                })),
+            services: state.services
+                .filter(s => s.qty > 0)
+                .map(s => ({
+                    id: s.id,
+                    name: s.name,
+                    price: s.price,
+                    qty: s.qty,
+                    radius: s.radius,
+                    carType: s.carType,
+                    lowProfile: s.lowProfile,
+                    runflat: s.runflat
+                }))
+        };
+
+        const payload = {
+            action: 'create_order_tyre',
+            data: orderData
+        };
+
+        showToast('Отправка...');
+
+        try {
+            const response = await fetch(PROXY_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showToast(`✅ Заказ №${result.orderNumber} создан`);
+                localStorage.setItem('lastOrderNumber', result.orderNumber);
+            } else {
+                showToast(`❌ Ошибка: ${result.error || result.message || 'Неизвестная ошибка'}`);
+            }
+        } catch (error) {
+            console.error('Ошибка:', error);
+            showToast('❌ Ошибка соединения с сервером');
+        }
     }
-}
 
     function init() {
         loadListsFromStorage();
