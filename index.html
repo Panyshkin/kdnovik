@@ -878,7 +878,9 @@
     };
 
     // ====== НАСТРОЙКИ (загрузка из 1С через Vercel) ======
-    const PROXY_URL = 'https://1c-proxy-vercel.vercel.app/api/get-settings'; // ЗАМЕНИТЕ НА РЕАЛЬНЫЙ URL ВАШЕГО VERCEL-ПРОКСИ
+    //const PROXY_URL = 'https://1c-proxy-vercel.vercel.app/api/get-settings'; // ЗАМЕНИТЕ НА РЕАЛЬНЫЙ URL ВАШЕГО VERCEL-ПРОКСИ
+    const SETTINGS_PROXY_URL = 'https://1c-proxy-vercel.vercel.app/api/get-settings';
+    
 
     // Функция загрузки настроек из 1С
     async function loadSettingsFrom1C() {
@@ -1474,7 +1476,7 @@
     }
 
     // ========== URL для отправки заказа на Vercel ==========
-    const ORDER_PROXY_URL = 'https://1c-proxy-vercel.vercel.app/api/create-order'; // ЗАМЕНИТЕ НА РЕАЛЬНЫЙ URL
+    const ORDER_PROXY_URL = 'https://1c-proxy-vercel.vercel.app/api/create-order';
 
     async function createOrder() {
         if (state.mechanics.length === 0) {
