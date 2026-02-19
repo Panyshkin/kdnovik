@@ -884,37 +884,63 @@
 
     // Функция загрузки настроек из 1С
     async function loadSettingsFrom1C() {
-    const subdivision = document.getElementById('subdivisionSelect').value;
+    console.log('🔵 loadSettingsFrom1C вызвана');
+    const subdivisionSelect = document.getElementById('subdivisionSelect');
+    console.log('🔵 Элемент subdivisionSelect:', subdivisionSelect);
+    
+    if (!subdivisionSelect) {
+        console.error('🔴 Элемент subdivisionSelect не найден!');
+        showToast('❌ Ошибка: элемент выбора не найден');
+        return;
+    }
+    
+    const subdivision = subdivisionSelect.value;
+    console.log('🔵 Выбранное подразделение:', subdivision);
     
     showToast('Загрузка настроек...');
     
-    try {
-        // БЫЛО: const response = await fetch(PROXY_URL, {
-        const response = await fetch(SETTINGS_PROXY_URL, {  // ← ИСПРАВЛЕНО
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ subdivision: subdivision })
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            MECHANICS = data.mechanics || [];
-            MATERIALS = data.materials || [];
-            SERVICES = data.services || [];
-            
-            saveListsToStorage();
-            buildSettingsModal();
-            showToast('✅ Настройки загружены');
-        } else {
-            showToast('❌ Ошибка: ' + (data.error || 'Неизвестная ошибка'));
-        }
-    } catch (error) {
-        console.error('Ошибка загрузки настроек:', error);
-        showToast('❌ Ошибка соединения с сервером');
-    }
+    // ВРЕМЕННО: используем тестовые данные для проверки
+    console.log('🟡 ИСПОЛЬЗУЮТСЯ ТЕСТОВЫЕ ДАННЫЕ');
+    const data = {
+        success: true,
+        mechanics: ['Иванов Иван', 'Петров Петр', 'Сидоров Сидор'],
+        materials: [
+            {id: 1, name: 'Расходные материалы', price: 150},
+            {id: 2, name: 'Грузик набивной', price: 50},
+            {id: 3, name: 'Грузик самоклеющийся', price: 80}
+        ],
+        services: [
+            {id: 1, name: 'Съём и установка колеса', price: 300, radius: null, carType: null, lowProfile: null, runflat: null},
+            {id: 2, name: 'Демонтаж шины', price: 250, radius: 17, carType: 'light', lowProfile: null, runflat: null}
+        ]
+    };
+    
+    console.log('🟢 Данные до обновления:', { 
+        MECHANICS: [...MECHANICS], 
+        MATERIALS: [...MATERIALS], 
+        SERVICES: [...SERVICES] 
+    });
+    
+    MECHANICS = data.mechanics;
+    MATERIALS = data.materials;
+    SERVICES = data.services;
+    
+    console.log('🟢 Данные после обновления:', { 
+        MECHANICS: [...MECHANICS], 
+        MATERIALS: [...MATERIALS], 
+        SERVICES: [...SERVICES] 
+    });
+    
+    saveListsToStorage();
+    console.log('🟢 Данные сохранены в localStorage');
+    
+    buildSettingsModal();
+    console.log('🟢 Модалка перестроена');
+    
+    showToast('✅ Тестовые настройки загружены');
 }
 
+    
     function loadListsFromStorage() {
         const storedMech = localStorage.getItem(STORAGE_KEYS.mechanics);
         if (storedMech) { try { MECHANICS = JSON.parse(storedMech); } catch(e){ MECHANICS = []; } }
