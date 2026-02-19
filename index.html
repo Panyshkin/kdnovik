@@ -883,10 +883,10 @@
     
 
     // Функция загрузки настроек из 1С
-    async function loadSettingsFrom1C() {
+    // ========== Функция загрузки настроек из 1С ==========
+async function loadSettingsFrom1C() {
     console.log('🔵 loadSettingsFrom1C вызвана');
     const subdivisionSelect = document.getElementById('subdivisionSelect');
-    console.log('🔵 Элемент subdivisionSelect:', subdivisionSelect);
     
     if (!subdivisionSelect) {
         console.error('🔴 Элемент subdivisionSelect не найден!');
@@ -899,45 +899,53 @@
     
     showToast('Загрузка настроек...');
     
-    // ВРЕМЕННО: используем тестовые данные для проверки
-    console.log('🟡 ИСПОЛЬЗУЮТСЯ ТЕСТОВЫЕ ДАННЫЕ');
-    const data = {
-        success: true,
-        mechanics: ['Иванов Иван', 'Петров Петр', 'Сидоров Сидор'],
-        materials: [
-            {id: 1, name: 'Расходные материалы', price: 150},
-            {id: 2, name: 'Грузик набивной', price: 50},
-            {id: 3, name: 'Грузик самоклеющийся', price: 80}
-        ],
-        services: [
-            {id: 1, name: 'Съём и установка колеса', price: 300, radius: null, carType: null, lowProfile: null, runflat: null},
-            {id: 2, name: 'Демонтаж шины', price: 250, radius: 17, carType: 'light', lowProfile: null, runflat: null}
-        ]
-    };
+    // Убедитесь, что переменная SETTINGS_PROXY_URL объявлена выше
+    // Например: const SETTINGS_PROXY_URL = 'https://1c-proxy-vercel.vercel.app/api/get-settings';
     
-    console.log('🟢 Данные до обновления:', { 
-        MECHANICS: [...MECHANICS], 
-        MATERIALS: [...MATERIALS], 
-        SERVICES: [...SERVICES] 
-    });
-    
-    MECHANICS = data.mechanics;
-    MATERIALS = data.materials;
-    SERVICES = data.services;
-    
-    console.log('🟢 Данные после обновления:', { 
-        MECHANICS: [...MECHANICS], 
-        MATERIALS: [...MATERIALS], 
-        SERVICES: [...SERVICES] 
-    });
-    
-    saveListsToStorage();
-    console.log('🟢 Данные сохранены в localStorage');
-    
-    buildSettingsModal();
-    console.log('🟢 Модалка перестроена');
-    
-    showToast('✅ Тестовые настройки загружены');
+    try {
+        console.log('🟡 Отправка запроса к:', SETTINGS_PROXY_URL);
+        const response = await fetch(SETTINGS_PROXY_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ subdivision: subdivision })
+        });
+        
+        console.log('🟢 Статус ответа:', response.status);
+        console.log('🟢 Заголовки:', response.headers);
+        
+        // Проверяем, что ответ успешный
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('🟢 Данные от сервера:', data);
+        
+        if (data.success) {
+            console.log('🟢 Механики:', data.mechanics);
+            console.log('🟢 Материалы:', data.materials);
+            console.log('🟢 Услуги:', data.services);
+            
+            // Обновляем глобальные списки
+            MECHANICS = data.mechanics || [];
+            MATERIALS = data.materials || [];
+            SERVICES = data.services || [];
+            
+            // Сохраняем в localStorage
+            saveListsToStorage();
+            
+            // Перестраиваем модалку настроек
+            buildSettingsModal();
+            
+            showToast('✅ Настройки загружены');
+        } else {
+            console.error('🔴 Ошибка в данных:', data.error);
+            showToast('❌ Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+        }
+    } catch (error) {
+        console.error('🔴 Ошибка запроса:', error);
+        showToast('❌ Ошибка соединения с сервером');
+    }
 }
 
     
