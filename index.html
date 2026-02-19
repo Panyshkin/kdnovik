@@ -884,40 +884,36 @@
 
     // Функция загрузки настроек из 1С
     async function loadSettingsFrom1C() {
-        const subdivision = document.getElementById('subdivisionSelect').value;
+    const subdivision = document.getElementById('subdivisionSelect').value;
+    
+    showToast('Загрузка настроек...');
+    
+    try {
+        // БЫЛО: const response = await fetch(PROXY_URL, {
+        const response = await fetch(SETTINGS_PROXY_URL, {  // ← ИСПРАВЛЕНО
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ subdivision: subdivision })
+        });
         
-        showToast('Загрузка настроек...');
+        const data = await response.json();
         
-        try {
-            const response = await fetch(PROXY_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ subdivision: subdivision })
-            });
+        if (data.success) {
+            MECHANICS = data.mechanics || [];
+            MATERIALS = data.materials || [];
+            SERVICES = data.services || [];
             
-            const data = await response.json();
-            
-            if (data.success) {
-                // Обновляем глобальные списки
-                MECHANICS = data.mechanics || [];
-                MATERIALS = data.materials || [];
-                SERVICES = data.services || [];
-                
-                // Сохраняем в localStorage
-                saveListsToStorage();
-                
-                // Перестраиваем модалку настроек
-                buildSettingsModal();
-                
-                showToast('✅ Настройки загружены');
-            } else {
-                showToast('❌ Ошибка: ' + (data.error || 'Неизвестная ошибка'));
-            }
-        } catch (error) {
-            console.error('Ошибка загрузки настроек:', error);
-            showToast('❌ Ошибка соединения с сервером');
+            saveListsToStorage();
+            buildSettingsModal();
+            showToast('✅ Настройки загружены');
+        } else {
+            showToast('❌ Ошибка: ' + (data.error || 'Неизвестная ошибка'));
         }
+    } catch (error) {
+        console.error('Ошибка загрузки настроек:', error);
+        showToast('❌ Ошибка соединения с сервером');
     }
+}
 
     function loadListsFromStorage() {
         const storedMech = localStorage.getItem(STORAGE_KEYS.mechanics);
