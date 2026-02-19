@@ -874,8 +874,48 @@
         materials: 'tireShop_materials',
         services: 'tireShop_services_v2',
         state: 'tireShop_state',
-        orders: 'tireShop_orders' // для хранения истории заказов
+        orders: 'tireShop_orders'
     };
+
+    // ====== НАСТРОЙКИ (загрузка из 1С через Vercel) ======
+    const PROXY_URL = 'https://1c-proxy-vercel.vercel.app/api/get-settings'; // ЗАМЕНИТЕ НА РЕАЛЬНЫЙ URL ВАШЕГО VERCEL-ПРОКСИ
+
+    // Функция загрузки настроек из 1С
+    async function loadSettingsFrom1C() {
+        const subdivision = document.getElementById('subdivisionSelect').value;
+        
+        showToast('Загрузка настроек...');
+        
+        try {
+            const response = await fetch(PROXY_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ subdivision: subdivision })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Обновляем глобальные списки
+                MECHANICS = data.mechanics || [];
+                MATERIALS = data.materials || [];
+                SERVICES = data.services || [];
+                
+                // Сохраняем в localStorage
+                saveListsToStorage();
+                
+                // Перестраиваем модалку настроек
+                buildSettingsModal();
+                
+                showToast('✅ Настройки загружены');
+            } else {
+                showToast('❌ Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+            }
+        } catch (error) {
+            console.error('Ошибка загрузки настроек:', error);
+            showToast('❌ Ошибка соединения с сервером');
+        }
+    }
 
     function loadListsFromStorage() {
         const storedMech = localStorage.getItem(STORAGE_KEYS.mechanics);
@@ -1100,6 +1140,23 @@
         });
         html += `<button class="settings-add-btn" id="addSvc"><i class="fa-solid fa-plus"></i> Добавить услугу</button></div>`;
 
+        // Блок загрузки из 1С через Vercel
+        html += `<div style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px;">
+            <div class="field-label">Загрузить настройки из 1С</div>
+            <div style="display: flex; gap: 8px;">
+                <select id="subdivisionSelect" style="flex: 1; background: var(--surface-2); border: none; border-radius: var(--radius-sm); padding: 10px; color: var(--text);">
+                    <option value="Оренбург">Оренбург</option>
+                    <option value="Новокуйбышевск">Новокуйбышевск</option>
+                    <option value="Похвистнево">Похвистнево</option>
+                    <option value="Отрадный">Отрадный</option>
+                    <option value="Сердобск">Сердобск</option>
+                    <option value="Бузулук">Бузулук</option>
+                    <option value="Сорочинск">Сорочинск</option>
+                </select>
+                <button class="settings-add-btn" id="loadFrom1C" style="width: auto; padding: 10px 16px;">Загрузить</button>
+            </div>
+        </div>`;
+
         html += `<button class="settings-reset-defaults" id="resetDefaults"><i class="fa-solid fa-rotate-left"></i> Сбросить к заводским настройкам</button>`;
         body.innerHTML = html;
 
@@ -1171,6 +1228,9 @@
             ];
             buildSettingsModal();
         });
+
+        // Обработчик кнопки загрузки из 1С
+        document.getElementById('loadFrom1C')?.addEventListener('click', loadSettingsFrom1C);
     }
 
     function saveSettings() {
@@ -1259,7 +1319,7 @@
         materials: 'mMaterials', services: 'mServices', settings: 'mSettings',
         history: 'mHistory'
     };
-    
+
     function openModal(name) {
         const id = modalMap[name];
         if (!id) return;
@@ -1274,7 +1334,7 @@
         }
         if (name === 'settings') buildSettingsModal();
         if (name === 'history') renderHistoryList('today');
-        
+
         document.getElementById(id).classList.add('active');
         document.body.style.overflow = 'hidden';
     }
@@ -1287,7 +1347,6 @@
     // ========== ИСТОРИЯ ЗАКАЗОВ ==========
     let orders = [];
 
-    // Загрузка заказов из localStorage
     function loadOrdersFromStorage() {
         const stored = localStorage.getItem(STORAGE_KEYS.orders);
         if (stored) {
@@ -1299,31 +1358,28 @@
         }
     }
 
-    // Сохранение заказов в localStorage
     function saveOrdersToStorage() {
         localStorage.setItem(STORAGE_KEYS.orders, JSON.stringify(orders));
     }
 
-    // Добавление нового заказа
     function addOrder(orderData) {
-    const newOrder = {
-        id: Date.now().toString(),
-        date: new Date().toISOString(),
-        clientName: orderData.client.name,
-        mechanics: orderData.manager.split(', '),
-        orderNumber1C: orderData.orderNumber,
-        amount: orderData.amount || 0,
-        paid: false,
-        lastCheckDate: null,
-        services: orderData.services || '',      // строка с услугами
-        materials: orderData.materials || ''     // строка с материалами
-    };
-    orders.unshift(newOrder);
-    saveOrdersToStorage();
-    return newOrder;
-}
+        const newOrder = {
+            id: Date.now().toString(),
+            date: new Date().toISOString(),
+            clientName: orderData.client.name,
+            mechanics: orderData.manager.split(', '),
+            orderNumber1C: orderData.orderNumber,
+            amount: orderData.amount || 0,
+            paid: false,
+            lastCheckDate: null,
+            services: orderData.services || '',
+            materials: orderData.materials || ''
+        };
+        orders.unshift(newOrder);
+        saveOrdersToStorage();
+        return newOrder;
+    }
 
-    // Обновление статуса оплаты
     function updatePaymentStatus(orderNumbers) {
         orderNumbers.forEach(number => {
             const order = orders.find(o => o.orderNumber1C === number);
@@ -1336,13 +1392,12 @@
         renderHistoryList(currentFilter);
     }
 
-    // Фильтрация заказов
     let currentFilter = 'today';
-    
+
     function filterOrders(filter) {
         const now = new Date();
         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        
+
         switch(filter) {
             case 'today':
                 return orders.filter(o => new Date(o.date) >= today);
@@ -1359,22 +1414,20 @@
         }
     }
 
-    // Отображение списка заказов
     function renderHistoryList(filter = 'today') {
         currentFilter = filter;
         const listEl = document.getElementById('historyList');
         const filtered = filterOrders(filter);
-        
-        // Обновляем активный фильтр
+
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.filter === filter);
         });
-        
+
         if (filtered.length === 0) {
             listEl.innerHTML = '<div class="empty-state">Нет заказов</div>';
             return;
         }
-        
+
         listEl.innerHTML = filtered.map(order => `
             <div class="history-item">
                 <div class="history-item-paid ${order.paid ? 'paid' : 'unpaid'}">
@@ -1393,20 +1446,17 @@
         `).join('');
     }
 
-    // Проверка оплаты (заглушка)
     async function checkPayments() {
         const unpaidOrders = orders.filter(o => !o.paid).map(o => o.orderNumber1C);
-        
+
         if (unpaidOrders.length === 0) {
             showToast('Нет заказов для проверки');
             return;
         }
-        
+
         showToast('Проверка оплаты...');
-        
-        // Имитация запроса к серверу
+
         setTimeout(() => {
-            // Для теста случайным образом отмечаем некоторые заказы как оплаченные
             const paidCount = Math.floor(Math.random() * 3) + 1;
             const paidOrders = unpaidOrders.slice(0, paidCount);
             updatePaymentStatus(paidOrders);
@@ -1414,7 +1464,6 @@
         }, 1500);
     }
 
-    // Очистка истории (заглушка)
     function clearHistory() {
         showConfirm('Очистить историю?', 'Будут удалены все заказы старше сегодняшнего дня.')
             .then(confirmed => {
@@ -1424,125 +1473,141 @@
             });
     }
 
-    // ========== URL для отправки на Vercel ==========
-    const PROXY_URL = 'https://1c-proxy-vercel.vercel.app/api/create-order';
+    // ========== URL для отправки заказа на Vercel ==========
+    const ORDER_PROXY_URL = 'https://1c-proxy-vercel.vercel.app/api/create-order'; // ЗАМЕНИТЕ НА РЕАЛЬНЫЙ URL
 
-    // ========== Функция отправки заказа ==========
     async function createOrder() {
-    // Валидация
-    if (state.mechanics.length === 0) {
-        showToast('Выберите хотя бы одного механика');
-        return;
-    }
-    if (!state.client.name || !state.client.phone || !state.client.car) {
-        showToast('Заполните ФИО, телефон и авто клиента');
-        return;
-    }
-    if (!state.services.some(s => s.qty > 0)) {
-        showToast('Добавьте хотя бы одну услугу');
-        return;
-    }
+        if (state.mechanics.length === 0) {
+            showToast('Выберите хотя бы одного механика');
+            return;
+        }
+        if (!state.client.name || !state.client.phone || !state.client.car) {
+            showToast('Заполните ФИО, телефон и авто клиента');
+            return;
+        }
+        if (!state.services.some(s => s.qty > 0)) {
+            showToast('Добавьте хотя бы одну услугу');
+            return;
+        }
 
-    const confirmed = await showConfirm('Создать заказ?', 'Данные будут отправлены в 1С.');
-    if (!confirmed) return;
+        const confirmed = await showConfirm('Создать заказ?', 'Данные будут отправлены в 1С.');
+        if (!confirmed) return;
 
-    // ✅ Для 1С отправляем МАССИВЫ с полной информацией
-    const orderData = {
-        manager: state.mechanics.join(', '),
-        client: {
-            name: state.client.name,
-            phone: state.client.phone,
-            car: state.client.car
-        },
-        wheels: {
-            radius: state.wheels.radius,
-            types: {
-                light: state.wheels.types.light || false,
-                jeep: state.wheels.types.jeep || false,
-                lowProfile: state.wheels.types.lowProfile || false,
-                runflat: state.wheels.types.runflat || false
-            },
-            qty: state.wheels.qty
-        },
-        materials: state.materials
-            .filter(m => m.qty > 0)
-            .map(m => ({
-                id: m.id,
-                name: m.name,
-                price: m.price,
-                qty: m.qty
-            })),
-        services: state.services
-            .filter(s => s.qty > 0)
-            .map(s => ({
-                id: s.id,
-                name: s.name,
-                price: s.price,
-                qty: s.qty,
-                radius: s.radius,
-                carType: s.carType,
-                lowProfile: s.lowProfile,
-                runflat: s.runflat
-            }))
-    };
-
-    const payload = {
-        action: 'create_order_tyre',
-        data: orderData
-    };
-
-    showToast('Отправка...');
-
-    try {
-        const response = await fetch(PROXY_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+        state.services = state.services.map(svc => {
+            if (svc.qty > 0) {
+                if (svc.radius === null || svc.radius === undefined) {
+                    svc.radius = state.wheels.radius;
+                }
+                if (svc.carType === null || svc.carType === undefined) {
+                    if (state.wheels.types.light) svc.carType = 'light';
+                    else if (state.wheels.types.jeep) svc.carType = 'jeep';
+                    else svc.carType = null;
+                }
+                if (svc.lowProfile === null || svc.lowProfile === undefined) {
+                    svc.lowProfile = state.wheels.types.lowProfile || false;
+                }
+                if (svc.runflat === null || svc.runflat === undefined) {
+                    svc.runflat = state.wheels.types.runflat || false;
+                }
+            }
+            return svc;
         });
 
-        const result = await response.json();
-
-        if (result.success) {
-            showToast(`✅ Заказ №${result.orderNumber} создан`);
-            localStorage.setItem('lastOrderNumber', result.orderNumber);
-            
-            // ✅ Для истории сохраняем СТРОКИ (для удобного отображения)
-            const servicesString = state.services
-                .filter(s => s.qty > 0)
-                .map(s => {
-                    let str = `${s.name} x${s.qty}`;
-                    const params = [];
-                    if (s.radius) params.push(`R${s.radius}`);
-                    if (s.carType === 'light') params.push('легковая');
-                    if (s.carType === 'jeep') params.push('джип');
-                    if (s.lowProfile) params.push('низкий профиль');
-                    if (s.runflat) params.push('runflat');
-                    if (params.length) str += ` (${params.join(', ')})`;
-                    return str;
-                })
-                .join(', ');
-
-            const materialsString = state.materials
+        const orderData = {
+            manager: state.mechanics.join(', '),
+            client: {
+                name: state.client.name,
+                phone: state.client.phone,
+                car: state.client.car
+            },
+            wheels: {
+                radius: state.wheels.radius,
+                types: {
+                    light: state.wheels.types.light || false,
+                    jeep: state.wheels.types.jeep || false,
+                    lowProfile: state.wheels.types.lowProfile || false,
+                    runflat: state.wheels.types.runflat || false
+                },
+                qty: state.wheels.qty
+            },
+            materials: state.materials
                 .filter(m => m.qty > 0)
-                .map(m => `${m.name} x${m.qty}`)
-                .join(', ');
+                .map(m => ({
+                    id: m.id,
+                    name: m.name,
+                    price: m.price,
+                    qty: m.qty
+                })),
+            services: state.services
+                .filter(s => s.qty > 0)
+                .map(s => ({
+                    id: s.id,
+                    name: s.name,
+                    price: s.price,
+                    qty: s.qty,
+                    radius: s.radius,
+                    carType: s.carType,
+                    lowProfile: s.lowProfile,
+                    runflat: s.runflat
+                }))
+        };
 
-            addOrder({
-                client: state.client,
-                manager: state.mechanics.join(', '),
-                orderNumber: result.orderNumber,
-                amount: calcTotal(),
-                services: servicesString,
-                materials: materialsString
+        const payload = {
+            action: 'create_order_tyre',
+            data: orderData
+        };
+
+        showToast('Отправка...');
+
+        try {
+            const response = await fetch(ORDER_PROXY_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
             });
-        } else {
-            showToast(`❌ Ошибка: ${result.error || result.message || 'Неизвестная ошибка'}`);
+
+            const result = await response.json();
+
+            if (result.success) {
+                showToast(`✅ Заказ №${result.orderNumber} создан`);
+                localStorage.setItem('lastOrderNumber', result.orderNumber);
+
+                const servicesString = state.services
+                    .filter(s => s.qty > 0)
+                    .map(s => {
+                        let str = `${s.name} x${s.qty}`;
+                        const params = [];
+                        if (s.radius) params.push(`R${s.radius}`);
+                        if (s.carType === 'light') params.push('легковая');
+                        if (s.carType === 'jeep') params.push('джип');
+                        if (s.lowProfile) params.push('низкий профиль');
+                        if (s.runflat) params.push('runflat');
+                        if (params.length) str += ` (${params.join(', ')})`;
+                        return str;
+                    })
+                    .join(', ');
+
+                const materialsString = state.materials
+                    .filter(m => m.qty > 0)
+                    .map(m => `${m.name} x${m.qty}`)
+                    .join(', ');
+
+                addOrder({
+                    client: state.client,
+                    manager: state.mechanics.join(', '),
+                    orderNumber: result.orderNumber,
+                    amount: calcTotal(),
+                    services: servicesString,
+                    materials: materialsString
+                });
+            } else {
+                showToast(`❌ Ошибка: ${result.error || result.message || 'Неизвестная ошибка'}`);
+            }
+        } catch (error) {
+            console.error('Ошибка:', error);
+            showToast('❌ Ошибка соединения с сервером');
         }
-    } catch (error) {
-        console.error('Ошибка:', error);
-        showToast('❌ Ошибка соединения с сервером');
     }
-}
 
     function init() {
         loadListsFromStorage();
@@ -1551,12 +1616,8 @@
         reconcileStateWithLists();
         updateAllDisplays();
 
-        // Настройки (левая иконка)
         document.getElementById('btnSettings').addEventListener('click', () => openModal('settings'));
-        
-        // История (правая иконка)
         document.getElementById('btnHistory').addEventListener('click', () => openModal('history'));
-        
         document.getElementById('btnCreateOrder').addEventListener('click', createOrder);
 
         document.querySelectorAll('.card[data-modal]').forEach(card => {
@@ -1597,17 +1658,13 @@
             });
         });
 
-        // Фильтры в истории
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 renderHistoryList(btn.dataset.filter);
             });
         });
 
-        // Кнопка проверки оплаты
         document.getElementById('checkPaymentsBtn')?.addEventListener('click', checkPayments);
-
-        // Кнопка очистки истории
         document.getElementById('clearHistoryBtn')?.addEventListener('click', clearHistory);
 
         document.addEventListener('keydown', e => {
