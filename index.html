@@ -899,9 +899,6 @@ async function loadSettingsFrom1C() {
     
     showToast('Загрузка настроек...');
     
-    // Убедитесь, что переменная SETTINGS_PROXY_URL объявлена выше
-    // Например: const SETTINGS_PROXY_URL = 'https://1c-proxy-vercel.vercel.app/api/get-settings';
-    
     try {
         console.log('🟡 Отправка запроса к:', SETTINGS_PROXY_URL);
         const response = await fetch(SETTINGS_PROXY_URL, {
@@ -910,10 +907,6 @@ async function loadSettingsFrom1C() {
             body: JSON.stringify({ subdivision: subdivision })
         });
         
-        console.log('🟢 Статус ответа:', response.status);
-        console.log('🟢 Заголовки:', response.headers);
-        
-        // Проверяем, что ответ успешный
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -924,12 +917,20 @@ async function loadSettingsFrom1C() {
         if (data.success) {
             console.log('🟢 Механики:', data.mechanics);
             console.log('🟢 Материалы:', data.materials);
-            console.log('🟢 Услуги:', data.services);
+            console.log('🟢 Услуги (базовые):', data.services);
+            console.log('🟢 PriceMap:', data.priceMap);
             
             // Обновляем глобальные списки
             MECHANICS = data.mechanics || [];
             MATERIALS = data.materials || [];
             SERVICES = data.services || [];
+            
+            // Сохраняем priceMap в localStorage
+            if (data.priceMap) {
+                localStorage.setItem('tireShop_priceMap', JSON.stringify(data.priceMap));
+            } else {
+                localStorage.removeItem('tireShop_priceMap');
+            }
             
             // Сохраняем в localStorage
             saveListsToStorage();
@@ -1033,16 +1034,34 @@ async function loadSettingsFrom1C() {
         });
     }
 
-    function fmtPrice(n) { return n.toLocaleString('ru-RU') + ' ₽'; }
     function calcTotal() {
-        return state.materials.reduce((s,i)=>s + (i.qty>0?i.price*i.qty:0),0) +
-               state.services.reduce((s,i)=>s + (i.qty>0?i.price*i.qty:0),0);
-    }
-    function calcItemsSum(items) { return items.reduce((s,i)=>s + (i.qty>0?i.price*i.qty:0),0); }
-    function updateSaveBtn() {
-        const sum = calcTotal();
-        document.getElementById('btnSaveSum').textContent = sum > 0 ? fmtPrice(sum) : '';
-    }
+    // Загружаем priceMap из localStorage
+    const priceMap = JSON.parse(localStorage.getItem('tireShop_priceMap') || '{}');
+    
+    let sum = 0;
+    
+    // Сумма по материалам
+    sum += state.materials.reduce((s, i) => s + (i.qty > 0 ? i.price * i.qty : 0), 0);
+    
+    // Сумма по услугам
+    sum += state.services.reduce((s, i) => {
+        if (i.qty > 0) {
+            // Формируем ключ для поиска цены
+            let priceKey = i.name;
+            if (i.radius) priceKey += `_R${i.radius}`;
+            if (i.carType === 'light') priceKey += '_light';
+            else if (i.carType === 'jeep') priceKey += '_jeep';
+            if (i.lowProfile) priceKey += '_lowProfile';
+            if (i.runflat) priceKey += '_runflat';
+            
+            const actualPrice = priceMap[priceKey] || i.price;
+            return s + actualPrice * i.qty;
+        }
+        return s;
+    }, 0);
+    
+    return sum;
+}
 
     function updateMechanicsDisp() {
         const el = document.getElementById('dMechanics');
