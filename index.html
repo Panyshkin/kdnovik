@@ -1063,33 +1063,36 @@
         // Услуги
         state.services.forEach(svc => {
             if (svc.qty > 0) {
-                // Определяем параметры для этой услуги
-                let radius = svc.radius;
-                if (radius === null || radius === undefined) {
-                    radius = state.wheels.radius;
-                }
-                let carType = svc.carType;
-                if (carType === null || carType === undefined) {
-                    if (state.wheels.types.light) carType = 'light';
-                    else if (state.wheels.types.jeep) carType = 'jeep';
-                    else carType = null;
-                }
-                let lowProfile = svc.lowProfile;
-                if (lowProfile === null || lowProfile === undefined) {
-                    lowProfile = state.wheels.types.lowProfile || false;
-                }
-                let runflat = svc.runflat;
-                if (runflat === null || runflat === undefined) {
-                    runflat = state.wheels.types.runflat || false;
-                }
-                
-                // Формируем ключ
                 let priceKey = svc.name;
-                if (radius) priceKey += `_R${radius}`;
-                if (carType === 'light') priceKey += '_light';
-                else if (carType === 'jeep') priceKey += '_jeep';
-                if (lowProfile) priceKey += '_lowProfile';
-                if (runflat) priceKey += '_runflat';
+                // Определяем, параметрическая ли услуга (есть ли хоть один не-null параметр)
+                const isParametric = svc.carType !== null || svc.lowProfile !== null || svc.runflat !== null;
+                
+                if (isParametric) {
+                    // Для параметрических услуг подставляем текущие параметры колёс, если они не заданы в услуге
+                    let radius = svc.radius;
+                    if (radius === null || radius === undefined) {
+                        radius = state.wheels.radius;
+                    }
+                    if (radius) priceKey += `_R${radius}`;
+                    
+                    let carType = svc.carType;
+                    if (carType === null || carType === undefined) {
+                        if (state.wheels.types.light) carType = 'light';
+                        else if (state.wheels.types.jeep) carType = 'jeep';
+                        else carType = null;
+                    }
+                    if (carType) priceKey += `_${carType}`;
+                    
+                    if (svc.lowProfile === true || (svc.lowProfile === null && state.wheels.types.lowProfile)) {
+                        priceKey += '_lowProfile';
+                    }
+                    if (svc.runflat === true || (svc.runflat === null && state.wheels.types.runflat)) {
+                        priceKey += '_runflat';
+                    }
+                } else {
+                    // Для постоянных услуг ключ = просто имя (без параметров)
+                    // Ничего не добавляем
+                }
                 
                 const actualPrice = priceMap[priceKey];
                 if (actualPrice !== undefined) {
@@ -1193,40 +1196,44 @@
             let priceLabel = fmtPrice(item.price);
             
             if (listId === 'svcList' && Object.keys(priceMap).length > 0) {
-                // Определяем параметры для этой услуги: берём из item, если есть, иначе из колёс
-                let radius = item.radius;
-                if (radius === null || radius === undefined) {
-                    radius = state.wheels.radius;
-                }
-                let carType = item.carType;
-                if (carType === null || carType === undefined) {
-                    if (state.wheels.types.light) carType = 'light';
-                    else if (state.wheels.types.jeep) carType = 'jeep';
-                    else carType = null;
-                }
-                let lowProfile = item.lowProfile;
-                if (lowProfile === null || lowProfile === undefined) {
-                    lowProfile = state.wheels.types.lowProfile || false;
-                }
-                let runflat = item.runflat;
-                if (runflat === null || runflat === undefined) {
-                    runflat = state.wheels.types.runflat || false;
-                }
+                // Определяем, параметрическая ли услуга
+                const isParametric = item.carType !== null || item.lowProfile !== null || item.runflat !== null;
                 
-                // Формируем ключ
                 let priceKey = item.name;
-                if (radius) priceKey += `_R${radius}`;
-                if (carType === 'light') priceKey += '_light';
-                else if (carType === 'jeep') priceKey += '_jeep';
-                if (lowProfile) priceKey += '_lowProfile';
-                if (runflat) priceKey += '_runflat';
+                
+                if (isParametric) {
+                    // Для параметрических услуг используем текущие параметры колёс для недостающих полей
+                    let radius = item.radius;
+                    if (radius === null || radius === undefined) {
+                        radius = state.wheels.radius;
+                    }
+                    if (radius) priceKey += `_R${radius}`;
+                    
+                    let carType = item.carType;
+                    if (carType === null || carType === undefined) {
+                        if (state.wheels.types.light) carType = 'light';
+                        else if (state.wheels.types.jeep) carType = 'jeep';
+                        else carType = null;
+                    }
+                    if (carType) priceKey += `_${carType}`;
+                    
+                    // Для lowProfile и runflat: если у услуги true, добавляем; если null, то смотрим колёса
+                    if (item.lowProfile === true || (item.lowProfile === null && state.wheels.types.lowProfile)) {
+                        priceKey += '_lowProfile';
+                    }
+                    if (item.runflat === true || (item.runflat === null && state.wheels.types.runflat)) {
+                        priceKey += '_runflat';
+                    }
+                } else {
+                    // Для постоянных услуг ключ = просто имя, ничего не добавляем
+                }
                 
                 const actualPrice = priceMap[priceKey];
                 if (actualPrice !== undefined) {
                     displayPrice = actualPrice;
                     priceLabel = fmtPrice(actualPrice);
                 } else {
-                    // Если точной цены нет – показываем "нет цены" или оставляем старую
+                    // Если цена не найдена, показываем прочерк или оставляем старую
                     priceLabel = 'Цена не определена';
                 }
             }
@@ -1270,33 +1277,33 @@
             if (item.qty > 0) {
                 let itemPrice = item.price;
                 
-                // Для услуг пытаемся найти актуальную цену в priceMap с учётом текущих параметров колёс
                 if (footerId === 'svcFooterSum' && Object.keys(priceMap).length > 0) {
-                    let radius = item.radius;
-                    if (radius === null || radius === undefined) {
-                        radius = state.wheels.radius;
-                    }
-                    let carType = item.carType;
-                    if (carType === null || carType === undefined) {
-                        if (state.wheels.types.light) carType = 'light';
-                        else if (state.wheels.types.jeep) carType = 'jeep';
-                        else carType = null;
-                    }
-                    let lowProfile = item.lowProfile;
-                    if (lowProfile === null || lowProfile === undefined) {
-                        lowProfile = state.wheels.types.lowProfile || false;
-                    }
-                    let runflat = item.runflat;
-                    if (runflat === null || runflat === undefined) {
-                        runflat = state.wheels.types.runflat || false;
-                    }
+                    const isParametric = item.carType !== null || item.lowProfile !== null || item.runflat !== null;
                     
                     let priceKey = item.name;
-                    if (radius) priceKey += `_R${radius}`;
-                    if (carType === 'light') priceKey += '_light';
-                    else if (carType === 'jeep') priceKey += '_jeep';
-                    if (lowProfile) priceKey += '_lowProfile';
-                    if (runflat) priceKey += '_runflat';
+                    
+                    if (isParametric) {
+                        let radius = item.radius;
+                        if (radius === null || radius === undefined) {
+                            radius = state.wheels.radius;
+                        }
+                        if (radius) priceKey += `_R${radius}`;
+                        
+                        let carType = item.carType;
+                        if (carType === null || carType === undefined) {
+                            if (state.wheels.types.light) carType = 'light';
+                            else if (state.wheels.types.jeep) carType = 'jeep';
+                            else carType = null;
+                        }
+                        if (carType) priceKey += `_${carType}`;
+                        
+                        if (item.lowProfile === true || (item.lowProfile === null && state.wheels.types.lowProfile)) {
+                            priceKey += '_lowProfile';
+                        }
+                        if (item.runflat === true || (item.runflat === null && state.wheels.types.runflat)) {
+                            priceKey += '_runflat';
+                        }
+                    }
                     
                     const actualPrice = priceMap[priceKey];
                     if (actualPrice !== undefined) {
@@ -1716,21 +1723,25 @@
 
         const priceMap = JSON.parse(localStorage.getItem(STORAGE_KEYS.priceMap) || '{}');
 
+        // Обновляем параметры услуг перед отправкой (подставляем текущие колёса)
         state.services = state.services.map(svc => {
             if (svc.qty > 0) {
-                if (svc.radius === null || svc.radius === undefined) {
-                    svc.radius = state.wheels.radius;
-                }
-                if (svc.carType === null || svc.carType === undefined) {
-                    if (state.wheels.types.light) svc.carType = 'light';
-                    else if (state.wheels.types.jeep) svc.carType = 'jeep';
-                    else svc.carType = null;
-                }
-                if (svc.lowProfile === null || svc.lowProfile === undefined) {
-                    svc.lowProfile = state.wheels.types.lowProfile || false;
-                }
-                if (svc.runflat === null || svc.runflat === undefined) {
-                    svc.runflat = state.wheels.types.runflat || false;
+                const isParametric = svc.carType !== null || svc.lowProfile !== null || svc.runflat !== null;
+                if (isParametric) {
+                    if (svc.radius === null || svc.radius === undefined) {
+                        svc.radius = state.wheels.radius;
+                    }
+                    if (svc.carType === null || svc.carType === undefined) {
+                        if (state.wheels.types.light) svc.carType = 'light';
+                        else if (state.wheels.types.jeep) svc.carType = 'jeep';
+                        else svc.carType = null;
+                    }
+                    if (svc.lowProfile === null || svc.lowProfile === undefined) {
+                        svc.lowProfile = state.wheels.types.lowProfile || false;
+                    }
+                    if (svc.runflat === null || svc.runflat === undefined) {
+                        svc.runflat = state.wheels.types.runflat || false;
+                    }
                 }
             }
             return svc;
@@ -1759,13 +1770,15 @@
             services: state.services
                 .filter(s => s.qty > 0)
                 .map(s => {
+                    // Цена уже должна быть актуальной, но на всякий случай пересчитываем
                     let priceKey = s.name;
-                    if (s.radius) priceKey += `_R${s.radius}`;
-                    if (s.carType === 'light') priceKey += '_light';
-                    else if (s.carType === 'jeep') priceKey += '_jeep';
-                    if (s.lowProfile) priceKey += '_lowProfile';
-                    if (s.runflat) priceKey += '_runflat';
-                    
+                    const isParametric = s.carType !== null || s.lowProfile !== null || s.runflat !== null;
+                    if (isParametric) {
+                        if (s.radius) priceKey += `_R${s.radius}`;
+                        if (s.carType) priceKey += `_${s.carType}`;
+                        if (s.lowProfile) priceKey += '_lowProfile';
+                        if (s.runflat) priceKey += '_runflat';
+                    }
                     const actualPrice = priceMap[priceKey] || s.price;
                     
                     return {
