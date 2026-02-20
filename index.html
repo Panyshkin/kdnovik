@@ -1027,31 +1027,39 @@
     }
 
     function filterServicesByWheels(services, wheels) {
-        return services.filter(svc => {
-            // Проверяем, поддерживает ли услуга текущие параметры колёс
-            const carTypes = (svc.carType || '').split(',').map(s => s.trim());
-            
-            // Проверка типа автомобиля
-            if (carTypes.length > 0 && carTypes[0] !== '') {
-                const isLight = wheels.types.light;
-                const isJeep = wheels.types.jeep;
-                
-                if (isLight && !carTypes.includes('light')) return false;
-                if (isJeep && !carTypes.includes('jeep')) return false;
-                if (!isLight && !isJeep && carTypes.length > 0) return false;
-            }
-            
-            // Проверка низкого профиля
-            if (svc.lowProfile !== null && svc.lowProfile !== wheels.types.lowProfile) return false;
-            
-            // Проверка runflat
-            if (svc.runflat !== null && svc.runflat !== wheels.types.runflat) return false;
-            
-            // Радиус не проверяем, так как он подставляется позже
-            return true;
-        });
-    }
+    return services.filter(svc => {
+        // Радиус: если у услуги указан конкретный радиус, он должен совпадать
+        if (svc.radius !== null && svc.radius !== wheels.radius) return false;
 
+        // Тип автомобиля: если у услуги есть ограничение по типу
+        if (svc.carType !== null && svc.carType !== '') {
+            const allowedTypes = svc.carType.split(',').map(s => s.trim());
+            const hasLight = wheels.types.light;
+            const hasJeep = wheels.types.jeep;
+            // Если выбран легковой, но он не разрешён – отсев
+            if (hasLight && !allowedTypes.includes('light')) return false;
+            // Если выбран джип, но он не разрешён – отсев
+            if (hasJeep && !allowedTypes.includes('jeep')) return false;
+            // Если ни один тип не выбран, считаем, что услуга подходит (ограничение не применяется)
+        }
+
+        // Низкий профиль
+        if (svc.lowProfile !== null) {
+            // Если у колёс выбран низкий профиль, услуга должна его поддерживать
+            if (wheels.types.lowProfile && svc.lowProfile !== true) return false;
+            // Если у колёс не выбран, но услуга требует низкого профиля – отсев
+            if (!wheels.types.lowProfile && svc.lowProfile === true) return false;
+        }
+
+        // Runflat – аналогично
+        if (svc.runflat !== null) {
+            if (wheels.types.runflat && svc.runflat !== true) return false;
+            if (!wheels.types.runflat && svc.runflat === true) return false;
+        }
+
+        return true;
+    });
+}
     function fmtPrice(n) { return n.toLocaleString('ru-RU') + ' ₽'; }
     
     function calcTotal() {
