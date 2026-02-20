@@ -926,7 +926,16 @@
                 
                 // Сохраняем priceMap в localStorage
                 if (data.priceMap) {
-                    localStorage.setItem(STORAGE_KEYS.priceMap, JSON.stringify(data.priceMap));
+                    // Если priceMap пришел как массив, преобразуем в объект
+                    if (Array.isArray(data.priceMap)) {
+                        const priceMapObj = {};
+                        data.priceMap.forEach(item => {
+                            priceMapObj[item.key] = item.value;
+                        });
+                        localStorage.setItem(STORAGE_KEYS.priceMap, JSON.stringify(priceMapObj));
+                    } else {
+                        localStorage.setItem(STORAGE_KEYS.priceMap, JSON.stringify(data.priceMap));
+                    }
                 } else {
                     localStorage.removeItem(STORAGE_KEYS.priceMap);
                 }
@@ -1018,30 +1027,30 @@
     }
 
     function filterServicesByWheels(services, wheels) {
-    return services.filter(svc => {
-        // Проверяем, поддерживает ли услуга текущие параметры колёс
-        const carTypes = (svc.carType || '').split(',').map(s => s.trim());
-        
-        // Проверка типа автомобиля
-        if (carTypes.length > 0 && carTypes[0] !== '') {
-            const isLight = wheels.types.light;
-            const isJeep = wheels.types.jeep;
+        return services.filter(svc => {
+            // Проверяем, поддерживает ли услуга текущие параметры колёс
+            const carTypes = (svc.carType || '').split(',').map(s => s.trim());
             
-            if (isLight && !carTypes.includes('light')) return false;
-            if (isJeep && !carTypes.includes('jeep')) return false;
-            if (!isLight && !isJeep && carTypes.length > 0) return false;
-        }
-        
-        // Проверка низкого профиля
-        if (svc.lowProfile !== null && svc.lowProfile !== wheels.types.lowProfile) return false;
-        
-        // Проверка runflat
-        if (svc.runflat !== null && svc.runflat !== wheels.types.runflat) return false;
-        
-        // Радиус не проверяем, так как он подставляется позже
-        return true;
-    });
-}
+            // Проверка типа автомобиля
+            if (carTypes.length > 0 && carTypes[0] !== '') {
+                const isLight = wheels.types.light;
+                const isJeep = wheels.types.jeep;
+                
+                if (isLight && !carTypes.includes('light')) return false;
+                if (isJeep && !carTypes.includes('jeep')) return false;
+                if (!isLight && !isJeep && carTypes.length > 0) return false;
+            }
+            
+            // Проверка низкого профиля
+            if (svc.lowProfile !== null && svc.lowProfile !== wheels.types.lowProfile) return false;
+            
+            // Проверка runflat
+            if (svc.runflat !== null && svc.runflat !== wheels.types.runflat) return false;
+            
+            // Радиус не проверяем, так как он подставляется позже
+            return true;
+        });
+    }
 
     function fmtPrice(n) { return n.toLocaleString('ru-RU') + ' ₽'; }
     
@@ -1144,95 +1153,27 @@
         });
         document.getElementById('wQtyVal').textContent = state.wheels.qty;
     }
+    
     function buildItemsModal(listId, items) {
-    const el = document.getElementById(listId);
-    
-    // Для услуг загружаем priceMap
-    let priceMap = {};
-    if (listId === 'svcList') {
-        try {
-            priceMap = JSON.parse(localStorage.getItem(STORAGE_KEYS.priceMap) || '{}');
-        } catch (e) {
-            priceMap = {};
-        }
-    }
-    
-    el.innerHTML = items.map((item, idx) => {
-        // Для услуг определяем цену из priceMap
-        let displayPrice = item.price;
-        let priceLabel = fmtPrice(item.price);
+        const el = document.getElementById(listId);
         
-        if (listId === 'svcList' && Object.keys(priceMap).length > 0) {
-            // Пробуем найти цену для текущей комбинации параметров
-            let priceKey = item.name;
-            if (item.radius) priceKey += `_R${item.radius}`;
-            if (item.carType === 'light') priceKey += '_light';
-            else if (item.carType === 'jeep') priceKey += '_jeep';
-            if (item.lowProfile) priceKey += '_lowProfile';
-            if (item.runflat) priceKey += '_runflat';
-            
-            const actualPrice = priceMap[priceKey];
-            if (actualPrice !== undefined) {
-                displayPrice = actualPrice;
-                priceLabel = fmtPrice(actualPrice);
-            } else {
-                // Если точной цены нет, показываем "от X" или "?"
-                const prices = Object.keys(priceMap)
-                    .filter(key => key.startsWith(item.name))
-                    .map(key => priceMap[key]);
-                if (prices.length > 0) {
-                    const minPrice = Math.min(...prices);
-                    const maxPrice = Math.max(...prices);
-                    if (minPrice === maxPrice) {
-                        priceLabel = fmtPrice(minPrice);
-                    } else {
-                        priceLabel = `от ${fmtPrice(minPrice)}`;
-                    }
-                }
+        // Для услуг загружаем priceMap
+        let priceMap = {};
+        if (listId === 'svcList') {
+            try {
+                priceMap = JSON.parse(localStorage.getItem(STORAGE_KEYS.priceMap) || '{}');
+            } catch (e) {
+                priceMap = {};
             }
         }
         
-        return `
-            <div class="item-row${item.qty===0?' zero':''}" data-idx="${idx}">
-                <div class="item-name-block">
-                    <div class="item-name">${item.name}</div>
-                    <div class="item-price-label">${priceLabel} / шт</div>
-                </div>
-                <div class="item-controls">
-                    <div class="item-select-wrap">
-                        <select class="item-select" data-idx="${idx}">
-                            ${Array.from({length:21},(_,i)=>`<option value="${i}"${i===item.qty?' selected':''}>${i}</option>`).join('')}
-                        </select>
-                        <span class="item-select-arrow"><i class="fa-solid fa-chevron-down"></i></span>
-                    </div>
-                    <button class="item-delete" data-idx="${idx}"><i class="fa-solid fa-trash-can"></i></button>
-                </div>
-            </div>
-        `;
-    }).join('');
-}
-    
-    ffunction updateModalFooterSum(footerId, items) {
-    const el = document.getElementById(footerId);
-    if (!el) return;
-    
-    // Для услуг загружаем priceMap
-    let priceMap = {};
-    if (footerId === 'svcFooterSum') {
-        try {
-            priceMap = JSON.parse(localStorage.getItem(STORAGE_KEYS.priceMap) || '{}');
-        } catch (e) {
-            priceMap = {};
-        }
-    }
-    
-    let sum = 0;
-    items.forEach(item => {
-        if (item.qty > 0) {
-            let itemPrice = item.price;
+        el.innerHTML = items.map((item, idx) => {
+            // Для услуг определяем цену из priceMap
+            let displayPrice = item.price;
+            let priceLabel = fmtPrice(item.price);
             
-            // Для услуг пытаемся найти актуальную цену в priceMap
-            if (footerId === 'svcFooterSum' && Object.keys(priceMap).length > 0) {
+            if (listId === 'svcList' && Object.keys(priceMap).length > 0) {
+                // Пробуем найти цену для текущей комбинации параметров
                 let priceKey = item.name;
                 if (item.radius) priceKey += `_R${item.radius}`;
                 if (item.carType === 'light') priceKey += '_light';
@@ -1242,16 +1183,85 @@
                 
                 const actualPrice = priceMap[priceKey];
                 if (actualPrice !== undefined) {
-                    itemPrice = actualPrice;
+                    displayPrice = actualPrice;
+                    priceLabel = fmtPrice(actualPrice);
+                } else {
+                    // Если точной цены нет, показываем "от X" или "?"
+                    const prices = Object.keys(priceMap)
+                        .filter(key => key.startsWith(item.name))
+                        .map(key => priceMap[key]);
+                    if (prices.length > 0) {
+                        const minPrice = Math.min(...prices);
+                        const maxPrice = Math.max(...prices);
+                        if (minPrice === maxPrice) {
+                            priceLabel = fmtPrice(minPrice);
+                        } else {
+                            priceLabel = `от ${fmtPrice(minPrice)}`;
+                        }
+                    }
                 }
             }
             
-            sum += itemPrice * item.qty;
-        }
-    });
+            return `
+                <div class="item-row${item.qty===0?' zero':''}" data-idx="${idx}">
+                    <div class="item-name-block">
+                        <div class="item-name">${item.name}</div>
+                        <div class="item-price-label">${priceLabel} / шт</div>
+                    </div>
+                    <div class="item-controls">
+                        <div class="item-select-wrap">
+                            <select class="item-select" data-idx="${idx}">
+                                ${Array.from({length:21},(_,i)=>`<option value="${i}"${i===item.qty?' selected':''}>${i}</option>`).join('')}
+                            </select>
+                            <span class="item-select-arrow"><i class="fa-solid fa-chevron-down"></i></span>
+                        </div>
+                        <button class="item-delete" data-idx="${idx}"><i class="fa-solid fa-trash-can"></i></button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
     
-    el.innerHTML = sum > 0 ? `<span class="modal-footer-sum-label">Сумма:</span><span class="modal-footer-sum-value">${fmtPrice(sum)}</span>` : '';
-}
+    function updateModalFooterSum(footerId, items) {
+        const el = document.getElementById(footerId);
+        if (!el) return;
+        
+        // Для услуг загружаем priceMap
+        let priceMap = {};
+        if (footerId === 'svcFooterSum') {
+            try {
+                priceMap = JSON.parse(localStorage.getItem(STORAGE_KEYS.priceMap) || '{}');
+            } catch (e) {
+                priceMap = {};
+            }
+        }
+        
+        let sum = 0;
+        items.forEach(item => {
+            if (item.qty > 0) {
+                let itemPrice = item.price;
+                
+                // Для услуг пытаемся найти актуальную цену в priceMap
+                if (footerId === 'svcFooterSum' && Object.keys(priceMap).length > 0) {
+                    let priceKey = item.name;
+                    if (item.radius) priceKey += `_R${item.radius}`;
+                    if (item.carType === 'light') priceKey += '_light';
+                    else if (item.carType === 'jeep') priceKey += '_jeep';
+                    if (item.lowProfile) priceKey += '_lowProfile';
+                    if (item.runflat) priceKey += '_runflat';
+                    
+                    const actualPrice = priceMap[priceKey];
+                    if (actualPrice !== undefined) {
+                        itemPrice = actualPrice;
+                    }
+                }
+                
+                sum += itemPrice * item.qty;
+            }
+        });
+        
+        el.innerHTML = sum > 0 ? `<span class="modal-footer-sum-label">Сумма:</span><span class="modal-footer-sum-value">${fmtPrice(sum)}</span>` : '';
+    }
 
     function buildSettingsModal() {
         const body = document.getElementById('settingsBody');
