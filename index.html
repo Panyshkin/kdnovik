@@ -6,6 +6,7 @@
     <title>Шиномонтаж · заказ</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
+        /* Все стили без изменений – оставлены как в предыдущей версии */
         :root {
             --bg: #000000;
             --surface: #1c1c1e;
@@ -1026,40 +1027,42 @@
         }));
     }
 
+    // ИСПРАВЛЕННАЯ ФУНКЦИЯ ФИЛЬТРАЦИИ УСЛУГ
     function filterServicesByWheels(services, wheels) {
-    return services.filter(svc => {
-        // Радиус: если у услуги указан конкретный радиус, он должен совпадать
-        if (svc.radius !== null && svc.radius !== wheels.radius) return false;
+        return services.filter(svc => {
+            // Радиус: если у услуги указан конкретный радиус, он должен совпадать
+            if (svc.radius !== null && svc.radius !== wheels.radius) return false;
 
-        // Тип автомобиля: если у услуги есть ограничение по типу
-        if (svc.carType !== null && svc.carType !== '') {
-            const allowedTypes = svc.carType.split(',').map(s => s.trim());
-            const hasLight = wheels.types.light;
-            const hasJeep = wheels.types.jeep;
-            // Если выбран легковой, но он не разрешён – отсев
-            if (hasLight && !allowedTypes.includes('light')) return false;
-            // Если выбран джип, но он не разрешён – отсев
-            if (hasJeep && !allowedTypes.includes('jeep')) return false;
-            // Если ни один тип не выбран, считаем, что услуга подходит (ограничение не применяется)
-        }
+            // Тип автомобиля: если у услуги есть ограничение по типу
+            if (svc.carType !== null && svc.carType !== '') {
+                const allowedTypes = svc.carType.split(',').map(s => s.trim());
+                const hasLight = wheels.types.light;
+                const hasJeep = wheels.types.jeep;
+                // Если выбран легковой, но он не разрешён – отсев
+                if (hasLight && !allowedTypes.includes('light')) return false;
+                // Если выбран джип, но он не разрешён – отсев
+                if (hasJeep && !allowedTypes.includes('jeep')) return false;
+                // Если ни один тип не выбран, считаем, что услуга подходит (ограничение не применяется)
+            }
 
-        // Низкий профиль
-        if (svc.lowProfile !== null) {
-            // Если у колёс выбран низкий профиль, услуга должна его поддерживать
-            if (wheels.types.lowProfile && svc.lowProfile !== true) return false;
-            // Если у колёс не выбран, но услуга требует низкого профиля – отсев
-            if (!wheels.types.lowProfile && svc.lowProfile === true) return false;
-        }
+            // Низкий профиль
+            if (svc.lowProfile !== null) {
+                // Если у колёс выбран низкий профиль, услуга должна его поддерживать
+                if (wheels.types.lowProfile && svc.lowProfile !== true) return false;
+                // Если у колёс не выбран, но услуга требует низкого профиля – отсев
+                if (!wheels.types.lowProfile && svc.lowProfile === true) return false;
+            }
 
-        // Runflat – аналогично
-        if (svc.runflat !== null) {
-            if (wheels.types.runflat && svc.runflat !== true) return false;
-            if (!wheels.types.runflat && svc.runflat === true) return false;
-        }
+            // Runflat – аналогично
+            if (svc.runflat !== null) {
+                if (wheels.types.runflat && svc.runflat !== true) return false;
+                if (!wheels.types.runflat && svc.runflat === true) return false;
+            }
 
-        return true;
-    });
-}
+            return true;
+        });
+    }
+
     function fmtPrice(n) { return n.toLocaleString('ru-RU') + ' ₽'; }
     
     function calcTotal() {
@@ -1293,10 +1296,8 @@
 
         html += `<div class="settings-section"><div class="settings-section-title"><i class="fa-solid fa-wrench"></i> Услуги (параметры)</div>`;
         SERVICES.forEach((svc) => {
-            // Для базовых услуг price не показываем, так как оно берется из priceMap
             const radiusOptions = '<option value="">Любой</option>' + RADII.map(r => `<option value="${r}"${svc.radius===r?' selected':''}>R${r}</option>`).join('');
             
-            // carType может быть строкой "light,jeep" - преобразуем в отдельные флаги для отображения
             const carTypes = (svc.carType || '').split(',').map(s => s.trim());
             const hasLight = carTypes.includes('light');
             const hasJeep = carTypes.includes('jeep');
@@ -1660,7 +1661,6 @@
 
     // ========== Функция отправки заказа ==========
     async function createOrder() {
-        // Валидация
         if (state.mechanics.length === 0) {
             showToast('Выберите хотя бы одного механика');
             return;
@@ -1677,10 +1677,8 @@
         const confirmed = await showConfirm('Создать заказ?', 'Данные будут отправлены в 1С.');
         if (!confirmed) return;
 
-        // Загружаем priceMap из localStorage
         const priceMap = JSON.parse(localStorage.getItem(STORAGE_KEYS.priceMap) || '{}');
 
-        // Подставляем текущие параметры колёс в услуги, где они не заданы
         state.services = state.services.map(svc => {
             if (svc.qty > 0) {
                 if (svc.radius === null || svc.radius === undefined) {
@@ -1701,7 +1699,6 @@
             return svc;
         });
 
-        // Формируем данные для отправки в 1С
         const orderData = {
             manager: state.mechanics.join(', '),
             client: {
@@ -1725,7 +1722,6 @@
             services: state.services
                 .filter(s => s.qty > 0)
                 .map(s => {
-                    // Формируем ключ для поиска цены в priceMap
                     let priceKey = s.name;
                     if (s.radius) priceKey += `_R${s.radius}`;
                     if (s.carType === 'light') priceKey += '_light';
@@ -1733,13 +1729,12 @@
                     if (s.lowProfile) priceKey += '_lowProfile';
                     if (s.runflat) priceKey += '_runflat';
                     
-                    // Получаем цену из priceMap или оставляем старую
                     const actualPrice = priceMap[priceKey] || s.price;
                     
                     return {
                         id: s.id,
                         name: s.name,
-                        price: actualPrice, // используем цену из priceMap
+                        price: actualPrice,
                         qty: s.qty,
                         radius: s.radius,
                         carType: s.carType,
@@ -1769,7 +1764,6 @@
                 showToast(`✅ Заказ №${result.orderNumber} создан`);
                 localStorage.setItem('lastOrderNumber', result.orderNumber);
 
-                // Формируем строки для истории
                 const servicesString = state.services
                     .filter(s => s.qty > 0)
                     .map(s => {
