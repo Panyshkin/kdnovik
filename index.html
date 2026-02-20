@@ -874,82 +874,80 @@
         materials: 'tireShop_materials',
         services: 'tireShop_services_v2',
         state: 'tireShop_state',
-        orders: 'tireShop_orders'
+        orders: 'tireShop_orders',
+        priceMap: 'tireShop_priceMap'
     };
 
-    // ====== НАСТРОЙКИ (загрузка из 1С через Vercel) ======
-    //const PROXY_URL = 'https://1c-proxy-vercel.vercel.app/api/get-settings'; // ЗАМЕНИТЕ НА РЕАЛЬНЫЙ URL ВАШЕГО VERCEL-ПРОКСИ
+    // ====== URL для отправки на Vercel ======
     const SETTINGS_PROXY_URL = 'https://1c-proxy-vercel.vercel.app/api/get-settings';
-    
+    const ORDER_PROXY_URL = 'https://1c-proxy-vercel.vercel.app/api/create-order';
 
-    // Функция загрузки настроек из 1С
     // ========== Функция загрузки настроек из 1С ==========
-async function loadSettingsFrom1C() {
-    console.log('🔵 loadSettingsFrom1C вызвана');
-    const subdivisionSelect = document.getElementById('subdivisionSelect');
-    
-    if (!subdivisionSelect) {
-        console.error('🔴 Элемент subdivisionSelect не найден!');
-        showToast('❌ Ошибка: элемент выбора не найден');
-        return;
-    }
-    
-    const subdivision = subdivisionSelect.value;
-    console.log('🔵 Выбранное подразделение:', subdivision);
-    
-    showToast('Загрузка настроек...');
-    
-    try {
-        console.log('🟡 Отправка запроса к:', SETTINGS_PROXY_URL);
-        const response = await fetch(SETTINGS_PROXY_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ subdivision: subdivision })
-        });
+    async function loadSettingsFrom1C() {
+        console.log('🔵 loadSettingsFrom1C вызвана');
+        const subdivisionSelect = document.getElementById('subdivisionSelect');
         
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+        if (!subdivisionSelect) {
+            console.error('🔴 Элемент subdivisionSelect не найден!');
+            showToast('❌ Ошибка: элемент выбора не найден');
+            return;
         }
         
-        const data = await response.json();
-        console.log('🟢 Данные от сервера:', data);
+        const subdivision = subdivisionSelect.value;
+        console.log('🔵 Выбранное подразделение:', subdivision);
         
-        if (data.success) {
-            console.log('🟢 Механики:', data.mechanics);
-            console.log('🟢 Материалы:', data.materials);
-            console.log('🟢 Услуги (базовые):', data.services);
-            console.log('🟢 PriceMap:', data.priceMap);
+        showToast('Загрузка настроек...');
+        
+        try {
+            console.log('🟡 Отправка запроса к:', SETTINGS_PROXY_URL);
+            const response = await fetch(SETTINGS_PROXY_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ subdivision: subdivision })
+            });
             
-            // Обновляем глобальные списки
-            MECHANICS = data.mechanics || [];
-            MATERIALS = data.materials || [];
-            SERVICES = data.services || [];
-            
-            // Сохраняем priceMap в localStorage
-            if (data.priceMap) {
-                localStorage.setItem('tireShop_priceMap', JSON.stringify(data.priceMap));
-            } else {
-                localStorage.removeItem('tireShop_priceMap');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
             
-            // Сохраняем в localStorage
-            saveListsToStorage();
+            const data = await response.json();
+            console.log('🟢 Данные от сервера:', data);
             
-            // Перестраиваем модалку настроек
-            buildSettingsModal();
-            
-            showToast('✅ Настройки загружены');
-        } else {
-            console.error('🔴 Ошибка в данных:', data.error);
-            showToast('❌ Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+            if (data.success) {
+                console.log('🟢 Механики:', data.mechanics);
+                console.log('🟢 Материалы:', data.materials);
+                console.log('🟢 Услуги (базовые):', data.services);
+                console.log('🟢 PriceMap:', data.priceMap);
+                
+                // Обновляем глобальные списки
+                MECHANICS = data.mechanics || [];
+                MATERIALS = data.materials || [];
+                SERVICES = data.services || [];
+                
+                // Сохраняем priceMap в localStorage
+                if (data.priceMap) {
+                    localStorage.setItem(STORAGE_KEYS.priceMap, JSON.stringify(data.priceMap));
+                } else {
+                    localStorage.removeItem(STORAGE_KEYS.priceMap);
+                }
+                
+                // Сохраняем в localStorage
+                saveListsToStorage();
+                
+                // Перестраиваем модалку настроек
+                buildSettingsModal();
+                
+                showToast('✅ Настройки загружены');
+            } else {
+                console.error('🔴 Ошибка в данных:', data.error);
+                showToast('❌ Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+            }
+        } catch (error) {
+            console.error('🔴 Ошибка запроса:', error);
+            showToast('❌ Ошибка соединения с сервером');
         }
-    } catch (error) {
-        console.error('🔴 Ошибка запроса:', error);
-        showToast('❌ Ошибка соединения с сервером');
     }
-}
 
-    
     function loadListsFromStorage() {
         const storedMech = localStorage.getItem(STORAGE_KEYS.mechanics);
         if (storedMech) { try { MECHANICS = JSON.parse(storedMech); } catch(e){ MECHANICS = []; } }
@@ -1034,34 +1032,43 @@ async function loadSettingsFrom1C() {
         });
     }
 
+    function fmtPrice(n) { return n.toLocaleString('ru-RU') + ' ₽'; }
+    
     function calcTotal() {
-    // Загружаем priceMap из localStorage
-    const priceMap = JSON.parse(localStorage.getItem('tireShop_priceMap') || '{}');
+        // Загружаем priceMap из localStorage
+        const priceMap = JSON.parse(localStorage.getItem(STORAGE_KEYS.priceMap) || '{}');
+        
+        let sum = 0;
+        
+        // Сумма по материалам
+        sum += state.materials.reduce((s, i) => s + (i.qty > 0 ? i.price * i.qty : 0), 0);
+        
+        // Сумма по услугам
+        sum += state.services.reduce((s, i) => {
+            if (i.qty > 0) {
+                // Формируем ключ для поиска цены
+                let priceKey = i.name;
+                if (i.radius) priceKey += `_R${i.radius}`;
+                if (i.carType === 'light') priceKey += '_light';
+                else if (i.carType === 'jeep') priceKey += '_jeep';
+                if (i.lowProfile) priceKey += '_lowProfile';
+                if (i.runflat) priceKey += '_runflat';
+                
+                const actualPrice = priceMap[priceKey] || i.price;
+                return s + actualPrice * i.qty;
+            }
+            return s;
+        }, 0);
+        
+        return sum;
+    }
     
-    let sum = 0;
+    function calcItemsSum(items) { return items.reduce((s,i)=>s + (i.qty>0?i.price*i.qty:0),0); }
     
-    // Сумма по материалам
-    sum += state.materials.reduce((s, i) => s + (i.qty > 0 ? i.price * i.qty : 0), 0);
-    
-    // Сумма по услугам
-    sum += state.services.reduce((s, i) => {
-        if (i.qty > 0) {
-            // Формируем ключ для поиска цены
-            let priceKey = i.name;
-            if (i.radius) priceKey += `_R${i.radius}`;
-            if (i.carType === 'light') priceKey += '_light';
-            else if (i.carType === 'jeep') priceKey += '_jeep';
-            if (i.lowProfile) priceKey += '_lowProfile';
-            if (i.runflat) priceKey += '_runflat';
-            
-            const actualPrice = priceMap[priceKey] || i.price;
-            return s + actualPrice * i.qty;
-        }
-        return s;
-    }, 0);
-    
-    return sum;
-}
+    function updateSaveBtn() {
+        const sum = calcTotal();
+        document.getElementById('btnSaveSum').textContent = sum > 0 ? fmtPrice(sum) : '';
+    }
 
     function updateMechanicsDisp() {
         const el = document.getElementById('dMechanics');
@@ -1175,23 +1182,39 @@ async function loadSettingsFrom1C() {
 
         html += `<div class="settings-section"><div class="settings-section-title"><i class="fa-solid fa-wrench"></i> Услуги (параметры)</div>`;
         SERVICES.forEach((svc) => {
+            // Для базовых услуг price не показываем, так как оно берется из priceMap
             const radiusOptions = '<option value="">Любой</option>' + RADII.map(r => `<option value="${r}"${svc.radius===r?' selected':''}>R${r}</option>`).join('');
-            const carTypeOptions = `<option value="" ${svc.carType===null?'selected':''}>Любой</option><option value="light" ${svc.carType==='light'?'selected':''}>Легковая</option><option value="jeep" ${svc.carType==='jeep'?'selected':''}>Джип</option>`;
-            const boolOptions = (val) => `<option value="" ${val===null?'selected':''}>Любой</option><option value="1" ${val===true?'selected':''}>Да</option><option value="0" ${val===false?'selected':''}>Нет</option>`;
+            
+            // carType может быть строкой "light,jeep" - преобразуем в отдельные флаги для отображения
+            const carTypes = (svc.carType || '').split(',').map(s => s.trim());
+            const hasLight = carTypes.includes('light');
+            const hasJeep = carTypes.includes('jeep');
+            
+            const carTypeOptions = `<option value="" ${!hasLight && !hasJeep ? 'selected' : ''}>Любой</option>
+                                   <option value="light" ${hasLight ? 'selected' : ''} ${!hasLight ? 'disabled' : ''}>Легковая</option>
+                                   <option value="jeep" ${hasJeep ? 'selected' : ''} ${!hasJeep ? 'disabled' : ''}>Джип</option>`;
+            
+            const lowProfileOptions = `<option value="" ${svc.lowProfile === null ? 'selected' : ''}>Любой</option>
+                                      <option value="1" ${svc.lowProfile === true ? 'selected' : ''} ${!svc.lowProfile ? 'disabled' : ''}>Да</option>
+                                      <option value="0" ${svc.lowProfile === false ? 'selected' : ''}>Нет</option>`;
+            
+            const runflatOptions = `<option value="" ${svc.runflat === null ? 'selected' : ''}>Любой</option>
+                                   <option value="1" ${svc.runflat === true ? 'selected' : ''} ${!svc.runflat ? 'disabled' : ''}>Да</option>
+                                   <option value="0" ${svc.runflat === false ? 'selected' : ''}>Нет</option>`;
 
             html += `<div class="settings-item" data-type="svc" data-id="${svc.id}">
-                <input type="text" class="svc-name" value="${svc.name.replace(/"/g, '&quot;')}" placeholder="Название">
-                <input type="number" class="price-input svc-price" value="${svc.price}" min="0" step="1" placeholder="Цена">
-                <select class="svc-radius">${radiusOptions}</select>
-                <select class="svc-car-type">${carTypeOptions}</select>
-                <select class="svc-low-profile">${boolOptions(svc.lowProfile)}</select>
-                <select class="svc-runflat">${boolOptions(svc.runflat)}</select>
+                <input type="text" class="svc-name" value="${svc.name.replace(/"/g, '&quot;')}" placeholder="Название" readonly style="background: var(--surface-3);">
+                <input type="number" class="price-input svc-price" value="${svc.price || 0}" min="0" step="1" placeholder="Цена" disabled style="opacity:0.5;">
+                <select class="svc-radius" ${!hasLight && !hasJeep ? 'disabled' : ''}>${radiusOptions}</select>
+                <select class="svc-car-type" ${!hasLight && !hasJeep ? 'disabled' : ''}>${carTypeOptions}</select>
+                <select class="svc-low-profile" ${!svc.lowProfile ? 'disabled' : ''}>${lowProfileOptions}</select>
+                <select class="svc-runflat" ${!svc.runflat ? 'disabled' : ''}>${runflatOptions}</select>
                 <button class="settings-delete" data-type="svc"><i class="fa-solid fa-trash-can"></i></button>
             </div>`;
         });
         html += `<button class="settings-add-btn" id="addSvc"><i class="fa-solid fa-plus"></i> Добавить услугу</button></div>`;
 
-        // Блок загрузки из 1С через Vercel
+        // Блок загрузки из 1С
         html += `<div style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px;">
             <div class="field-label">Загрузить настройки из 1С</div>
             <div style="display: flex; gap: 8px;">
@@ -1524,10 +1547,9 @@ async function loadSettingsFrom1C() {
             });
     }
 
-    // ========== URL для отправки заказа на Vercel ==========
-    const ORDER_PROXY_URL = 'https://1c-proxy-vercel.vercel.app/api/create-order';
-
+    // ========== Функция отправки заказа ==========
     async function createOrder() {
+        // Валидация
         if (state.mechanics.length === 0) {
             showToast('Выберите хотя бы одного механика');
             return;
@@ -1544,6 +1566,10 @@ async function loadSettingsFrom1C() {
         const confirmed = await showConfirm('Создать заказ?', 'Данные будут отправлены в 1С.');
         if (!confirmed) return;
 
+        // Загружаем priceMap из localStorage
+        const priceMap = JSON.parse(localStorage.getItem(STORAGE_KEYS.priceMap) || '{}');
+
+        // Подставляем текущие параметры колёс в услуги, где они не заданы
         state.services = state.services.map(svc => {
             if (svc.qty > 0) {
                 if (svc.radius === null || svc.radius === undefined) {
@@ -1564,6 +1590,7 @@ async function loadSettingsFrom1C() {
             return svc;
         });
 
+        // Формируем данные для отправки в 1С
         const orderData = {
             manager: state.mechanics.join(', '),
             client: {
@@ -1573,12 +1600,7 @@ async function loadSettingsFrom1C() {
             },
             wheels: {
                 radius: state.wheels.radius,
-                types: {
-                    light: state.wheels.types.light || false,
-                    jeep: state.wheels.types.jeep || false,
-                    lowProfile: state.wheels.types.lowProfile || false,
-                    runflat: state.wheels.types.runflat || false
-                },
+                types: state.wheels.types,
                 qty: state.wheels.qty
             },
             materials: state.materials
@@ -1591,16 +1613,29 @@ async function loadSettingsFrom1C() {
                 })),
             services: state.services
                 .filter(s => s.qty > 0)
-                .map(s => ({
-                    id: s.id,
-                    name: s.name,
-                    price: s.price,
-                    qty: s.qty,
-                    radius: s.radius,
-                    carType: s.carType,
-                    lowProfile: s.lowProfile,
-                    runflat: s.runflat
-                }))
+                .map(s => {
+                    // Формируем ключ для поиска цены в priceMap
+                    let priceKey = s.name;
+                    if (s.radius) priceKey += `_R${s.radius}`;
+                    if (s.carType === 'light') priceKey += '_light';
+                    else if (s.carType === 'jeep') priceKey += '_jeep';
+                    if (s.lowProfile) priceKey += '_lowProfile';
+                    if (s.runflat) priceKey += '_runflat';
+                    
+                    // Получаем цену из priceMap или оставляем старую
+                    const actualPrice = priceMap[priceKey] || s.price;
+                    
+                    return {
+                        id: s.id,
+                        name: s.name,
+                        price: actualPrice, // используем цену из priceMap
+                        qty: s.qty,
+                        radius: s.radius,
+                        carType: s.carType,
+                        lowProfile: s.lowProfile,
+                        runflat: s.runflat
+                    };
+                })
         };
 
         const payload = {
@@ -1623,6 +1658,7 @@ async function loadSettingsFrom1C() {
                 showToast(`✅ Заказ №${result.orderNumber} создан`);
                 localStorage.setItem('lastOrderNumber', result.orderNumber);
 
+                // Формируем строки для истории
                 const servicesString = state.services
                     .filter(s => s.qty > 0)
                     .map(s => {
