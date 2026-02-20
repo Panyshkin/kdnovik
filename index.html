@@ -1514,9 +1514,9 @@
         if (name === 'wheels') buildWheelsModal();
         if (name === 'materials') { buildItemsModal('matList', state.materials); updateModalFooterSum('matFooterSum', state.materials); }
         if (name === 'services') {
-            const filtered = filterServicesByWheels(state.services, state.wheels);
-            buildItemsModal('svcList', filtered);
-            updateModalFooterSum('svcFooterSum', filtered);
+            // Отключаем фильтрацию – показываем все услуги
+            buildItemsModal('svcList', state.services);
+            updateModalFooterSum('svcFooterSum', state.services);
         }
         if (name === 'settings') buildSettingsModal();
         if (name === 'history') renderHistoryList('today');
