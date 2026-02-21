@@ -877,7 +877,7 @@
         state: 'tireShop_state',
         orders: 'tireShop_orders',
         priceMap: 'tireShop_priceMap',
-        selectedSubdivision: 'tireShop_selectedSubdivision' // для сохранения выбранного города
+        selectedSubdivision: 'tireShop_selectedSubdivision'
     };
 
     // ====== URL для отправки на Vercel ======
@@ -928,7 +928,6 @@
                 
                 // Сохраняем priceMap в localStorage
                 if (data.priceMap) {
-                    // Если priceMap пришел как массив, преобразуем в объект
                     if (Array.isArray(data.priceMap)) {
                         const priceMapObj = {};
                         data.priceMap.forEach(item => {
@@ -942,13 +941,8 @@
                     localStorage.removeItem(STORAGE_KEYS.priceMap);
                 }
                 
-                // Сохраняем в localStorage
                 saveListsToStorage();
-                
-                // Сохраняем выбранное подразделение
                 localStorage.setItem(STORAGE_KEYS.selectedSubdivision, subdivision);
-                
-                // Перестраиваем модалку настроек
                 buildSettingsModal();
                 
                 showToast('✅ Настройки загружены');
@@ -1040,16 +1034,12 @@
             // Если у услуги есть ограничение по типу автомобиля
             if (svc.carType !== null && svc.carType !== '') {
                 const allowedTypes = svc.carType.split(',').map(s => s.trim());
-                // Если выбран какой-то тип, услуга должна его поддерживать
                 if (wheels.types.light && !allowedTypes.includes('light')) return false;
                 if (wheels.types.jeep && !allowedTypes.includes('jeep')) return false;
-                // Если ни один тип не выбран, то считаем, что услуга подходит (не отсеиваем)
             }
 
             // Низкий профиль: если у колёс выбран, услуга должна его поддерживать
             if (wheels.types.lowProfile && svc.lowProfile !== true) return false;
-            // Если у колёс не выбран, но услуга требует низкого профиля? – нет, не отсеиваем, так как параметр не выбран
-            // (услуга с lowProfile=true может быть выбрана, если параметр не выбран)
 
             // Runflat: аналогично
             if (wheels.types.runflat && svc.runflat !== true) return false;
@@ -1079,7 +1069,6 @@
                 else if (state.wheels.types.jeep) carType = 'jeep';
                 else carType = null;
             } else {
-                // Если у услуги указан тип, но он составной (light,jeep), нужно выбрать подходящий
                 const types = carType.split(',').map(s => s.trim());
                 if (state.wheels.types.light && types.includes('light')) carType = 'light';
                 else if (state.wheels.types.jeep && types.includes('jeep')) carType = 'jeep';
@@ -1095,6 +1084,8 @@
             }
         }
         
+        // Для отладки можно раскомментировать:
+        // console.log('priceKey for', svc.name, ':', priceKey, 'found:', priceMap[priceKey] !== undefined);
         const actualPrice = priceMap[priceKey];
         return actualPrice !== undefined ? actualPrice : svc.price;
     }
@@ -1102,10 +1093,8 @@
     function calcTotal() {
         let sum = 0;
         
-        // Материалы
         sum += state.materials.reduce((s, i) => s + (i.qty > 0 ? i.price * i.qty : 0), 0);
         
-        // Услуги – используем getServicePrice для каждой
         state.services.forEach(svc => {
             if (svc.qty > 0) {
                 const price = getServicePrice(svc);
@@ -1185,13 +1174,28 @@
             btn.classList.toggle('active', state.wheels.types[btn.dataset.type]);
         });
         document.getElementById('wQtyVal').textContent = state.wheels.qty;
+
+        // Добавляем обработчики для обновления модалки услуг при изменении параметров
+        document.querySelectorAll('#radiusGrid .radius-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                // После изменения радиуса обновим отображение, если открыта модалка услуг
+                if (document.getElementById('mServices').classList.contains('active')) {
+                    openModal('services');
+                }
+            });
+        });
+        document.querySelectorAll('#typeGrid .type-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (document.getElementById('mServices').classList.contains('active')) {
+                    openModal('services');
+                }
+            });
+        });
     }
     
     function buildItemsModal(listId, items) {
         const el = document.getElementById(listId);
         
-        // Для услуг загружаем priceMap не нужна здесь, т.к. цены получаем через getServicePrice
-        // Но нам нужно отобразить цену для каждой услуги с учётом текущих параметров
         el.innerHTML = items.map((item, idx) => {
             let displayPrice = item.price;
             if (listId === 'svcList') {
@@ -1241,7 +1245,6 @@
         const body = document.getElementById('settingsBody');
         let html = '';
 
-        // Блок загрузки из 1С – поднят в самый верх
         const savedSubdivision = localStorage.getItem(STORAGE_KEYS.selectedSubdivision) || 'Оренбург';
         html += `<div style="margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 16px;">
             <div class="field-label">Загрузить настройки из 1С</div>
@@ -1379,7 +1382,6 @@
             buildSettingsModal();
         });
 
-        // Обработчик кнопки загрузки из 1С
         document.getElementById('loadFrom1C')?.addEventListener('click', loadSettingsFrom1C);
     }
 
@@ -1478,7 +1480,6 @@
         if (name === 'wheels') buildWheelsModal();
         if (name === 'materials') { buildItemsModal('matList', state.materials); updateModalFooterSum('matFooterSum', state.materials); }
         if (name === 'services') {
-            // Применяем фильтрацию по текущим параметрам колёс
             const filtered = filterServicesByWheels(state.services, state.wheels);
             buildItemsModal('svcList', filtered);
             updateModalFooterSum('svcFooterSum', filtered);
@@ -1642,7 +1643,8 @@
         const confirmed = await showConfirm('Создать заказ?', 'Данные будут отправлены в 1С.');
         if (!confirmed) return;
 
-        // Обновляем параметры услуг перед отправкой (подставляем текущие колёса)
+        const priceMap = JSON.parse(localStorage.getItem(STORAGE_KEYS.priceMap) || '{}');
+
         state.services = state.services.map(svc => {
             if (svc.qty > 0) {
                 const isParametric = svc.carType !== null || svc.lowProfile !== null || svc.runflat !== null;
@@ -1655,7 +1657,6 @@
                         else if (state.wheels.types.jeep) svc.carType = 'jeep';
                         else svc.carType = null;
                     } else {
-                        // Если у услуги указан тип, выбираем подходящий
                         const types = svc.carType.split(',').map(s => s.trim());
                         if (state.wheels.types.light && types.includes('light')) svc.carType = 'light';
                         else if (state.wheels.types.jeep && types.includes('jeep')) svc.carType = 'jeep';
@@ -1671,8 +1672,6 @@
             }
             return svc;
         });
-
-        const priceMap = JSON.parse(localStorage.getItem(STORAGE_KEYS.priceMap) || '{}');
 
         const orderData = {
             manager: state.mechanics.join(', '),
@@ -1868,6 +1867,10 @@
             if (!btn) return;
             document.querySelectorAll('#radiusGrid .radius-btn').forEach(b=>b.classList.remove('active'));
             btn.classList.add('active');
+            // Обновляем модалку услуг, если она открыта
+            if (document.getElementById('mServices').classList.contains('active')) {
+                openModal('services');
+            }
         });
 
         document.getElementById('typeGrid')?.addEventListener('click', e => {
@@ -1879,17 +1882,23 @@
                 if (btn.classList.contains('active')) btn.classList.remove('active');
                 else { btn.classList.add('active'); other?.classList.remove('active'); }
             } else btn.classList.toggle('active');
+            // Обновляем модалку услуг, если она открыта
+            if (document.getElementById('mServices').classList.contains('active')) {
+                openModal('services');
+            }
         });
 
         document.getElementById('wQtyMinus')?.addEventListener('click', ()=>{
             const el = document.getElementById('wQtyVal');
             let v = parseInt(el.textContent);
             if (v>1) el.textContent = --v;
+            updateSaveBtn();
         });
         document.getElementById('wQtyPlus')?.addEventListener('click', ()=>{
             const el = document.getElementById('wQtyVal');
             let v = parseInt(el.textContent);
             if (v<20) el.textContent = ++v;
+            updateSaveBtn();
         });
 
         document.getElementById('applyAll')?.addEventListener('click', async () => {
