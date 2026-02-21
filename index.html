@@ -686,7 +686,7 @@
     </div>
 </div>
 
-<!-- МОДАЛКА КЛИЕНТА С КАМЕРОЙ -->
+<!-- МОДАЛКА КЛИЕНТА С КАМЕРОЙ (уменьшенной) -->
 <div class="modal-overlay" id="mClient">
     <div class="modal">
         <div class="modal-handle"></div>
@@ -1045,25 +1045,29 @@
         }));
     }
 
-    // ИСПРАВЛЕННАЯ ФУНКЦИЯ ФИЛЬТРАЦИИ УСЛУГ
+    // Функция фильтрации услуг по параметрам колёс (теперь пропускает все услуги, если параметры не выбраны)
     function filterServicesByWheels(services, wheels) {
+        // Если никакие параметры не выбраны – показываем все услуги
+        const hasParams = wheels.types.light || wheels.types.jeep || wheels.types.lowProfile || wheels.types.runflat;
+        if (!hasParams) {
+            return services;
+        }
+
         return services.filter(svc => {
-            // Если у услуги указан конкретный радиус, он должен совпадать
+            // Радиус: если у услуги указан конкретный радиус, он должен совпадать
             if (svc.radius !== null && svc.radius !== wheels.radius) return false;
 
-            // Если у услуги есть ограничение по типу автомобиля
+            // Тип автомобиля
             if (svc.carType !== null && svc.carType !== '') {
                 const allowedTypes = svc.carType.split(',').map(s => s.trim());
-                // Если выбран какой-то тип, услуга должна его поддерживать
                 if (wheels.types.light && !allowedTypes.includes('light')) return false;
                 if (wheels.types.jeep && !allowedTypes.includes('jeep')) return false;
-                // Если ни один тип не выбран – не отсеиваем
             }
 
-            // Низкий профиль: если у колёс выбран, услуга должна его поддерживать
+            // Низкий профиль
             if (wheels.types.lowProfile && svc.lowProfile !== true) return false;
 
-            // Runflat: аналогично
+            // Runflat
             if (wheels.types.runflat && svc.runflat !== true) return false;
 
             return true;
@@ -1630,10 +1634,9 @@
             });
     }
 
-    // ========== РАСПОЗНАВАНИЕ НОМЕРА АВТОМОБИЛЯ ==========
+    // ========== РАСПОЗНАВАНИЕ НОМЕРА АВТОМОБИЛЯ (улучшенное) ==========
     let scanStream = null;
 
-    // Загружаем Tesseract (один раз)
     const loadTesseract = () => {
         return new Promise((resolve) => {
             if (window.Tesseract) {
@@ -1647,87 +1650,93 @@
         });
     };
 
-    // Предобработка изображения для улучшения распознавания номеров
+    // Предобработка: увеличение контраста, бинаризация
     function preprocessImage(canvas) {
         const ctx = canvas.getContext('2d');
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const data = imageData.data;
-        // Простая бинаризация: превращаем в ч/б по порогу
         for (let i = 0; i < data.length; i += 4) {
             let r = data[i];
             let g = data[i+1];
             let b = data[i+2];
             let gray = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-            // Инвертируем, чтобы текст был чёрным на белом (часто улучшает распознавание)
+            // Инвертируем и делаем ч/б
             let val = gray > 128 ? 0 : 255;
             data[i] = data[i+1] = data[i+2] = val;
         }
         ctx.putImageData(imageData, 0, 0);
     }
 
-    // Обработчик кнопки сканирования
+    // Функция для извлечения номера из текста (оставляет только латиницу и цифры, убирает лишнее)
+    function extractPlate(text) {
+        // Замена похожих русских букв на латинские (для номеров)
+        const replaceMap = {
+            'А': 'A', 'В': 'B', 'Е': 'E', 'К': 'K', 'М': 'M', 'Н': 'H', 'О': 'O', 'Р': 'P', 'С': 'C', 'Т': 'T', 'У': 'Y', 'Х': 'X',
+            'а': 'a', 'в': 'b', 'е': 'e', 'к': 'k', 'м': 'm', 'н': 'h', 'о': 'o', 'р': 'p', 'с': 'c', 'т': 't', 'у': 'y', 'х': 'x'
+        };
+        let converted = '';
+        for (let ch of text) {
+            if (replaceMap[ch]) converted += replaceMap[ch];
+            else converted += ch;
+        }
+        // Оставляем только латинские буквы и цифры
+        const allowed = converted.replace(/[^A-Za-z0-9]/g, '');
+        // Ищем первый непрерывный блок из букв и цифр длиной от 6 до 10 символов (примерная длина номера)
+        const match = allowed.match(/[A-Za-z0-9]{6,10}/);
+        return match ? match[0] : '';
+    }
+
     document.getElementById('btnScanPlate')?.addEventListener('click', async () => {
         const cameraContainer = document.getElementById('cameraContainer');
         const video = document.getElementById('video');
-        const inName = document.getElementById('inName');
         
         try {
-            // Запрашиваем доступ к камере
             scanStream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: "environment" } // задняя камера
+                video: { facingMode: "environment" }
             });
             video.srcObject = scanStream;
             cameraContainer.style.display = 'block';
-            
-            // Готовим Tesseract
             await loadTesseract();
-            console.log('Tesseract загружен');
-            
+            console.log('Tesseract loaded');
         } catch (err) {
             showToast('❌ Не удалось получить доступ к камере');
             console.error(err);
         }
     });
 
-    // Обработчик кнопки "Сделать снимок"
     document.getElementById('captureBtn')?.addEventListener('click', async () => {
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         const ocrStatus = document.getElementById('ocrStatus');
         
-        // Настраиваем canvas под размер видео
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         
-        // Предобработка для улучшения распознавания
+        // Предобработка
         preprocessImage(canvas);
         
         ocrStatus.textContent = '⏳ Распознавание...';
         
         try {
             const Tesseract = await loadTesseract();
-            const result = await Tesseract.recognize(canvas, 'rus+eng', {
+            const result = await Tesseract.recognize(canvas, 'eng', { // используем только английский для номеров
                 logger: m => console.log(m),
-                tessedit_char_whitelist: 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя0123456789- ',
-                tessedit_pageseg_mode: 7 // Распознавать как одно текстовое поле
+                tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
+                tessedit_pageseg_mode: 7
             });
             
-            // Извлекаем текст и оставляем только допустимые символы (русские/англ буквы, цифры, дефис)
             const rawText = result.data.text;
-            const cleanedText = rawText.replace(/[^a-zA-Zа-яА-Я0-9\-]/g, '').trim();
+            const plate = extractPlate(rawText);
             
-            ocrStatus.textContent = cleanedText ? '✅ Распознано' : '❌ Не удалось распознать';
-            
-            // Вставляем результат в поле ФИО
-            document.getElementById('inName').value = cleanedText || '[не удалось распознать]';
+            ocrStatus.textContent = plate ? '✅ Распознано' : '❌ Номер не найден';
+            document.getElementById('inName').value = plate || '[не удалось распознать]';
             
         } catch (error) {
             ocrStatus.textContent = '❌ Ошибка распознавания';
             console.error(error);
         } finally {
-            // Останавливаем камеру и прячем контейнер
             if (scanStream) {
                 scanStream.getTracks().forEach(track => track.stop());
                 scanStream = null;
@@ -1737,7 +1746,6 @@
         }
     });
 
-    // Обработчик кнопки "Отмена"
     document.getElementById('cancelCameraBtn')?.addEventListener('click', () => {
         if (scanStream) {
             scanStream.getTracks().forEach(track => track.stop());
@@ -1990,7 +1998,6 @@
             if (!btn) return;
             document.querySelectorAll('#radiusGrid .radius-btn').forEach(b=>b.classList.remove('active'));
             btn.classList.add('active');
-            // Обновляем модалку услуг, если она открыта
             if (document.getElementById('mServices').classList.contains('active')) {
                 openModal('services');
             }
@@ -2005,7 +2012,6 @@
                 if (btn.classList.contains('active')) btn.classList.remove('active');
                 else { btn.classList.add('active'); other?.classList.remove('active'); }
             } else btn.classList.toggle('active');
-            // Обновляем модалку услуг, если она открыта
             if (document.getElementById('mServices').classList.contains('active')) {
                 openModal('services');
             }
