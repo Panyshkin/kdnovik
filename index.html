@@ -6,7 +6,6 @@
     <title>Шиномонтаж · заказ</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        /* все стили без изменений – оставлены как в предыдущей версии */
         :root {
             --bg: #000000;
             --surface: #1c1c1e;
@@ -687,6 +686,7 @@
     </div>
 </div>
 
+<!-- МОДАЛКА КЛИЕНТА С КАМЕРОЙ -->
 <div class="modal-overlay" id="mClient">
     <div class="modal">
         <div class="modal-handle"></div>
@@ -696,8 +696,23 @@
         </div>
         <div class="modal-body">
             <div class="field">
-                <div class="field-label">ФИО</div>
+                <div class="field-label" style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>ФИО</span>
+                    <button class="icon-btn" id="btnScanPlate" title="Сканировать номер автомобиля" style="width: 32px; height: 32px;">
+                        <i class="fa-solid fa-camera"></i>
+                    </button>
+                </div>
                 <input class="field-input" id="inName" type="text" placeholder="Иванов Иван Иванович">
+                <!-- Контейнер для камеры -->
+                <div id="cameraContainer" style="display: none; margin-top: 10px; position: relative;">
+                    <video id="video" autoplay playsinline style="width: 100%; border-radius: var(--radius);"></video>
+                    <canvas id="canvas" style="display: none;"></canvas>
+                    <div style="display: flex; gap: 8px; margin-top: 8px;">
+                        <button class="btn-done" id="captureBtn" style="flex: 1;">📸 Сделать снимок</button>
+                        <button class="btn-secondary" id="cancelCameraBtn" style="flex: 1;">Отмена</button>
+                    </div>
+                    <div id="ocrStatus" style="margin-top: 8px; font-size: 0.85rem; color: var(--text-secondary);"></div>
+                </div>
             </div>
             <div class="field">
                 <div class="field-label">Телефон</div>
@@ -1030,23 +1045,28 @@
         }));
     }
 
-    // Функция фильтрации услуг по параметрам колёс (используется при открытии модалки)
+    // Функция фильтрации услуг по параметрам колёс – теперь если ни один параметр не выбран, показываем всё
     function filterServicesByWheels(services, wheels) {
+        // Если вообще ничего не выбрано (радиус по умолчанию 17, но он всегда есть; проверим типы)
+        const noTypes = !wheels.types.light && !wheels.types.jeep && !wheels.types.lowProfile && !wheels.types.runflat;
+        if (noTypes) {
+            return services; // показываем все услуги
+        }
         return services.filter(svc => {
-            // Если у услуги указан конкретный радиус, он должен совпадать
+            // Радиус: если у услуги указан конкретный радиус, он должен совпадать
             if (svc.radius !== null && svc.radius !== wheels.radius) return false;
 
-            // Если у услуги есть ограничение по типу автомобиля
+            // Тип автомобиля
             if (svc.carType !== null && svc.carType !== '') {
                 const allowedTypes = svc.carType.split(',').map(s => s.trim());
                 if (wheels.types.light && !allowedTypes.includes('light')) return false;
                 if (wheels.types.jeep && !allowedTypes.includes('jeep')) return false;
             }
 
-            // Низкий профиль: если у колёс выбран, услуга должна его поддерживать
+            // Низкий профиль
             if (wheels.types.lowProfile && svc.lowProfile !== true) return false;
 
-            // Runflat: аналогично
+            // Runflat
             if (wheels.types.runflat && svc.runflat !== true) return false;
 
             return true;
@@ -1481,6 +1501,94 @@
         overlay.classList.remove('active');
         document.body.style.overflow = '';
     }
+
+    // ========== РАСПОЗНАВАНИЕ НОМЕРА АВТОМОБИЛЯ ==========
+    let scanStream = null;
+
+    // Загружаем Tesseract (один раз)
+    const loadTesseract = () => {
+        return new Promise((resolve) => {
+            if (window.Tesseract) {
+                resolve(window.Tesseract);
+            } else {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js';
+                script.onload = () => resolve(window.Tesseract);
+                document.head.appendChild(script);
+            }
+        });
+    };
+
+    // Обработчик кнопки сканирования
+    document.getElementById('btnScanPlate')?.addEventListener('click', async () => {
+        const cameraContainer = document.getElementById('cameraContainer');
+        const video = document.getElementById('video');
+        
+        try {
+            scanStream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: "environment" } // задняя камера
+            });
+            video.srcObject = scanStream;
+            cameraContainer.style.display = 'block';
+            
+            await loadTesseract();
+            console.log('Tesseract загружен');
+            
+        } catch (err) {
+            showToast('❌ Не удалось получить доступ к камере');
+            console.error(err);
+        }
+    });
+
+    // Обработчик кнопки "Сделать снимок"
+    document.getElementById('captureBtn')?.addEventListener('click', async () => {
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const ocrStatus = document.getElementById('ocrStatus');
+        
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        ocrStatus.textContent = '⏳ Распознавание...';
+        
+        try {
+            const Tesseract = await loadTesseract();
+            const result = await Tesseract.recognize(canvas, 'rus+eng', {
+                logger: m => console.log(m)
+            });
+            
+            const rawText = result.data.text;
+            // Очищаем от лишних символов (оставляем буквы, цифры, дефисы)
+            const cleanedText = rawText.replace(/[^a-zA-Zа-яА-Я0-9\-\s]/g, '').trim();
+            
+            ocrStatus.textContent = '✅ Распознано';
+            document.getElementById('inName').value = cleanedText || '[не удалось распознать]';
+            
+        } catch (error) {
+            ocrStatus.textContent = '❌ Ошибка распознавания';
+            console.error(error);
+        } finally {
+            if (scanStream) {
+                scanStream.getTracks().forEach(track => track.stop());
+                scanStream = null;
+            }
+            document.getElementById('cameraContainer').style.display = 'none';
+            document.getElementById('video').srcObject = null;
+        }
+    });
+
+    // Обработчик кнопки "Отмена"
+    document.getElementById('cancelCameraBtn')?.addEventListener('click', () => {
+        if (scanStream) {
+            scanStream.getTracks().forEach(track => track.stop());
+            scanStream = null;
+        }
+        document.getElementById('cameraContainer').style.display = 'none';
+        document.getElementById('video').srcObject = null;
+        document.getElementById('ocrStatus').textContent = '';
+    });
 
     // ========== ИСТОРИЯ ЗАКАЗОВ ==========
     let orders = [];
