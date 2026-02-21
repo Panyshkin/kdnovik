@@ -1027,27 +1027,20 @@
         }));
     }
 
-    // Функция фильтрации (не используется в модалке, но оставим)
-    function filterServicesByWheels(services, wheels) {
-        return services.filter(svc => {
-            if (svc.radius !== null && svc.radius !== wheels.radius) return false;
-            if (svc.carType !== null && svc.carType !== '') {
-                const allowedTypes = svc.carType.split(',').map(s => s.trim());
-                const hasLight = wheels.types.light;
-                const hasJeep = wheels.types.jeep;
-                if (hasLight && !allowedTypes.includes('light')) return false;
-                if (hasJeep && !allowedTypes.includes('jeep')) return false;
-            }
-            if (svc.lowProfile !== null) {
-                if (wheels.types.lowProfile && svc.lowProfile !== true) return false;
-                if (!wheels.types.lowProfile && svc.lowProfile === true) return false;
-            }
-            if (svc.runflat !== null) {
-                if (wheels.types.runflat && svc.runflat !== true) return false;
-                if (!wheels.types.runflat && svc.runflat === true) return false;
-            }
-            return true;
-        });
+    // Функция для определения текущего типа автомобиля для услуги
+    function getEffectiveCarType(svc, wheels) {
+        if (svc.carType === null || svc.carType === undefined) {
+            // Если у услуги нет ограничений, берём из колёс
+            if (wheels.types.light) return 'light';
+            if (wheels.types.jeep) return 'jeep';
+            return null;
+        } else {
+            // Услуга поддерживает один или несколько типов
+            const types = svc.carType.split(',').map(s => s.trim());
+            if (types.includes('light') && wheels.types.light) return 'light';
+            if (types.includes('jeep') && wheels.types.jeep) return 'jeep';
+            return null; // ни один не подходит
+        }
     }
 
     function fmtPrice(n) { return n.toLocaleString('ru-RU') + ' ₽'; }
@@ -1064,34 +1057,28 @@
         state.services.forEach(svc => {
             if (svc.qty > 0) {
                 let priceKey = svc.name;
-                // Определяем, параметрическая ли услуга (есть ли хоть один не-null параметр)
                 const isParametric = svc.carType !== null || svc.lowProfile !== null || svc.runflat !== null;
                 
                 if (isParametric) {
-                    // Для параметрических услуг подставляем текущие параметры колёс, если они не заданы в услуге
+                    // Радиус
                     let radius = svc.radius;
                     if (radius === null || radius === undefined) {
                         radius = state.wheels.radius;
                     }
                     if (radius) priceKey += `_R${radius}`;
                     
-                    let carType = svc.carType;
-                    if (carType === null || carType === undefined) {
-                        if (state.wheels.types.light) carType = 'light';
-                        else if (state.wheels.types.jeep) carType = 'jeep';
-                        else carType = null;
-                    }
+                    // Тип автомобиля
+                    let carType = getEffectiveCarType(svc, state.wheels);
                     if (carType) priceKey += `_${carType}`;
                     
+                    // Низкий профиль
                     if (svc.lowProfile === true || (svc.lowProfile === null && state.wheels.types.lowProfile)) {
                         priceKey += '_lowProfile';
                     }
+                    // Runflat
                     if (svc.runflat === true || (svc.runflat === null && state.wheels.types.runflat)) {
                         priceKey += '_runflat';
                     }
-                } else {
-                    // Для постоянных услуг ключ = просто имя (без параметров)
-                    // Ничего не добавляем
                 }
                 
                 const actualPrice = priceMap[priceKey];
@@ -1177,7 +1164,6 @@
         document.getElementById('wQtyVal').textContent = state.wheels.qty;
     }
     
-    // ИСПРАВЛЕННАЯ ФУНКЦИЯ ПОСТРОЕНИЯ МОДАЛЬНОГО ОКНА
     function buildItemsModal(listId, items) {
         const el = document.getElementById(listId);
         
@@ -1196,36 +1182,30 @@
             let priceLabel = fmtPrice(item.price);
             
             if (listId === 'svcList' && Object.keys(priceMap).length > 0) {
-                // Определяем, параметрическая ли услуга
                 const isParametric = item.carType !== null || item.lowProfile !== null || item.runflat !== null;
                 
                 let priceKey = item.name;
                 
                 if (isParametric) {
-                    // Для параметрических услуг используем текущие параметры колёс для недостающих полей
+                    // Радиус
                     let radius = item.radius;
                     if (radius === null || radius === undefined) {
                         radius = state.wheels.radius;
                     }
                     if (radius) priceKey += `_R${radius}`;
                     
-                    let carType = item.carType;
-                    if (carType === null || carType === undefined) {
-                        if (state.wheels.types.light) carType = 'light';
-                        else if (state.wheels.types.jeep) carType = 'jeep';
-                        else carType = null;
-                    }
+                    // Тип автомобиля
+                    let carType = getEffectiveCarType(item, state.wheels);
                     if (carType) priceKey += `_${carType}`;
                     
-                    // Для lowProfile и runflat: если у услуги true, добавляем; если null, то смотрим колёса
+                    // Низкий профиль
                     if (item.lowProfile === true || (item.lowProfile === null && state.wheels.types.lowProfile)) {
                         priceKey += '_lowProfile';
                     }
+                    // Runflat
                     if (item.runflat === true || (item.runflat === null && state.wheels.types.runflat)) {
                         priceKey += '_runflat';
                     }
-                } else {
-                    // Для постоянных услуг ключ = просто имя, ничего не добавляем
                 }
                 
                 const actualPrice = priceMap[priceKey];
@@ -1233,7 +1213,6 @@
                     displayPrice = actualPrice;
                     priceLabel = fmtPrice(actualPrice);
                 } else {
-                    // Если цена не найдена, показываем прочерк или оставляем старую
                     priceLabel = 'Цена не определена';
                 }
             }
@@ -1283,23 +1262,22 @@
                     let priceKey = item.name;
                     
                     if (isParametric) {
+                        // Радиус
                         let radius = item.radius;
                         if (radius === null || radius === undefined) {
                             radius = state.wheels.radius;
                         }
                         if (radius) priceKey += `_R${radius}`;
                         
-                        let carType = item.carType;
-                        if (carType === null || carType === undefined) {
-                            if (state.wheels.types.light) carType = 'light';
-                            else if (state.wheels.types.jeep) carType = 'jeep';
-                            else carType = null;
-                        }
+                        // Тип автомобиля
+                        let carType = getEffectiveCarType(item, state.wheels);
                         if (carType) priceKey += `_${carType}`;
                         
+                        // Низкий профиль
                         if (item.lowProfile === true || (item.lowProfile === null && state.wheels.types.lowProfile)) {
                             priceKey += '_lowProfile';
                         }
+                        // Runflat
                         if (item.runflat === true || (item.runflat === null && state.wheels.types.runflat)) {
                             priceKey += '_runflat';
                         }
@@ -1723,7 +1701,7 @@
 
         const priceMap = JSON.parse(localStorage.getItem(STORAGE_KEYS.priceMap) || '{}');
 
-        // Обновляем параметры услуг перед отправкой (подставляем текущие колёса)
+        // Обновляем параметры услуг перед отправкой
         state.services = state.services.map(svc => {
             if (svc.qty > 0) {
                 const isParametric = svc.carType !== null || svc.lowProfile !== null || svc.runflat !== null;
@@ -1770,7 +1748,6 @@
             services: state.services
                 .filter(s => s.qty > 0)
                 .map(s => {
-                    // Цена уже должна быть актуальной, но на всякий случай пересчитываем
                     let priceKey = s.name;
                     const isParametric = s.carType !== null || s.lowProfile !== null || s.runflat !== null;
                     if (isParametric) {
@@ -1990,7 +1967,7 @@
                     items[idx].qty = parseInt(e.target.value);
                     e.target.closest('.item-row').classList.toggle('zero', items[idx].qty===0);
                     updateModalFooterSum(footerId, items);
-                    updateSaveBtn(); // обновляем общую сумму при изменении количества
+                    updateSaveBtn();
                 }
             });
             document.getElementById(listId)?.addEventListener('click', e => {
@@ -2001,7 +1978,7 @@
                     row.querySelector('.item-select').value = '0';
                     row.classList.add('zero');
                     updateModalFooterSum(footerId, items);
-                    updateSaveBtn(); // обновляем общую сумму при удалении
+                    updateSaveBtn();
                 }
             });
         });
