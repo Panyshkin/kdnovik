@@ -703,9 +703,9 @@
                     </button>
                 </div>
                 <input class="field-input" id="inName" type="text" placeholder="Иванов Иван Иванович">
-                <!-- Контейнер для камеры -->
+                <!-- Контейнер для камеры (уменьшен) -->
                 <div id="cameraContainer" style="display: none; margin-top: 10px; position: relative;">
-                    <video id="video" autoplay playsinline style="width: 100%; border-radius: var(--radius);"></video>
+                    <video id="video" autoplay playsinline style="width: 100%; height: 200px; object-fit: cover; border-radius: var(--radius); background: #000;"></video>
                     <canvas id="canvas" style="display: none;"></canvas>
                     <div style="display: flex; gap: 8px; margin-top: 8px;">
                         <button class="btn-done" id="captureBtn" style="flex: 1;">📸 Сделать снимок</button>
@@ -959,7 +959,7 @@
                 saveListsToStorage();
                 localStorage.setItem(STORAGE_KEYS.selectedSubdivision, subdivision);
                 
-                // Важно: синхронизируем state с новыми списками
+                // Синхронизируем состояние с новыми списками
                 reconcileStateWithLists();
                 updateAllDisplays();
                 
@@ -1045,28 +1045,25 @@
         }));
     }
 
-    // Функция фильтрации услуг по параметрам колёс – теперь если ни один параметр не выбран, показываем всё
+    // ИСПРАВЛЕННАЯ ФУНКЦИЯ ФИЛЬТРАЦИИ УСЛУГ
     function filterServicesByWheels(services, wheels) {
-        // Если вообще ничего не выбрано (радиус по умолчанию 17, но он всегда есть; проверим типы)
-        const noTypes = !wheels.types.light && !wheels.types.jeep && !wheels.types.lowProfile && !wheels.types.runflat;
-        if (noTypes) {
-            return services; // показываем все услуги
-        }
         return services.filter(svc => {
-            // Радиус: если у услуги указан конкретный радиус, он должен совпадать
+            // Если у услуги указан конкретный радиус, он должен совпадать
             if (svc.radius !== null && svc.radius !== wheels.radius) return false;
 
-            // Тип автомобиля
+            // Если у услуги есть ограничение по типу автомобиля
             if (svc.carType !== null && svc.carType !== '') {
                 const allowedTypes = svc.carType.split(',').map(s => s.trim());
+                // Если выбран какой-то тип, услуга должна его поддерживать
                 if (wheels.types.light && !allowedTypes.includes('light')) return false;
                 if (wheels.types.jeep && !allowedTypes.includes('jeep')) return false;
+                // Если ни один тип не выбран – не отсеиваем
             }
 
-            // Низкий профиль
+            // Низкий профиль: если у колёс выбран, услуга должна его поддерживать
             if (wheels.types.lowProfile && svc.lowProfile !== true) return false;
 
-            // Runflat
+            // Runflat: аналогично
             if (wheels.types.runflat && svc.runflat !== true) return false;
 
             return true;
@@ -1486,7 +1483,9 @@
         if (name === 'wheels') buildWheelsModal();
         if (name === 'materials') { buildItemsModal('matList', state.materials); updateModalFooterSum('matFooterSum', state.materials); }
         if (name === 'services') {
+            // Применяем фильтрацию по текущим параметрам колёс
             const filtered = filterServicesByWheels(state.services, state.wheels);
+            console.log('Filtered services:', filtered); // для отладки
             buildItemsModal('svcList', filtered);
             updateModalFooterSum('svcFooterSum', filtered);
         }
@@ -1501,94 +1500,6 @@
         overlay.classList.remove('active');
         document.body.style.overflow = '';
     }
-
-    // ========== РАСПОЗНАВАНИЕ НОМЕРА АВТОМОБИЛЯ ==========
-    let scanStream = null;
-
-    // Загружаем Tesseract (один раз)
-    const loadTesseract = () => {
-        return new Promise((resolve) => {
-            if (window.Tesseract) {
-                resolve(window.Tesseract);
-            } else {
-                const script = document.createElement('script');
-                script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js';
-                script.onload = () => resolve(window.Tesseract);
-                document.head.appendChild(script);
-            }
-        });
-    };
-
-    // Обработчик кнопки сканирования
-    document.getElementById('btnScanPlate')?.addEventListener('click', async () => {
-        const cameraContainer = document.getElementById('cameraContainer');
-        const video = document.getElementById('video');
-        
-        try {
-            scanStream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: "environment" } // задняя камера
-            });
-            video.srcObject = scanStream;
-            cameraContainer.style.display = 'block';
-            
-            await loadTesseract();
-            console.log('Tesseract загружен');
-            
-        } catch (err) {
-            showToast('❌ Не удалось получить доступ к камере');
-            console.error(err);
-        }
-    });
-
-    // Обработчик кнопки "Сделать снимок"
-    document.getElementById('captureBtn')?.addEventListener('click', async () => {
-        const video = document.getElementById('video');
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-        const ocrStatus = document.getElementById('ocrStatus');
-        
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        
-        ocrStatus.textContent = '⏳ Распознавание...';
-        
-        try {
-            const Tesseract = await loadTesseract();
-            const result = await Tesseract.recognize(canvas, 'rus+eng', {
-                logger: m => console.log(m)
-            });
-            
-            const rawText = result.data.text;
-            // Очищаем от лишних символов (оставляем буквы, цифры, дефисы)
-            const cleanedText = rawText.replace(/[^a-zA-Zа-яА-Я0-9\-\s]/g, '').trim();
-            
-            ocrStatus.textContent = '✅ Распознано';
-            document.getElementById('inName').value = cleanedText || '[не удалось распознать]';
-            
-        } catch (error) {
-            ocrStatus.textContent = '❌ Ошибка распознавания';
-            console.error(error);
-        } finally {
-            if (scanStream) {
-                scanStream.getTracks().forEach(track => track.stop());
-                scanStream = null;
-            }
-            document.getElementById('cameraContainer').style.display = 'none';
-            document.getElementById('video').srcObject = null;
-        }
-    });
-
-    // Обработчик кнопки "Отмена"
-    document.getElementById('cancelCameraBtn')?.addEventListener('click', () => {
-        if (scanStream) {
-            scanStream.getTracks().forEach(track => track.stop());
-            scanStream = null;
-        }
-        document.getElementById('cameraContainer').style.display = 'none';
-        document.getElementById('video').srcObject = null;
-        document.getElementById('ocrStatus').textContent = '';
-    });
 
     // ========== ИСТОРИЯ ЗАКАЗОВ ==========
     let orders = [];
@@ -1718,6 +1629,124 @@
                 }
             });
     }
+
+    // ========== РАСПОЗНАВАНИЕ НОМЕРА АВТОМОБИЛЯ ==========
+    let scanStream = null;
+
+    // Загружаем Tesseract (один раз)
+    const loadTesseract = () => {
+        return new Promise((resolve) => {
+            if (window.Tesseract) {
+                resolve(window.Tesseract);
+            } else {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js';
+                script.onload = () => resolve(window.Tesseract);
+                document.head.appendChild(script);
+            }
+        });
+    };
+
+    // Предобработка изображения для улучшения распознавания номеров
+    function preprocessImage(canvas) {
+        const ctx = canvas.getContext('2d');
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        // Простая бинаризация: превращаем в ч/б по порогу
+        for (let i = 0; i < data.length; i += 4) {
+            let r = data[i];
+            let g = data[i+1];
+            let b = data[i+2];
+            let gray = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+            // Инвертируем, чтобы текст был чёрным на белом (часто улучшает распознавание)
+            let val = gray > 128 ? 0 : 255;
+            data[i] = data[i+1] = data[i+2] = val;
+        }
+        ctx.putImageData(imageData, 0, 0);
+    }
+
+    // Обработчик кнопки сканирования
+    document.getElementById('btnScanPlate')?.addEventListener('click', async () => {
+        const cameraContainer = document.getElementById('cameraContainer');
+        const video = document.getElementById('video');
+        const inName = document.getElementById('inName');
+        
+        try {
+            // Запрашиваем доступ к камере
+            scanStream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: "environment" } // задняя камера
+            });
+            video.srcObject = scanStream;
+            cameraContainer.style.display = 'block';
+            
+            // Готовим Tesseract
+            await loadTesseract();
+            console.log('Tesseract загружен');
+            
+        } catch (err) {
+            showToast('❌ Не удалось получить доступ к камере');
+            console.error(err);
+        }
+    });
+
+    // Обработчик кнопки "Сделать снимок"
+    document.getElementById('captureBtn')?.addEventListener('click', async () => {
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const ocrStatus = document.getElementById('ocrStatus');
+        
+        // Настраиваем canvas под размер видео
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // Предобработка для улучшения распознавания
+        preprocessImage(canvas);
+        
+        ocrStatus.textContent = '⏳ Распознавание...';
+        
+        try {
+            const Tesseract = await loadTesseract();
+            const result = await Tesseract.recognize(canvas, 'rus+eng', {
+                logger: m => console.log(m),
+                tessedit_char_whitelist: 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя0123456789- ',
+                tessedit_pageseg_mode: 7 // Распознавать как одно текстовое поле
+            });
+            
+            // Извлекаем текст и оставляем только допустимые символы (русские/англ буквы, цифры, дефис)
+            const rawText = result.data.text;
+            const cleanedText = rawText.replace(/[^a-zA-Zа-яА-Я0-9\-]/g, '').trim();
+            
+            ocrStatus.textContent = cleanedText ? '✅ Распознано' : '❌ Не удалось распознать';
+            
+            // Вставляем результат в поле ФИО
+            document.getElementById('inName').value = cleanedText || '[не удалось распознать]';
+            
+        } catch (error) {
+            ocrStatus.textContent = '❌ Ошибка распознавания';
+            console.error(error);
+        } finally {
+            // Останавливаем камеру и прячем контейнер
+            if (scanStream) {
+                scanStream.getTracks().forEach(track => track.stop());
+                scanStream = null;
+            }
+            document.getElementById('cameraContainer').style.display = 'none';
+            document.getElementById('video').srcObject = null;
+        }
+    });
+
+    // Обработчик кнопки "Отмена"
+    document.getElementById('cancelCameraBtn')?.addEventListener('click', () => {
+        if (scanStream) {
+            scanStream.getTracks().forEach(track => track.stop());
+            scanStream = null;
+        }
+        document.getElementById('cameraContainer').style.display = 'none';
+        document.getElementById('video').srcObject = null;
+        document.getElementById('ocrStatus').textContent = '';
+    });
 
     // ========== Функция отправки заказа ==========
     async function createOrder() {
