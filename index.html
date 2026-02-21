@@ -943,6 +943,11 @@
                 
                 saveListsToStorage();
                 localStorage.setItem(STORAGE_KEYS.selectedSubdivision, subdivision);
+                
+                // Важно: синхронизируем state с новыми списками
+                reconcileStateWithLists();
+                updateAllDisplays();
+                
                 buildSettingsModal();
                 
                 showToast('✅ Настройки загружены');
@@ -1084,10 +1089,8 @@
             }
         }
         
-        // Для отладки можно раскомментировать:
-        // console.log('priceKey for', svc.name, ':', priceKey, 'found:', priceMap[priceKey] !== undefined);
         const actualPrice = priceMap[priceKey];
-        return actualPrice !== undefined ? actualPrice : svc.price;
+        return actualPrice !== undefined ? actualPrice : (svc.price || 0);
     }
 
     function calcTotal() {
@@ -1174,23 +1177,6 @@
             btn.classList.toggle('active', state.wheels.types[btn.dataset.type]);
         });
         document.getElementById('wQtyVal').textContent = state.wheels.qty;
-
-        // Добавляем обработчики для обновления модалки услуг при изменении параметров
-        document.querySelectorAll('#radiusGrid .radius-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                // После изменения радиуса обновим отображение, если открыта модалка услуг
-                if (document.getElementById('mServices').classList.contains('active')) {
-                    openModal('services');
-                }
-            });
-        });
-        document.querySelectorAll('#typeGrid .type-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                if (document.getElementById('mServices').classList.contains('active')) {
-                    openModal('services');
-                }
-            });
-        });
     }
     
     function buildItemsModal(listId, items) {
