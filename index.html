@@ -6,7 +6,7 @@
     <title>Шиномонтаж · заказ</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        /* все стили без изменений – оставлены как в предыдущей версии */
+        /* Все стили без изменений – они уже были в предыдущих версиях */
         :root {
             --bg: #000000;
             --surface: #1c1c1e;
@@ -766,6 +766,7 @@
     </div>
 </div>
 
+<!-- МОДАЛКА МАТЕРИАЛОВ (исправлена) -->
 <div class="modal-overlay" id="mMaterials">
     <div class="modal">
         <div class="modal-handle"></div>
@@ -1046,26 +1047,25 @@
         }));
     }
 
-    // ИСПРАВЛЕННАЯ ФУНКЦИЯ ФИЛЬТРАЦИИ УСЛУГ (мягкая)
+    // Мягкий фильтр услуг – не скрывает обычные услуги
     function filterServicesByWheels(services, wheels) {
         const hasParams = wheels.types.light || wheels.types.jeep || wheels.types.lowProfile || wheels.types.runflat;
         if (!hasParams) return services;
 
         return services.filter(svc => {
-            // Радиус: если у услуги он ЗАДАН, он должен совпадать
+            // Радиус: если у услуги он задан, должен совпадать
             if (svc.radius !== null && wheels.radius && svc.radius !== wheels.radius) return false;
 
-            // Тип автомобиля: показываем если тип совпадает ИЛИ если у услуги тип вообще не указан
+            // Тип автомобиля: если у услуги есть список типов, и наш тип не входит – скрываем
             if (svc.carType) {
                 const allowed = svc.carType.split(',').map(s => s.trim());
                 if (wheels.types.light && !allowed.includes('light')) return false;
                 if (wheels.types.jeep && !allowed.includes('jeep')) return false;
             }
 
-            // Низкий профиль: если у услуги есть специальный флаг lowProfileOnly и он не совпадает – скрываем
-            // (в ваших данных может не быть таких флагов, тогда просто игнорируем)
-            if (svc.lowProfileOnly && !wheels.types.lowProfile) return false;
+            // Для спец. услуг: если услуга предназначена только для runflat, а он не выбран – скрываем
             if (svc.runflatOnly && !wheels.types.runflat) return false;
+            if (svc.lowProfileOnly && !wheels.types.lowProfile) return false;
 
             return true;
         });
@@ -1073,7 +1073,6 @@
 
     function fmtPrice(n) { return n.toLocaleString('ru-RU') + ' ₽'; }
     
-    // Функция для определения цены услуги с учётом параметров колёс
     function getServicePrice(svc) {
         const priceMap = JSON.parse(localStorage.getItem(STORAGE_KEYS.priceMap) || '{}');
         let priceKey = svc.name;
@@ -1081,9 +1080,7 @@
         
         if (isParametric) {
             let radius = svc.radius;
-            if (radius === null || radius === undefined) {
-                radius = state.wheels.radius;
-            }
+            if (radius === null || radius === undefined) radius = state.wheels.radius;
             if (radius) priceKey += `_R${radius}`;
             
             let carType = svc.carType;
@@ -1106,7 +1103,6 @@
                 priceKey += '_runflat';
             }
         }
-        
         const actualPrice = priceMap[priceKey];
         return actualPrice !== undefined ? actualPrice : (svc.price || 0);
     }
@@ -1116,8 +1112,7 @@
         sum += state.materials.reduce((s, i) => s + (i.qty > 0 ? i.price * i.qty : 0), 0);
         state.services.forEach(svc => {
             if (svc.qty > 0) {
-                const price = getServicePrice(svc);
-                sum += price * svc.qty;
+                sum += getServicePrice(svc) * svc.qty;
             }
         });
         return sum;
@@ -1171,8 +1166,6 @@
         updateItemsDisp('dMaterials', state.materials, 'Нет позиций');
         updateItemsDisp('dServices', state.services, 'Нет позиций');
         updateSaveBtn();
-        // также обновим главный список выбранных позиций
-        renderOrderList();
     }
 
     function buildMechanicsModal() {
@@ -1196,30 +1189,33 @@
         document.getElementById('wQtyVal').textContent = state.wheels.qty;
     }
     
-    // ИСПРАВЛЕННАЯ ФУНКЦИЯ ПОСТРОЕНИЯ МОДАЛКИ
+    // ОБНОВЛЁННАЯ функция построения модальных списков (материалов и услуг)
     function buildItemsModal(listId, items) {
         const el = document.getElementById(listId);
         
-        el.innerHTML = items.map((item) => {
-            let displayPrice = (listId === 'svcList') ? getServicePrice(item) : item.price;
+        el.innerHTML = items.map(item => {
+            let displayPrice = item.price;
             let priceLabel = fmtPrice(displayPrice);
-            
+            if (listId === 'svcList') {
+                displayPrice = getServicePrice(item);
+                priceLabel = fmtPrice(displayPrice);
+            }
+            // Используем id как уникальный идентификатор (для материалов он есть, для услуг тоже добавим)
+            const id = item.id || item.name; // fallback на name, если id нет
             return `
-                <div class="item-row${item.qty === 0 ? ' zero' : ''}" data-name="${item.name}">
+                <div class="item-row${item.qty === 0 ? ' zero' : ''}" data-id="${id}">
                     <div class="item-name-block">
                         <div class="item-name">${item.name}</div>
                         <div class="item-price-label">${priceLabel} / шт</div>
                     </div>
                     <div class="item-controls">
                         <div class="item-select-wrap">
-                            <select class="item-select" onchange="window.updateItemQuantity('${listId}', '${item.name}', this.value)">
-                                ${Array.from({length:21},(_,i)=>`<option value="${i}"${i===item.qty?' selected':''}>${i}</option>`).join('')}
+                            <select class="item-select" data-id="${id}">
+                                ${Array.from({length:21}, (_,i) => `<option value="${i}" ${i === item.qty ? 'selected' : ''}>${i}</option>`).join('')}
                             </select>
                             <span class="item-select-arrow"><i class="fa-solid fa-chevron-down"></i></span>
                         </div>
-                        <button class="item-delete" onclick="window.updateItemQuantity('${listId}', '${item.name}', 0)">
-                            <i class="fa-solid fa-trash-can"></i>
-                        </button>
+                        <button class="item-delete" data-id="${id}"><i class="fa-solid fa-trash-can"></i></button>
                     </div>
                 </div>
             `;
@@ -1242,56 +1238,6 @@
         });
         
         el.innerHTML = sum > 0 ? `<span class="modal-footer-sum-label">Сумма:</span><span class="modal-footer-sum-value">${fmtPrice(sum)}</span>` : '';
-    }
-
-    // ГЛОБАЛЬНАЯ ФУНКЦИЯ ДЛЯ ОБНОВЛЕНИЯ КОЛИЧЕСТВА
-    window.updateItemQuantity = function(listId, itemName, newQty) {
-        const qty = parseInt(newQty);
-        const stateArray = (listId === 'svcList') ? state.services : state.materials;
-        const item = stateArray.find(s => s.name === itemName);
-        if (!item) return;
-        
-        item.qty = qty;
-        
-        // Обновляем визуал строки
-        const row = document.querySelector(`[data-name="${itemName}"]`);
-        if (row) {
-            qty === 0 ? row.classList.add('zero') : row.classList.remove('zero');
-        }
-        
-        // Пересчитываем сумму в футере модалки
-        const footerId = (listId === 'svcList') ? 'svcFooterSum' : 'matFooterSum';
-        updateModalFooterSum(footerId, stateArray);
-        
-        // Обновляем главный экран
-        updateSaveBtn();
-        renderOrderList();
-    };
-
-    // Функция рендера основного списка выбранных позиций (добавить в HTML контейнер, если нужно)
-    function renderOrderList() {
-        const container = document.getElementById('orderList');
-        if (!container) return; // если такого элемента нет, можно создать или игнорировать
-        const selectedServices = state.services.filter(s => s.qty > 0);
-        const selectedMaterials = state.materials.filter(m => m.qty > 0);
-        const allSelected = [...selectedServices, ...selectedMaterials];
-        if (allSelected.length === 0) {
-            container.innerHTML = '<div class="empty-msg">Список пуст</div>';
-            return;
-        }
-        container.innerHTML = allSelected.map(item => {
-            const price = (item.price !== undefined) ? item.price : getServicePrice(item);
-            const sum = price * item.qty;
-            return `
-                <div class="order-item">
-                    <div class="order-item-info">
-                        <div class="order-item-name">${item.name}</div>
-                        <div class="order-item-sub">${item.qty} шт. x ${fmtPrice(price)}</div>
-                    </div>
-                    <div class="order-item-sum">${fmtPrice(sum)}</div>
-                </div>
-            `;
-        }).join('');
     }
 
     function buildSettingsModal() {
@@ -1484,6 +1430,7 @@
         updateAllDisplays();
     }
 
+    // ОБНОВЛЁННАЯ функция сохранения из модалок – используем data-id
     function saveCurrentModal(overlay) {
         const id = overlay.id;
         if (id === 'mMechanics') {
@@ -1503,13 +1450,34 @@
             state.wheels.qty = parseInt(document.getElementById('wQtyVal').textContent);
             updateWheelsDisp();
         } else if (id === 'mMaterials') {
+            // Сохраняем материалы – ищем по data-id
             document.querySelectorAll('#matList .item-row').forEach(row => {
-                const idx = parseInt(row.dataset.idx);
-                state.materials[idx].qty = parseInt(row.querySelector('.item-select').value);
+                const id = row.dataset.id;
+                const select = row.querySelector('.item-select');
+                if (id && select) {
+                    const qty = parseInt(select.value);
+                    const material = state.materials.find(m => String(m.id) === id);
+                    if (material) material.qty = qty;
+                }
             });
             updateItemsDisp('dMaterials', state.materials, 'Нет позиций');
         } else if (id === 'mServices') {
-            // В модалке услуг данные обновляются через updateItemQuantity, здесь ничего не делаем
+            // Сохраняем услуги – ищем по data-id (если есть) или по data-name (для старых данных)
+            document.querySelectorAll('#svcList .item-row').forEach(row => {
+                let id = row.dataset.id;
+                let name = row.dataset.name; // fallback
+                const select = row.querySelector('.item-select');
+                if (id && select) {
+                    const qty = parseInt(select.value);
+                    const service = state.services.find(s => String(s.id) === id);
+                    if (service) service.qty = qty;
+                } else if (name && select) {
+                    const qty = parseInt(select.value);
+                    const service = state.services.find(s => s.name === name);
+                    if (service) service.qty = qty;
+                }
+            });
+            updateItemsDisp('dServices', state.services, 'Нет позиций');
         }
         updateSaveBtn();
         saveStateToStorage();
@@ -1530,7 +1498,6 @@
         if (name === 'materials') { buildItemsModal('matList', state.materials); updateModalFooterSum('matFooterSum', state.materials); }
         if (name === 'services') {
             const filtered = filterServicesByWheels(state.services, state.wheels);
-            console.log('Filtered services:', filtered);
             buildItemsModal('svcList', filtered);
             updateModalFooterSum('svcFooterSum', filtered);
         }
@@ -1675,7 +1642,7 @@
             });
     }
 
-    // ========== РАСПОЗНАВАНИЕ НОМЕРА АВТОМОБИЛЯ (улучшенное) ==========
+    // ========== РАСПОЗНАВАНИЕ НОМЕРА (без изменений) ==========
     let scanStream = null;
 
     const loadTesseract = () => {
@@ -1724,15 +1691,11 @@
     document.getElementById('btnScanPlate')?.addEventListener('click', async () => {
         const cameraContainer = document.getElementById('cameraContainer');
         const video = document.getElementById('video');
-        
         try {
-            scanStream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: "environment" }
-            });
+            scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
             video.srcObject = scanStream;
             cameraContainer.style.display = 'block';
             await loadTesseract();
-            console.log('Tesseract loaded');
         } catch (err) {
             showToast('❌ Не удалось получить доступ к камере');
             console.error(err);
@@ -1744,15 +1707,11 @@
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         const ocrStatus = document.getElementById('ocrStatus');
-        
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        
         preprocessImage(canvas);
-        
         ocrStatus.textContent = '⏳ Распознавание...';
-        
         try {
             const Tesseract = await loadTesseract();
             const result = await Tesseract.recognize(canvas, 'eng', {
@@ -1760,13 +1719,10 @@
                 tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
                 tessedit_pageseg_mode: 7
             });
-            
             const rawText = result.data.text;
             const plate = extractPlate(rawText);
-            
             ocrStatus.textContent = plate ? '✅ Распознано' : '❌ Номер не найден';
             document.getElementById('inName').value = plate || '[не удалось распознать]';
-            
         } catch (error) {
             ocrStatus.textContent = '❌ Ошибка распознавания';
             console.error(error);
@@ -1814,9 +1770,7 @@
             if (svc.qty > 0) {
                 const isParametric = svc.carType !== null || svc.lowProfile !== null || svc.runflat !== null;
                 if (isParametric) {
-                    if (svc.radius === null || svc.radius === undefined) {
-                        svc.radius = state.wheels.radius;
-                    }
+                    if (svc.radius === null || svc.radius === undefined) svc.radius = state.wheels.radius;
                     if (svc.carType === null || svc.carType === undefined) {
                         if (state.wheels.types.light) svc.carType = 'light';
                         else if (state.wheels.types.jeep) svc.carType = 'jeep';
@@ -1827,12 +1781,8 @@
                         else if (state.wheels.types.jeep && types.includes('jeep')) svc.carType = 'jeep';
                         else svc.carType = null;
                     }
-                    if (svc.lowProfile === null || svc.lowProfile === undefined) {
-                        svc.lowProfile = state.wheels.types.lowProfile || false;
-                    }
-                    if (svc.runflat === null || svc.runflat === undefined) {
-                        svc.runflat = state.wheels.types.runflat || false;
-                    }
+                    if (svc.lowProfile === null || svc.lowProfile === undefined) svc.lowProfile = state.wheels.types.lowProfile || false;
+                    if (svc.runflat === null || svc.runflat === undefined) svc.runflat = state.wheels.types.runflat || false;
                 }
             }
             return svc;
@@ -1850,35 +1800,30 @@
                 types: state.wheels.types,
                 qty: state.wheels.qty
             },
-            materials: state.materials
-                .filter(m => m.qty > 0)
-                .map(m => ({
-                    id: m.id,
-                    name: m.name,
-                    price: m.price,
-                    qty: m.qty
-                })),
-            services: state.services
-                .filter(s => s.qty > 0)
-                .map(s => {
-                    let priceKey = s.name;
-                    if (s.radius) priceKey += `_R${s.radius}`;
-                    if (s.carType) priceKey += `_${s.carType}`;
-                    if (s.lowProfile) priceKey += '_lowProfile';
-                    if (s.runflat) priceKey += '_runflat';
-                    const actualPrice = priceMap[priceKey] || s.price;
-                    
-                    return {
-                        id: s.id,
-                        name: s.name,
-                        price: actualPrice,
-                        qty: s.qty,
-                        radius: s.radius,
-                        carType: s.carType,
-                        lowProfile: s.lowProfile,
-                        runflat: s.runflat
-                    };
-                })
+            materials: state.materials.filter(m => m.qty > 0).map(m => ({
+                id: m.id,
+                name: m.name,
+                price: m.price,
+                qty: m.qty
+            })),
+            services: state.services.filter(s => s.qty > 0).map(s => {
+                let priceKey = s.name;
+                if (s.radius) priceKey += `_R${s.radius}`;
+                if (s.carType) priceKey += `_${s.carType}`;
+                if (s.lowProfile) priceKey += '_lowProfile';
+                if (s.runflat) priceKey += '_runflat';
+                const actualPrice = priceMap[priceKey] || s.price;
+                return {
+                    id: s.id,
+                    name: s.name,
+                    price: actualPrice,
+                    qty: s.qty,
+                    radius: s.radius,
+                    carType: s.carType,
+                    lowProfile: s.lowProfile,
+                    runflat: s.runflat
+                };
+            })
         };
 
         const payload = {
@@ -1887,40 +1832,28 @@
         };
 
         showToast('Отправка...');
-
         try {
             const response = await fetch(ORDER_PROXY_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-
             const result = await response.json();
-
             if (result.success) {
                 showToast(`✅ Заказ №${result.orderNumber} создан`);
                 localStorage.setItem('lastOrderNumber', result.orderNumber);
-
-                const servicesString = state.services
-                    .filter(s => s.qty > 0)
-                    .map(s => {
-                        let str = `${s.name} x${s.qty}`;
-                        const params = [];
-                        if (s.radius) params.push(`R${s.radius}`);
-                        if (s.carType === 'light') params.push('легковая');
-                        if (s.carType === 'jeep') params.push('джип');
-                        if (s.lowProfile) params.push('низкий профиль');
-                        if (s.runflat) params.push('runflat');
-                        if (params.length) str += ` (${params.join(', ')})`;
-                        return str;
-                    })
-                    .join(', ');
-
-                const materialsString = state.materials
-                    .filter(m => m.qty > 0)
-                    .map(m => `${m.name} x${m.qty}`)
-                    .join(', ');
-
+                const servicesString = state.services.filter(s => s.qty > 0).map(s => {
+                    let str = `${s.name} x${s.qty}`;
+                    const params = [];
+                    if (s.radius) params.push(`R${s.radius}`);
+                    if (s.carType === 'light') params.push('легковая');
+                    if (s.carType === 'jeep') params.push('джип');
+                    if (s.lowProfile) params.push('низкий профиль');
+                    if (s.runflat) params.push('runflat');
+                    if (params.length) str += ` (${params.join(', ')})`;
+                    return str;
+                }).join(', ');
+                const materialsString = state.materials.filter(m => m.qty > 0).map(m => `${m.name} x${m.qty}`).join(', ');
                 addOrder({
                     client: state.client,
                     manager: state.mechanics.join(', '),
@@ -2032,9 +1965,7 @@
             if (!btn) return;
             document.querySelectorAll('#radiusGrid .radius-btn').forEach(b=>b.classList.remove('active'));
             btn.classList.add('active');
-            if (document.getElementById('mServices').classList.contains('active')) {
-                openModal('services');
-            }
+            if (document.getElementById('mServices').classList.contains('active')) openModal('services');
         });
 
         document.getElementById('typeGrid')?.addEventListener('click', e => {
@@ -2046,9 +1977,7 @@
                 if (btn.classList.contains('active')) btn.classList.remove('active');
                 else { btn.classList.add('active'); other?.classList.remove('active'); }
             } else btn.classList.toggle('active');
-            if (document.getElementById('mServices').classList.contains('active')) {
-                openModal('services');
-            }
+            if (document.getElementById('mServices').classList.contains('active')) openModal('services');
         });
 
         document.getElementById('wQtyMinus')?.addEventListener('click', ()=>{
@@ -2073,24 +2002,58 @@
             updateItemsDisp('dMaterials', state.materials, 'Нет позиций');
             updateItemsDisp('dServices', state.services, 'Нет позиций');
             updateSaveBtn();
-            renderOrderList();
             showToast(`Количество ${qty} применено`);
         });
 
-        ['matList','svcList'].forEach(listId => {
-            document.getElementById(listId)?.addEventListener('change', e => {
-                if (e.target.classList.contains('item-select')) {
-                    const name = e.target.closest('.item-row').dataset.name;
-                    const newQty = parseInt(e.target.value);
-                    window.updateItemQuantity(listId, name, newQty);
+        // Обработчики для динамического изменения количества (через делегирование)
+        document.addEventListener('change', function(e) {
+            if (e.target.classList.contains('item-select')) {
+                const row = e.target.closest('.item-row');
+                if (!row) return;
+                const id = row.dataset.id;
+                const listId = row.closest('.items-list')?.id;
+                if (!listId) return;
+                const qty = parseInt(e.target.value);
+                if (listId === 'matList') {
+                    const material = state.materials.find(m => String(m.id) === id);
+                    if (material) material.qty = qty;
+                    updateModalFooterSum('matFooterSum', state.materials);
+                } else if (listId === 'svcList') {
+                    let service = state.services.find(s => String(s.id) === id);
+                    if (!service) service = state.services.find(s => s.name === id);
+                    if (service) service.qty = qty;
+                    updateModalFooterSum('svcFooterSum', state.services);
                 }
-            });
-            document.getElementById(listId)?.addEventListener('click', e => {
-                if (e.target.closest('.item-delete')) {
-                    const name = e.target.closest('.item-delete').closest('.item-row').dataset.name;
-                    window.updateItemQuantity(listId, name, 0);
+                updateSaveBtn();
+            }
+        });
+
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.item-delete')) {
+                const btn = e.target.closest('.item-delete');
+                const row = btn.closest('.item-row');
+                if (!row) return;
+                const id = row.dataset.id;
+                const listId = row.closest('.items-list')?.id;
+                if (!listId) return;
+                if (listId === 'matList') {
+                    const material = state.materials.find(m => String(m.id) === id);
+                    if (material) material.qty = 0;
+                    const select = row.querySelector('.item-select');
+                    if (select) select.value = 0;
+                    row.classList.add('zero');
+                    updateModalFooterSum('matFooterSum', state.materials);
+                } else if (listId === 'svcList') {
+                    let service = state.services.find(s => String(s.id) === id);
+                    if (!service) service = state.services.find(s => s.name === id);
+                    if (service) service.qty = 0;
+                    const select = row.querySelector('.item-select');
+                    if (select) select.value = 0;
+                    row.classList.add('zero');
+                    updateModalFooterSum('svcFooterSum', state.services);
                 }
-            });
+                updateSaveBtn();
+            }
         });
 
         document.getElementById('btnReset').addEventListener('click', async () => {
