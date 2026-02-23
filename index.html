@@ -1011,8 +1011,11 @@
         }));
     }
 
-    // Проверяет, соответствует ли одна услуга текущим параметрам колёс
+    // Проверяет, соответствует ли одна услуга текущим параметрам колёс (для переменных услуг)
     function serviceMatchesWheels(svc, wheels) {
+        // Если это постоянная услуга (нет параметров) – всегда подходит
+        if (svc.radius === null && svc.carType === null && !svc.lowProfile && !svc.runflat) return true;
+
         // Радиус: если у услуги указан, должен совпадать
         if (svc.radius !== null && wheels.radius && svc.radius !== wheels.radius) return false;
         // Тип автомобиля: если у услуги указан, должен совпадать
@@ -1027,11 +1030,13 @@
         return true;
     }
 
-    // Сбрасывает количества услуг, не соответствующих текущим параметрам
+    // Сбрасывает количества переменных услуг, не соответствующих текущим параметрам
     function resetInvalidServices() {
         let changed = false;
         state.services = state.services.map(svc => {
-            if (svc.qty > 0 && !serviceMatchesWheels(svc, state.wheels)) {
+            // Постоянные услуги не трогаем
+            const isConstant = svc.radius === null && svc.carType === null && !svc.lowProfile && !svc.runflat;
+            if (!isConstant && svc.qty > 0 && !serviceMatchesWheels(svc, state.wheels)) {
                 svc.qty = 0;
                 changed = true;
             }
@@ -1045,9 +1050,15 @@
         }
     }
 
-    // Фильтр для модального окна (только доступные услуги)
+    // Фильтр для модального окна: показываем все постоянные + переменные, прошедшие фильтр
     function filterServicesByWheels(services, wheels) {
-        return services.filter(svc => serviceMatchesWheels(svc, wheels));
+        return services.filter(svc => {
+            // Постоянные услуги всегда видны
+            const isConstant = svc.radius === null && svc.carType === null && !svc.lowProfile && !svc.runflat;
+            if (isConstant) return true;
+            // Иначе проверяем по параметрам
+            return serviceMatchesWheels(svc, wheels);
+        });
     }
 
     function fmtPrice(n) { return n.toLocaleString('ru-RU') + ' ₽'; }
