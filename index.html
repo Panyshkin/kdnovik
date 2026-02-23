@@ -6,7 +6,7 @@
     <title>Шиномонтаж · заказ</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        /* все стили без изменений – оставлены как в предыдущей версии */
+        /* все стили без изменений – они уже были в предыдущих версиях */
         :root {
             --bg: #000000;
             --surface: #1c1c1e;
@@ -926,8 +926,8 @@
                 
                 saveListsToStorage();
                 localStorage.setItem(STORAGE_KEYS.selectedSubdivision, subdivision);
-                reconcileStateWithLists();
-                resetInvalidServices(); // после загрузки сбрасываем несоответствующие
+                reconcileStateWithLists();      // обновляем state, добавляя новые услуги с qty=0
+                resetInvalidServices();         // сбрасываем те, что не подходят под текущие колёса
                 updateAllDisplays();
                 buildSettingsModal();
                 showToast('✅ Настройки загружены');
