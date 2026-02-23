@@ -6,6 +6,7 @@
     <title>Шиномонтаж · заказ</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
+        /* все стили без изменений – оставлены как в предыдущей версии */
         :root {
             --bg: #000000;
             --surface: #1c1c1e;
@@ -782,7 +783,7 @@
     </div>
 </div>
 
-<!-- МОДАЛКА УСЛУГ (плоский список) -->
+<!-- МОДАЛКА УСЛУГ -->
 <div class="modal-overlay" id="mServices">
     <div class="modal">
         <div class="modal-handle"></div>
@@ -927,6 +928,8 @@
                 saveListsToStorage();
                 localStorage.setItem(STORAGE_KEYS.selectedSubdivision, subdivision);
                 reconcileStateWithLists();
+                // после загрузки новых данных, сбросить несоответствующие текущим колёсам
+                resetInvalidServices();
                 updateAllDisplays();
                 buildSettingsModal();
                 showToast('✅ Настройки загружены');
@@ -1010,29 +1013,43 @@
         }));
     }
 
-    // Фильтр услуг по параметрам колёс
-    function filterServicesByWheels(services, wheels) {
-        const hasParams = wheels.types.light || wheels.types.jeep || wheels.types.lowProfile || wheels.types.runflat;
-        if (!hasParams) return services;
+    // Проверяет, соответствует ли одна услуга текущим параметрам колёс
+    function serviceMatchesWheels(svc, wheels) {
+        // Радиус: если у услуги указан, должен совпадать
+        if (svc.radius !== null && wheels.radius && svc.radius !== wheels.radius) return false;
+        // Тип автомобиля: если у услуги указан, должен совпадать
+        if (svc.carType) {
+            if (wheels.types.light && svc.carType !== 'light') return false;
+            if (wheels.types.jeep && svc.carType !== 'jeep') return false;
+        }
+        // Низкий профиль: если выбран, услуга должна его поддерживать
+        if (wheels.types.lowProfile && svc.lowProfile !== true) return false;
+        // Runflat: аналогично
+        if (wheels.types.runflat && svc.runflat !== true) return false;
+        return true;
+    }
 
-        return services.filter(svc => {
-            // Радиус: если у услуги указан, должен совпадать
-            if (svc.radius !== null && wheels.radius && svc.radius !== wheels.radius) return false;
-
-            // Тип автомобиля: если у услуги указан, должен совпадать
-            if (svc.carType) {
-                if (wheels.types.light && svc.carType !== 'light') return false;
-                if (wheels.types.jeep && svc.carType !== 'jeep') return false;
+    // Сбрасывает количества услуг, не соответствующих текущим параметрам
+    function resetInvalidServices() {
+        let changed = false;
+        state.services = state.services.map(svc => {
+            if (svc.qty > 0 && !serviceMatchesWheels(svc, state.wheels)) {
+                svc.qty = 0;
+                changed = true;
             }
-
-            // Низкий профиль: если у колёс выбран, услуга должна его поддерживать
-            if (wheels.types.lowProfile && svc.lowProfile !== true) return false;
-
-            // Runflat: аналогично
-            if (wheels.types.runflat && svc.runflat !== true) return false;
-
-            return true;
+            return svc;
         });
+        if (changed) {
+            updateAllDisplays();
+            if (document.getElementById('mServices').classList.contains('active')) {
+                openModal('services'); // перестроить модалку
+            }
+        }
+    }
+
+    // Фильтр для модального окна (только доступные услуги)
+    function filterServicesByWheels(services, wheels) {
+        return services.filter(svc => serviceMatchesWheels(svc, wheels));
     }
 
     function fmtPrice(n) { return n.toLocaleString('ru-RU') + ' ₽'; }
@@ -1336,6 +1353,8 @@
             });
             state.wheels.qty = parseInt(document.getElementById('wQtyVal').textContent);
             updateWheelsDisp();
+            // после изменения параметров колёс сбрасываем несоответствующие услуги
+            resetInvalidServices();
         } else if (id === 'mMaterials') {
             document.querySelectorAll('#matList .item-row').forEach(row => {
                 const id = row.dataset.id;
@@ -1486,7 +1505,7 @@
             .then(confirmed => { if (confirmed) showToast('Заглушка: очистка истории'); });
     }
 
-    // ========== РАСПОЗНАВАНИЕ НОМЕРА ==========
+    // ========== РАСПОЗНАВАНИЕ НОМЕРА (без изменений) ==========
     let scanStream = null;
     const loadTesseract = () => {
         return new Promise((resolve) => {
@@ -1757,7 +1776,10 @@
             if (!btn) return;
             document.querySelectorAll('#radiusGrid .radius-btn').forEach(b=>b.classList.remove('active'));
             btn.classList.add('active');
-            if (document.getElementById('mServices').classList.contains('active')) openModal('services');
+            // если модалка открыта, перестроим её
+            if (document.getElementById('mServices').classList.contains('active')) {
+                openModal('services');
+            }
         });
 
         document.getElementById('typeGrid')?.addEventListener('click', e => {
@@ -1769,7 +1791,9 @@
                 if (btn.classList.contains('active')) btn.classList.remove('active');
                 else { btn.classList.add('active'); other?.classList.remove('active'); }
             } else btn.classList.toggle('active');
-            if (document.getElementById('mServices').classList.contains('active')) openModal('services');
+            if (document.getElementById('mServices').classList.contains('active')) {
+                openModal('services');
+            }
         });
 
         document.getElementById('wQtyMinus')?.addEventListener('click', ()=>{
