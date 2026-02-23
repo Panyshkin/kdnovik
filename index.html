@@ -6,6 +6,7 @@
     <title>Шиномонтаж · заказ</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
+        /* все стили без изменений – оставлены как в предыдущей версии */
         :root {
             --bg: #000000;
             --surface: #1c1c1e;
@@ -686,7 +687,7 @@
     </div>
 </div>
 
-<!-- МОДАЛКА КЛИЕНТА С КАМЕРОЙ (уменьшенной) -->
+<!-- МОДАЛКА КЛИЕНТА С КАМЕРОЙ -->
 <div class="modal-overlay" id="mClient">
     <div class="modal">
         <div class="modal-handle"></div>
@@ -1045,30 +1046,26 @@
         }));
     }
 
-    // Функция фильтрации услуг по параметрам колёс (теперь пропускает все услуги, если параметры не выбраны)
+    // ИСПРАВЛЕННАЯ ФУНКЦИЯ ФИЛЬТРАЦИИ УСЛУГ (мягкая)
     function filterServicesByWheels(services, wheels) {
-        // Если никакие параметры не выбраны – показываем все услуги
         const hasParams = wheels.types.light || wheels.types.jeep || wheels.types.lowProfile || wheels.types.runflat;
-        if (!hasParams) {
-            return services;
-        }
+        if (!hasParams) return services;
 
         return services.filter(svc => {
-            // Радиус: если у услуги указан конкретный радиус, он должен совпадать
-            if (svc.radius !== null && svc.radius !== wheels.radius) return false;
+            // Радиус: если у услуги он ЗАДАН, он должен совпадать
+            if (svc.radius !== null && wheels.radius && svc.radius !== wheels.radius) return false;
 
-            // Тип автомобиля
-            if (svc.carType !== null && svc.carType !== '') {
-                const allowedTypes = svc.carType.split(',').map(s => s.trim());
-                if (wheels.types.light && !allowedTypes.includes('light')) return false;
-                if (wheels.types.jeep && !allowedTypes.includes('jeep')) return false;
+            // Тип автомобиля: показываем если тип совпадает ИЛИ если у услуги тип вообще не указан
+            if (svc.carType) {
+                const allowed = svc.carType.split(',').map(s => s.trim());
+                if (wheels.types.light && !allowed.includes('light')) return false;
+                if (wheels.types.jeep && !allowed.includes('jeep')) return false;
             }
 
-            // Низкий профиль
-            if (wheels.types.lowProfile && svc.lowProfile !== true) return false;
-
-            // Runflat
-            if (wheels.types.runflat && svc.runflat !== true) return false;
+            // Низкий профиль: если у услуги есть специальный флаг lowProfileOnly и он не совпадает – скрываем
+            // (в ваших данных может не быть таких флагов, тогда просто игнорируем)
+            if (svc.lowProfileOnly && !wheels.types.lowProfile) return false;
+            if (svc.runflatOnly && !wheels.types.runflat) return false;
 
             return true;
         });
@@ -1116,16 +1113,13 @@
 
     function calcTotal() {
         let sum = 0;
-        
         sum += state.materials.reduce((s, i) => s + (i.qty > 0 ? i.price * i.qty : 0), 0);
-        
         state.services.forEach(svc => {
             if (svc.qty > 0) {
                 const price = getServicePrice(svc);
                 sum += price * svc.qty;
             }
         });
-        
         return sum;
     }
     
@@ -1177,6 +1171,8 @@
         updateItemsDisp('dMaterials', state.materials, 'Нет позиций');
         updateItemsDisp('dServices', state.services, 'Нет позиций');
         updateSaveBtn();
+        // также обновим главный список выбранных позиций
+        renderOrderList();
     }
 
     function buildMechanicsModal() {
@@ -1200,30 +1196,30 @@
         document.getElementById('wQtyVal').textContent = state.wheels.qty;
     }
     
+    // ИСПРАВЛЕННАЯ ФУНКЦИЯ ПОСТРОЕНИЯ МОДАЛКИ
     function buildItemsModal(listId, items) {
         const el = document.getElementById(listId);
         
-        el.innerHTML = items.map((item, idx) => {
-            let displayPrice = item.price;
-            if (listId === 'svcList') {
-                displayPrice = getServicePrice(item);
-            }
+        el.innerHTML = items.map((item) => {
+            let displayPrice = (listId === 'svcList') ? getServicePrice(item) : item.price;
             let priceLabel = fmtPrice(displayPrice);
             
             return `
-                <div class="item-row${item.qty===0?' zero':''}" data-idx="${idx}">
+                <div class="item-row${item.qty === 0 ? ' zero' : ''}" data-name="${item.name}">
                     <div class="item-name-block">
                         <div class="item-name">${item.name}</div>
                         <div class="item-price-label">${priceLabel} / шт</div>
                     </div>
                     <div class="item-controls">
                         <div class="item-select-wrap">
-                            <select class="item-select" data-idx="${idx}">
+                            <select class="item-select" onchange="window.updateItemQuantity('${listId}', '${item.name}', this.value)">
                                 ${Array.from({length:21},(_,i)=>`<option value="${i}"${i===item.qty?' selected':''}>${i}</option>`).join('')}
                             </select>
                             <span class="item-select-arrow"><i class="fa-solid fa-chevron-down"></i></span>
                         </div>
-                        <button class="item-delete" data-idx="${idx}"><i class="fa-solid fa-trash-can"></i></button>
+                        <button class="item-delete" onclick="window.updateItemQuantity('${listId}', '${item.name}', 0)">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
                     </div>
                 </div>
             `;
@@ -1246,6 +1242,56 @@
         });
         
         el.innerHTML = sum > 0 ? `<span class="modal-footer-sum-label">Сумма:</span><span class="modal-footer-sum-value">${fmtPrice(sum)}</span>` : '';
+    }
+
+    // ГЛОБАЛЬНАЯ ФУНКЦИЯ ДЛЯ ОБНОВЛЕНИЯ КОЛИЧЕСТВА
+    window.updateItemQuantity = function(listId, itemName, newQty) {
+        const qty = parseInt(newQty);
+        const stateArray = (listId === 'svcList') ? state.services : state.materials;
+        const item = stateArray.find(s => s.name === itemName);
+        if (!item) return;
+        
+        item.qty = qty;
+        
+        // Обновляем визуал строки
+        const row = document.querySelector(`[data-name="${itemName}"]`);
+        if (row) {
+            qty === 0 ? row.classList.add('zero') : row.classList.remove('zero');
+        }
+        
+        // Пересчитываем сумму в футере модалки
+        const footerId = (listId === 'svcList') ? 'svcFooterSum' : 'matFooterSum';
+        updateModalFooterSum(footerId, stateArray);
+        
+        // Обновляем главный экран
+        updateSaveBtn();
+        renderOrderList();
+    };
+
+    // Функция рендера основного списка выбранных позиций (добавить в HTML контейнер, если нужно)
+    function renderOrderList() {
+        const container = document.getElementById('orderList');
+        if (!container) return; // если такого элемента нет, можно создать или игнорировать
+        const selectedServices = state.services.filter(s => s.qty > 0);
+        const selectedMaterials = state.materials.filter(m => m.qty > 0);
+        const allSelected = [...selectedServices, ...selectedMaterials];
+        if (allSelected.length === 0) {
+            container.innerHTML = '<div class="empty-msg">Список пуст</div>';
+            return;
+        }
+        container.innerHTML = allSelected.map(item => {
+            const price = (item.price !== undefined) ? item.price : getServicePrice(item);
+            const sum = price * item.qty;
+            return `
+                <div class="order-item">
+                    <div class="order-item-info">
+                        <div class="order-item-name">${item.name}</div>
+                        <div class="order-item-sub">${item.qty} шт. x ${fmtPrice(price)}</div>
+                    </div>
+                    <div class="order-item-sum">${fmtPrice(sum)}</div>
+                </div>
+            `;
+        }).join('');
     }
 
     function buildSettingsModal() {
@@ -1463,11 +1509,7 @@
             });
             updateItemsDisp('dMaterials', state.materials, 'Нет позиций');
         } else if (id === 'mServices') {
-            document.querySelectorAll('#svcList .item-row').forEach(row => {
-                const idx = parseInt(row.dataset.idx);
-                state.services[idx].qty = parseInt(row.querySelector('.item-select').value);
-            });
-            updateItemsDisp('dServices', state.services, 'Нет позиций');
+            // В модалке услуг данные обновляются через updateItemQuantity, здесь ничего не делаем
         }
         updateSaveBtn();
         saveStateToStorage();
@@ -1487,9 +1529,8 @@
         if (name === 'wheels') buildWheelsModal();
         if (name === 'materials') { buildItemsModal('matList', state.materials); updateModalFooterSum('matFooterSum', state.materials); }
         if (name === 'services') {
-            // Применяем фильтрацию по текущим параметрам колёс
             const filtered = filterServicesByWheels(state.services, state.wheels);
-            console.log('Filtered services:', filtered); // для отладки
+            console.log('Filtered services:', filtered);
             buildItemsModal('svcList', filtered);
             updateModalFooterSum('svcFooterSum', filtered);
         }
@@ -1650,7 +1691,6 @@
         });
     };
 
-    // Предобработка: увеличение контраста, бинаризация
     function preprocessImage(canvas) {
         const ctx = canvas.getContext('2d');
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -1660,16 +1700,13 @@
             let g = data[i+1];
             let b = data[i+2];
             let gray = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-            // Инвертируем и делаем ч/б
             let val = gray > 128 ? 0 : 255;
             data[i] = data[i+1] = data[i+2] = val;
         }
         ctx.putImageData(imageData, 0, 0);
     }
 
-    // Функция для извлечения номера из текста (оставляет только латиницу и цифры, убирает лишнее)
     function extractPlate(text) {
-        // Замена похожих русских букв на латинские (для номеров)
         const replaceMap = {
             'А': 'A', 'В': 'B', 'Е': 'E', 'К': 'K', 'М': 'M', 'Н': 'H', 'О': 'O', 'Р': 'P', 'С': 'C', 'Т': 'T', 'У': 'Y', 'Х': 'X',
             'а': 'a', 'в': 'b', 'е': 'e', 'к': 'k', 'м': 'm', 'н': 'h', 'о': 'o', 'р': 'p', 'с': 'c', 'т': 't', 'у': 'y', 'х': 'x'
@@ -1679,9 +1716,7 @@
             if (replaceMap[ch]) converted += replaceMap[ch];
             else converted += ch;
         }
-        // Оставляем только латинские буквы и цифры
         const allowed = converted.replace(/[^A-Za-z0-9]/g, '');
-        // Ищем первый непрерывный блок из букв и цифр длиной от 6 до 10 символов (примерная длина номера)
         const match = allowed.match(/[A-Za-z0-9]{6,10}/);
         return match ? match[0] : '';
     }
@@ -1714,14 +1749,13 @@
         canvas.height = video.videoHeight;
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         
-        // Предобработка
         preprocessImage(canvas);
         
         ocrStatus.textContent = '⏳ Распознавание...';
         
         try {
             const Tesseract = await loadTesseract();
-            const result = await Tesseract.recognize(canvas, 'eng', { // используем только английский для номеров
+            const result = await Tesseract.recognize(canvas, 'eng', {
                 logger: m => console.log(m),
                 tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
                 tessedit_pageseg_mode: 7
@@ -2039,30 +2073,22 @@
             updateItemsDisp('dMaterials', state.materials, 'Нет позиций');
             updateItemsDisp('dServices', state.services, 'Нет позиций');
             updateSaveBtn();
+            renderOrderList();
             showToast(`Количество ${qty} применено`);
         });
 
         ['matList','svcList'].forEach(listId => {
-            const items = listId === 'matList' ? state.materials : state.services;
-            const footerId = listId === 'matList' ? 'matFooterSum' : 'svcFooterSum';
             document.getElementById(listId)?.addEventListener('change', e => {
                 if (e.target.classList.contains('item-select')) {
-                    const idx = parseInt(e.target.dataset.idx);
-                    items[idx].qty = parseInt(e.target.value);
-                    e.target.closest('.item-row').classList.toggle('zero', items[idx].qty===0);
-                    updateModalFooterSum(footerId, items);
-                    updateSaveBtn();
+                    const name = e.target.closest('.item-row').dataset.name;
+                    const newQty = parseInt(e.target.value);
+                    window.updateItemQuantity(listId, name, newQty);
                 }
             });
             document.getElementById(listId)?.addEventListener('click', e => {
                 if (e.target.closest('.item-delete')) {
-                    const idx = parseInt(e.target.closest('.item-delete').dataset.idx);
-                    items[idx].qty = 0;
-                    const row = e.target.closest('.item-row');
-                    row.querySelector('.item-select').value = '0';
-                    row.classList.add('zero');
-                    updateModalFooterSum(footerId, items);
-                    updateSaveBtn();
+                    const name = e.target.closest('.item-delete').closest('.item-row').dataset.name;
+                    window.updateItemQuantity(listId, name, 0);
                 }
             });
         });
