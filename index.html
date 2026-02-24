@@ -2118,7 +2118,7 @@
             saveStateToStorage();     // сохраняем в localStorage
         });
 
-        // ЕДИНСТВЕННЫЙ ОБРАБОТЧИК ДЛЯ КНОПКИ УДАЛЕНИЯ (заменяет все предыдущие)
+        // УЛУЧШЕННЫЙ ОБРАБОТЧИК ДЛЯ КНОПКИ УДАЛЕНИЯ
         document.addEventListener('click', function(e) {
             const deleteBtn = e.target.closest('.item-delete');
             if (!deleteBtn) return;
@@ -2132,35 +2132,34 @@
             const listId = row.closest('.items-list')?.id;
             if (!listId) return;
 
-            let item;
             if (listId === 'matList') {
-                item = state.materials.find(m => String(m.id) === id);
-            } else if (listId === 'svcList') {
-                item = state.services.find(s => String(s.id) === id);
-            }
-
-            if (item) {
-                item.qty = 0;
-
-                // Визуально обнуляем строку
-                row.classList.add('zero');
-
-                // Сбрасываем select на 0
-                const select = row.querySelector('.item-select');
-                if (select) select.value = 0;
-
-                // Обновляем сумму в футере модалки
-                if (listId === 'matList') {
+                const material = state.materials.find(m => String(m.id) === id);
+                if (material) {
+                    material.qty = 0;
+                    row.classList.add('zero');
+                    const select = row.querySelector('.item-select');
+                    if (select) select.value = '0'; // строка, потому что value в option — строки
                     updateModalFooterSum('matFooterSum', state.materials);
-                } else if (listId === 'svcList') {
+                    console.log('Сброшено материал:', material.name); // дебаг
+                }
+            } else if (listId === 'svcList') {
+                const service = state.services.find(s => String(s.id) === id);
+                if (service) {
+                    service.qty = 0;
+                    row.classList.add('zero');
+                    const select = row.querySelector('.item-select');
+                    if (select) select.value = '0';
                     const filtered = filterServicesByWheels(state.services, state.wheels);
                     updateModalFooterSum('svcFooterSum', filtered);
+                    console.log('Сброшено услуга:', service.name); // дебаг
                 }
-
-                updateSaveBtn();           // главная сумма
-                saveStateToStorage();      // сохраняем
-                showToast('Позиция обнулена');
             }
+
+            // Обновляем главный экран и сумму
+            updateItemsDisp('dMaterials', state.materials, 'Нет позиций');
+            updateItemsDisp('dServices', state.services, 'Нет позиций');
+            updateSaveBtn();
+            saveStateToStorage();
         });
 
         document.getElementById('btnReset').addEventListener('click', async () => {
