@@ -1362,6 +1362,17 @@
             updateWheelsDisp();
             // после изменения параметров колёс сбрасываем несоответствующие услуги
             resetInvalidServices();
+            
+            // Если модальное окно услуг открыто, обновляем его содержимое
+            const servicesModal = document.getElementById('mServices');
+            if (servicesModal && servicesModal.classList.contains('active')) {
+                // Небольшая задержка, чтобы модальное окно успело обновиться после закрытия
+                setTimeout(() => {
+                    const filtered = filterServicesByWheels(state.services, state.wheels);
+                    buildItemsModal('svcList', filtered);
+                    updateModalFooterSum('svcFooterSum', filtered);
+                }, 50);
+            }
         } else if (id === 'mMaterials') {
             document.querySelectorAll('#matList .item-row').forEach(row => {
                 const id = row.dataset.id;
@@ -1778,16 +1789,28 @@
             this.value = out;
         });
 
+        // Обработчики для радиуса - обновляем список услуг если модальное окно открыто
         document.getElementById('radiusGrid')?.addEventListener('click', e => {
             const btn = e.target.closest('.radius-btn');
             if (!btn) return;
             document.querySelectorAll('#radiusGrid .radius-btn').forEach(b=>b.classList.remove('active'));
             btn.classList.add('active');
-            if (document.getElementById('mServices').classList.contains('active')) {
-                openModal('services');
+            
+            // Если модальное окно услуг открыто, обновляем его сразу
+            const servicesModal = document.getElementById('mServices');
+            if (servicesModal && servicesModal.classList.contains('active')) {
+                // Временно обновляем state.wheels.radius для фильтрации
+                const newRadius = parseInt(btn.dataset.r);
+                const filtered = filterServicesByWheels(state.services, {
+                    ...state.wheels,
+                    radius: newRadius
+                });
+                buildItemsModal('svcList', filtered);
+                updateModalFooterSum('svcFooterSum', filtered);
             }
         });
 
+        // Обработчики для типа - обновляем список услуг если модальное окно открыто
         document.getElementById('typeGrid')?.addEventListener('click', e => {
             const btn = e.target.closest('.type-btn');
             if (!btn) return;
@@ -1795,10 +1818,26 @@
             if (type==='light' || type==='jeep') {
                 const other = document.querySelector(`#typeGrid .type-btn[data-type="${type==='light'?'jeep':'light'}"]`);
                 if (btn.classList.contains('active')) btn.classList.remove('active');
-                else { btn.classList.add('active'); other?.classList.remove('active'); }
+                else { 
+                    btn.classList.add('active'); 
+                    other?.classList.remove('active'); 
+                }
             } else btn.classList.toggle('active');
-            if (document.getElementById('mServices').classList.contains('active')) {
-                openModal('services');
+            
+            // Если модальное окно услуг открыто, обновляем его сразу
+            const servicesModal = document.getElementById('mServices');
+            if (servicesModal && servicesModal.classList.contains('active')) {
+                // Временно обновляем state.wheels.types для фильтрации
+                const newTypes = {...state.wheels.types};
+                document.querySelectorAll('#typeGrid .type-btn').forEach(btn => {
+                    newTypes[btn.dataset.type] = btn.classList.contains('active');
+                });
+                const filtered = filterServicesByWheels(state.services, {
+                    ...state.wheels,
+                    types: newTypes
+                });
+                buildItemsModal('svcList', filtered);
+                updateModalFooterSum('svcFooterSum', filtered);
             }
         });
 
