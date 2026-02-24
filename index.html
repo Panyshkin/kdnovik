@@ -561,18 +561,52 @@
         .apply-all-bar:active { transform: scale(0.98); opacity: 0.8; }
 
         .items-list { display: flex; flex-direction: column; background: var(--surface-2); border-radius: var(--radius); overflow: hidden; }
-        .item-row { display: flex; align-items: center; padding: 10px 14px; transition: opacity var(--transition); gap: 10px; }
+        .item-row {
+            display: flex;
+            align-items: center;
+            padding: 10px 14px;
+            gap: 10px;
+            transition: background 0.2s, opacity 0.2s;
+        }
         .item-row + .item-row { border-top: 0.5px solid var(--border); }
-        .item-row.zero { opacity: 0.3; }
+        .item-row.active {
+            background: rgba(10, 132, 255, 0.12);
+            opacity: 1;
+        }
+        .item-row.zero {
+            opacity: 0.4;
+            background: transparent;
+        }
         .item-name-block { flex: 1; min-width: 0; }
         .item-name { font-weight: 500; font-size: 0.88rem; color: var(--text); line-height: 1.3; }
         .item-price-label { font-size: 0.75rem; color: var(--text-muted); margin-top: 1px; }
-        .item-controls { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+        .item-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
         .item-select-wrap { position: relative; flex-shrink: 0; }
         .item-select { appearance: none; -webkit-appearance: none; background: var(--surface-3); color: var(--primary); border: none; border-radius: 8px; padding: 6px 28px 6px 10px; font-size: 0.95rem; font-weight: 700; font-family: inherit; cursor: pointer; outline: none; min-width: 58px; text-align: center; }
         .item-select-arrow { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 0.6rem; color: var(--text-muted); pointer-events: none; }
-        .item-delete { width: 32px; height: 32px; border: none; background: transparent; color: var(--text-muted); font-size: 0.8rem; cursor: pointer; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all var(--transition); }
-        .item-delete:active { color: var(--danger); background: var(--danger-soft); }
+
+        .item-checkbox-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            flex-shrink: 0;
+        }
+        .item-checkbox {
+            width: 22px;
+            height: 22px;
+            accent-color: var(--primary);
+            cursor: pointer;
+        }
+        .item-checkbox:checked ~ .item-name-block .item-name {
+            font-weight: 600;
+        }
 
         .toast { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 16px); left: 50%; transform: translateX(-50%) translateY(-80px); background: var(--surface-2); color: var(--text); padding: 13px 22px; border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); z-index: 2000; opacity: 0; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 0.9rem; white-space: nowrap; backdrop-filter: blur(20px); border: 0.5px solid var(--border); }
         .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -909,7 +943,6 @@
             !s.lowProfile && !s.runflat
         );
         if (!hasTechWash) {
-            // Создаём новую услугу с уникальным id
             const newId = 'tech_wash_' + Date.now();
             SERVICES.push({
                 id: newId,
@@ -929,19 +962,15 @@
         return services.map(svc => {
             const nameLower = svc.name.toLowerCase();
             
-            // Parse radius if null
             if (svc.radius === null || svc.radius === undefined) {
-                // Ищем точное число после R (например R14)
                 const matchExact = nameLower.match(/r(\d+)/);
                 if (matchExact) {
                     svc.radius = Number(matchExact[1]);
                 } else {
-                    // Ищем диапазон R12-13
                     const matchRange = nameLower.match(/r(\d+)-(\d+)/);
                     if (matchRange) {
                         svc.radius = `${matchRange[1]}-${matchRange[2]}`;
                     } else if (nameLower.includes('и более')) {
-                        // Ищем минимальное число перед "и более"
                         const matchMin = nameLower.match(/r(\d+)/);
                         if (matchMin) {
                             svc.radius = `${matchMin[1]} и более`;
@@ -950,7 +979,6 @@
                 }
             }
             
-            // Parse carType if null
             if (svc.carType === null || svc.carType === undefined) {
                 if (nameLower.includes('легкового')) {
                     svc.carType = 'light';
@@ -961,7 +989,6 @@
                 }
             }
             
-            // Parse lowProfile / runflat if false
             if (!svc.lowProfile && nameLower.includes('низкий профиль')) {
                 svc.lowProfile = true;
             }
@@ -973,20 +1000,15 @@
         });
     }
 
-    // ========== Функция загрузки настроек из 1С ==========
     async function loadSettingsFrom1C() {
-        console.log('🔵 loadSettingsFrom1C вызвана');
         const subdivisionSelect = document.getElementById('subdivisionSelect');
         if (!subdivisionSelect) {
-            console.error('🔴 Элемент subdivisionSelect не найден!');
             showToast('❌ Ошибка: элемент выбора не найден');
             return;
         }
         const subdivision = subdivisionSelect.value;
-        console.log('🔵 Выбранное подразделение:', subdivision);
         showToast('Загрузка настроек...');
         try {
-            console.log('🟡 Отправка запроса к:', SETTINGS_PROXY_URL);
             const response = await fetch(SETTINGS_PROXY_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -994,34 +1016,25 @@
             });
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const data = await response.json();
-            console.log('🟢 Данные от сервера:', data);
             if (data.success) {
-                console.log('🟢 Механики:', data.mechanics);
-                console.log('🟢 Материалы:', data.materials);
-                console.log('🟢 Услуги:', data.services);
-                
                 MECHANICS = data.mechanics || [];
                 MATERIALS = data.materials || [];
                 SERVICES = data.services || [];
                 
-                // Парсим услуги для извлечения параметров из названий
                 SERVICES = parseServices(SERVICES);
-                // Гарантируем наличие постоянной технологической мойки
                 ensureTechWash();
                 
                 saveListsToStorage();
                 localStorage.setItem(STORAGE_KEYS.selectedSubdivision, subdivision);
-                reconcileStateWithLists();      // обновляем state, добавляя новые услуги с qty=0
-                resetInvalidServices();         // сбрасываем те, что не подходят под текущие колёса
+                reconcileStateWithLists();
+                resetInvalidServices();
                 updateAllDisplays();
                 buildSettingsModal();
                 showToast('✅ Настройки загружены');
             } else {
-                console.error('🔴 Ошибка в данных:', data.error);
                 showToast('❌ Ошибка: ' + (data.error || 'Неизвестная ошибка'));
             }
         } catch (error) {
-            console.error('🔴 Ошибка запроса:', error);
             showToast('❌ Ошибка соединения с сервером');
         }
     }
@@ -1045,9 +1058,7 @@
         const storedSvc = localStorage.getItem(STORAGE_KEYS.services);
         if (storedSvc) {
             try { SERVICES = JSON.parse(storedSvc); } catch(e){ SERVICES = []; }
-            // Парсим услуги
             SERVICES = parseServices(SERVICES);
-            // Гарантируем наличие постоянной технологической мойки
             ensureTechWash();
         }
         if (!SERVICES || !SERVICES.length) {
@@ -1085,7 +1096,6 @@
         localStorage.setItem(STORAGE_KEYS.state, JSON.stringify(state));
     }
 
-    // Синхронизация state с эталонными списками (сохраняем количества, новые элементы добавляем с qty=0)
     function reconcileStateWithLists() {
         state.mechanics = state.mechanics.filter(name => MECHANICS.includes(name));
 
@@ -1111,7 +1121,6 @@
 
         let matches = true;
 
-        // Radius check
         if (svc.radius !== null && svc.radius !== undefined && wheels.radius) {
             const svcRadius = String(svc.radius);
             const wheelRadius = Number(wheels.radius);
@@ -1128,7 +1137,6 @@
             }
         }
 
-        // Car type check (для мойки — обязательно)
         if (svc.carType || nameLower.includes('легкового') || nameLower.includes('джип') || nameLower.includes('газель')) {
             const isLightService = nameLower.includes('легкового') || svc.carType === 'light';
             const isJeepService = nameLower.includes('джип') || nameLower.includes('минивэн') ||
@@ -1140,12 +1148,10 @@
             const isJeepSelected = wheels.types.jeep;
 
             if (isMyka) {
-                // Для мойки — строже: должен совпадать тип
                 if (isLightSelected && !isLightService) matches = false;
                 if (isJeepSelected && !isJeepService) matches = false;
-                if (!isLightSelected && !isJeepSelected) matches = false; // если ничего не выбрано — не показываем
+                if (!isLightSelected && !isJeepSelected) matches = false;
             } else {
-                // Обычная логика для других услуг
                 if (isLightSelected && isJeepService && !isLightService) matches = false;
                 if (isJeepSelected && isLightService && !isJeepService) matches = false;
                 if (!isLightSelected && !isJeepSelected && (isLightService || isJeepService || isGazelle)) {
@@ -1155,7 +1161,6 @@
             }
         }
 
-        // LowProfile и Runflat — для мойки игнорируем
         if (!isMyka) {
             if (wheels.types.lowProfile && !svc.lowProfile && !nameLower.includes('низкий профиль')) matches = false;
             if (wheels.types.runflat && !svc.runflat && !nameLower.includes('runflat')) matches = false;
@@ -1164,7 +1169,6 @@
         return matches;
     }
 
-    // Фильтр для модального окна: показываем все постоянные + переменные, прошедшие фильтр
     function filterServicesByWheels(services, wheels) {
         return services.filter(svc => {
             if (isConstantService(svc)) return true;
@@ -1172,19 +1176,16 @@
         });
     }
 
-    // Сортировка услуг: сначала постоянные (без префикса), потом переменные по порядку (по имени)
     function sortServices(services) {
         return services.sort((a, b) => {
             const aConst = isConstantService(a);
             const bConst = isConstantService(b);
             if (aConst && !bConst) return -1;
             if (!aConst && bConst) return 1;
-            // Если обе постоянные или обе переменные, сортируем по имени
             return a.name.localeCompare(b.name);
         });
     }
 
-    // Сбрасывает количества переменных услуг, не соответствующих текущим параметрам
     function resetInvalidServices() {
         let changed = false;
         state.services = state.services.map(svc => {
@@ -1216,8 +1217,6 @@
         });
         return sum;
     }
-    
-    function calcItemsSum(items) { return items.reduce((s,i)=>s + (i.qty>0?i.price*i.qty:0),0); }
     
     function updateSaveBtn() {
         const sum = calcTotal();
@@ -1251,7 +1250,7 @@
     }
     
     function formatServiceName(service) {
-        return service.name; // Используем полное название из базы данных
+        return service.name;
     }
     
     function updateItemsDisp(elId, items, emptyText) {
@@ -1265,7 +1264,6 @@
             el.className = 'card-subtitle has-tags';
             el.innerHTML = active.map(i => {
                 let displayName = i.name;
-                // Для услуг используем полное название
                 if (elId === 'dServices') {
                     displayName = formatServiceName(i);
                 }
@@ -1304,22 +1302,21 @@
         document.getElementById('wQtyVal').textContent = state.wheels.qty;
     }
     
+    // НОВАЯ функция buildItemsModal с чекбоксами
     function buildItemsModal(listId, items) {
         const el = document.getElementById(listId);
-        // Для услуг применяем сортировку
         const sortedItems = listId === 'svcList' ? sortServices([...items]) : items;
         el.innerHTML = sortedItems.map(item => {
             let priceLabel = fmtPrice(item.price);
             const id = item.id || item.name;
             let displayName = item.name;
             
-            // Для услуг используем полное название из базы
             if (listId === 'svcList') {
                 displayName = formatServiceName(item);
             }
             
             return `
-                <div class="item-row${item.qty === 0 ? ' zero' : ''}" data-id="${id}">
+                <div class="item-row${item.qty > 0 ? ' active' : ' zero'}" data-id="${id}">
                     <div class="item-name-block">
                         <div class="item-name">${displayName}</div>
                         <div class="item-price-label">${priceLabel} / шт</div>
@@ -1331,11 +1328,23 @@
                             </select>
                             <span class="item-select-arrow"><i class="fa-solid fa-chevron-down"></i></span>
                         </div>
-                        <button class="item-delete" data-id="${id}"><i class="fa-solid fa-trash-can"></i></button>
+                        <div class="item-checkbox-wrap">
+                            <input type="checkbox" class="item-checkbox" data-id="${id}" ${item.qty > 0 ? 'checked' : ''}>
+                        </div>
                     </div>
                 </div>
             `;
         }).join('');
+
+        // дополнительная синхронизация классов
+        el.querySelectorAll('.item-row').forEach(row => {
+            const checkbox = row.querySelector('.item-checkbox');
+            if (checkbox) {
+                const isChecked = checkbox.checked;
+                row.classList.toggle('active', isChecked);
+                row.classList.toggle('zero', !isChecked);
+            }
+        });
     }
     
     function updateModalFooterSum(footerId, items) {
@@ -1537,10 +1546,8 @@
             state.wheels.qty = parseInt(document.getElementById('wQtyVal').textContent);
             updateWheelsDisp();
             
-            // после изменения параметров колёс сбрасываем несоответствующие услуги
             resetInvalidServices();
             
-            // Предзаполняем qty для всех подходящих услуг (постоянные + переменные), у которых сейчас qty === 0
             const wheelsQty = state.wheels.qty;
             state.services.forEach(svc => {
                 if (svc.qty === 0 && (isConstantService(svc) || serviceMatchesWheels(svc, state.wheels))) {
@@ -1548,10 +1555,8 @@
                 }
             });
             
-            // Обновляем отображение услуг на главном экране
             updateItemsDisp('dServices', state.services, 'Нет позиций');
             
-            // Если модальное окно услуг открыто, обновляем его содержимое
             const servicesModal = document.getElementById('mServices');
             if (servicesModal && servicesModal.classList.contains('active')) {
                 const filtered = filterServicesByWheels(state.services, state.wheels);
@@ -1973,10 +1978,8 @@
             document.querySelectorAll('#radiusGrid .radius-btn').forEach(b=>b.classList.remove('active'));
             btn.classList.add('active');
             
-            // Если модальное окно услуг открыто, обновляем его сразу
             const servicesModal = document.getElementById('mServices');
             if (servicesModal && servicesModal.classList.contains('active')) {
-                // Временно обновляем state.wheels.radius для фильтрации
                 const newRadius = parseInt(btn.dataset.r);
                 const filtered = filterServicesByWheels(state.services, {
                     ...state.wheels,
@@ -2001,10 +2004,8 @@
                 }
             } else btn.classList.toggle('active');
             
-            // Если модальное окно услуг открыто, обновляем его сразу
             const servicesModal = document.getElementById('mServices');
             if (servicesModal && servicesModal.classList.contains('active')) {
-                // Временно обновляем state.wheels.types для фильтрации
                 const newTypes = {...state.wheels.types};
                 document.querySelectorAll('#typeGrid .type-btn').forEach(btn => {
                     newTypes[btn.dataset.type] = btn.classList.contains('active');
@@ -2039,10 +2040,8 @@
                 return;
             }
 
-            // 1. Все материалы — всегда
             state.materials.forEach(m => { m.qty = qty; });
 
-            // 2. Все постоянные услуги — всегда (независимо от колёс)
             let constantCount = 0;
             state.services.forEach(svc => {
                 if (isConstantService(svc)) {
@@ -2051,7 +2050,6 @@
                 }
             });
 
-            // 3. Переменные услуги — только те, что соответствуют текущим параметрам колёс
             let variableCount = 0;
             const filteredVariables = state.services.filter(svc => 
                 !isConstantService(svc) && serviceMatchesWheels(svc, state.wheels)
@@ -2061,7 +2059,6 @@
                 variableCount++;
             });
 
-            // Обновляем UI модалок, если они открыты
             if (document.getElementById('mMaterials').classList.contains('active')) {
                 buildItemsModal('matList', state.materials);
                 updateModalFooterSum('matFooterSum', state.materials);
@@ -2081,86 +2078,81 @@
             showToast(`Установлено ${qty} шт:\n• все материалы\n• ${constantCount} постоянных услуг\n• ${variableCount} переменных услуг`);
         });
 
-        // делегированные обработчики для select (с обновлением класса строки и суммы)
+        // НОВЫЙ ОБРАБОТЧИК change (объединяет чекбоксы и селекты)
         document.addEventListener('change', function(e) {
-            if (!e.target.classList.contains('item-select')) return;
-            
-            const row = e.target.closest('.item-row');
-            if (!row) return;
+            const target = e.target;
 
-            const id = row.dataset.id;
-            const listId = row.closest('.items-list')?.id;
-            if (!listId) return;
+            // Чекбокс "Выполнено"
+            if (target.classList.contains('item-checkbox')) {
+                const row = target.closest('.item-row');
+                if (!row) return;
+                const id = row.dataset.id;
+                const listId = row.closest('.items-list')?.id;
+                if (!listId) return;
 
-            const qty = parseInt(e.target.value);
-            
-            if (listId === 'matList') {
-                const material = state.materials.find(m => String(m.id) === id);
-                if (material) {
-                    material.qty = qty;
-                    // Обновляем класс строки
-                    row.classList.toggle('zero', qty === 0);
-                    // Обновляем сумму в футере материалов
+                const checked = target.checked;
+                const qty = checked ? state.wheels.qty : 0;
+
+                if (listId === 'matList') {
+                    const material = state.materials.find(m => String(m.id) === id);
+                    if (material) material.qty = qty;
                     updateModalFooterSum('matFooterSum', state.materials);
-                }
-            } else if (listId === 'svcList') {
-                const service = state.services.find(s => String(s.id) === id);
-                if (service) {
-                    service.qty = qty;
-                    row.classList.toggle('zero', qty === 0);
-                    // Для услуг сумма считается по отфильтрованному списку
+                } else if (listId === 'svcList') {
+                    const service = state.services.find(s => String(s.id) === id);
+                    if (service) service.qty = qty;
                     const filtered = filterServicesByWheels(state.services, state.wheels);
                     updateModalFooterSum('svcFooterSum', filtered);
                 }
+
+                // Подсветка и класс zero
+                row.classList.toggle('active', checked);
+                row.classList.toggle('zero', !checked);
+
+                // Синхронизация селекта
+                const select = row.querySelector('.item-select');
+                if (select) select.value = qty;
+
+                updateItemsDisp('dMaterials', state.materials, 'Нет позиций');
+                updateItemsDisp('dServices', state.services, 'Нет позиций');
+                updateSaveBtn();
+                saveStateToStorage();
             }
-            
-            updateSaveBtn();          // обновляем главную сумму
-            saveStateToStorage();     // сохраняем в localStorage
-        });
 
-        // УЛУЧШЕННЫЙ ОБРАБОТЧИК ДЛЯ КНОПКИ УДАЛЕНИЯ
-        document.addEventListener('click', function(e) {
-            const deleteBtn = e.target.closest('.item-delete');
-            if (!deleteBtn) return;
+            // Изменение количества в селекте
+            if (target.classList.contains('item-select')) {
+                const row = target.closest('.item-row');
+                if (!row) return;
+                const id = row.dataset.id;
+                const listId = row.closest('.items-list')?.id;
+                if (!listId) return;
 
-            e.stopPropagation(); // предотвращаем всплытие, если есть другие обработчики
+                const qty = parseInt(target.value);
 
-            const row = deleteBtn.closest('.item-row');
-            if (!row) return;
-
-            const id = row.dataset.id;
-            const listId = row.closest('.items-list')?.id;
-            if (!listId) return;
-
-            if (listId === 'matList') {
-                const material = state.materials.find(m => String(m.id) === id);
-                if (material) {
-                    material.qty = 0;
-                    row.classList.add('zero');
-                    const select = row.querySelector('.item-select');
-                    if (select) select.value = '0'; // строка, потому что value в option — строки
+                if (listId === 'matList') {
+                    const material = state.materials.find(m => String(m.id) === id);
+                    if (material) material.qty = qty;
                     updateModalFooterSum('matFooterSum', state.materials);
-                    console.log('Сброшено материал:', material.name); // дебаг
-                }
-            } else if (listId === 'svcList') {
-                const service = state.services.find(s => String(s.id) === id);
-                if (service) {
-                    service.qty = 0;
-                    row.classList.add('zero');
-                    const select = row.querySelector('.item-select');
-                    if (select) select.value = '0';
+                } else if (listId === 'svcList') {
+                    const service = state.services.find(s => String(s.id) === id);
+                    if (service) service.qty = qty;
                     const filtered = filterServicesByWheels(state.services, state.wheels);
                     updateModalFooterSum('svcFooterSum', filtered);
-                    console.log('Сброшено услуга:', service.name); // дебаг
                 }
-            }
 
-            // Обновляем главный экран и сумму
-            updateItemsDisp('dMaterials', state.materials, 'Нет позиций');
-            updateItemsDisp('dServices', state.services, 'Нет позиций');
-            updateSaveBtn();
-            saveStateToStorage();
+                // Синхронизация чекбокса и подсветки
+                const checkbox = row.querySelector('.item-checkbox');
+                if (checkbox) checkbox.checked = qty > 0;
+                row.classList.toggle('active', qty > 0);
+                row.classList.toggle('zero', qty === 0);
+
+                updateItemsDisp('dMaterials', state.materials, 'Нет позиций');
+                updateItemsDisp('dServices', state.services, 'Нет позиций');
+                updateSaveBtn();
+                saveStateToStorage();
+            }
         });
+
+        // Старый обработчик click для корзинки УДАЛЁН (корзинки больше нет)
 
         document.getElementById('btnReset').addEventListener('click', async () => {
             if (await showConfirm('Сбросить форму?', 'Все введённые данные будут удалены.')) {
