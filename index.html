@@ -591,21 +591,50 @@
         .item-select { appearance: none; -webkit-appearance: none; background: var(--surface-3); color: var(--primary); border: none; border-radius: 8px; padding: 6px 28px 6px 10px; font-size: 0.95rem; font-weight: 700; font-family: inherit; cursor: pointer; outline: none; min-width: 58px; text-align: center; }
         .item-select-arrow { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 0.6rem; color: var(--text-muted); pointer-events: none; }
 
+        /* Кастомный чекбокс в стиле приложения */
         .item-checkbox-wrap {
+            position: relative;
+            width: 44px;
+            height: 44px;
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 44px;
-            flex-shrink: 0;
-        }
-        .item-checkbox {
-            width: 22px;
-            height: 22px;
-            accent-color: var(--primary);
             cursor: pointer;
         }
-        .item-checkbox:checked ~ .item-name-block .item-name {
-            font-weight: 600;
+
+        .item-checkbox {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--text-muted);
+            border-radius: 6px;
+            background: var(--surface-3);
+            outline: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .item-checkbox:checked {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .item-checkbox:checked::after {
+            content: '\f00c'; /* fa-check */
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            color: white;
+            font-size: 14px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .item-checkbox:focus {
+            box-shadow: 0 0 0 3px var(--primary-glow);
         }
 
         .toast { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 16px); left: 50%; transform: translateX(-50%) translateY(-80px); background: var(--surface-2); color: var(--text); padding: 13px 22px; border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); z-index: 2000; opacity: 0; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 0.9rem; white-space: nowrap; backdrop-filter: blur(20px); border: 0.5px solid var(--border); }
@@ -1302,7 +1331,7 @@
         document.getElementById('wQtyVal').textContent = state.wheels.qty;
     }
     
-    // НОВАЯ функция buildItemsModal с чекбоксами
+    // НОВАЯ функция buildItemsModal с кастомным чекбоксом
     function buildItemsModal(listId, items) {
         const el = document.getElementById(listId);
         const sortedItems = listId === 'svcList' ? sortServices([...items]) : items;
@@ -2078,7 +2107,7 @@
             showToast(`Установлено ${qty} шт:\n• все материалы\n• ${constantCount} постоянных услуг\n• ${variableCount} переменных услуг`);
         });
 
-        // НОВЫЙ ОБРАБОТЧИК change (объединяет чекбоксы и селекты)
+        // НОВЫЙ ОБРАБОТЧИК change (объединяет чекбоксы и селекты) с усиленным поиском по id
         document.addEventListener('change', function(e) {
             const target = e.target;
 
@@ -2093,32 +2122,46 @@
                 const checked = target.checked;
                 const qty = checked ? state.wheels.qty : 0;
 
+                let updated = false;
+
                 if (listId === 'matList') {
-                    const material = state.materials.find(m => String(m.id) === id);
-                    if (material) material.qty = qty;
-                    updateModalFooterSum('matFooterSum', state.materials);
+                    const material = state.materials.find(m => String(m.id).trim() === id.trim());
+                    if (material) {
+                        material.qty = qty;
+                        updated = true;
+                        updateModalFooterSum('matFooterSum', state.materials);
+                        console.log('Материал обновлён:', material.name, 'qty=', qty);
+                    } else {
+                        console.warn('Материал не найден по id:', id);
+                    }
                 } else if (listId === 'svcList') {
-                    const service = state.services.find(s => String(s.id) === id);
-                    if (service) service.qty = qty;
-                    const filtered = filterServicesByWheels(state.services, state.wheels);
-                    updateModalFooterSum('svcFooterSum', filtered);
+                    const service = state.services.find(s => String(s.id).trim() === id.trim());
+                    if (service) {
+                        service.qty = qty;
+                        updated = true;
+                        const filtered = filterServicesByWheels(state.services, state.wheels);
+                        updateModalFooterSum('svcFooterSum', filtered);
+                        console.log('Услуга обновлена:', service.name, 'qty=', qty);
+                    } else {
+                        console.warn('Услуга не найдена по id:', id);
+                    }
                 }
 
-                // Подсветка и класс zero
-                row.classList.toggle('active', checked);
-                row.classList.toggle('zero', !checked);
+                if (updated) {
+                    row.classList.toggle('active', checked);
+                    row.classList.toggle('zero', !checked);
 
-                // Синхронизация селекта
-                const select = row.querySelector('.item-select');
-                if (select) select.value = qty;
+                    const select = row.querySelector('.item-select');
+                    if (select) select.value = qty;
 
-                updateItemsDisp('dMaterials', state.materials, 'Нет позиций');
-                updateItemsDisp('dServices', state.services, 'Нет позиций');
-                updateSaveBtn();
-                saveStateToStorage();
+                    updateItemsDisp('dMaterials', state.materials, 'Нет позиций');
+                    updateItemsDisp('dServices', state.services, 'Нет позиций');
+                    updateSaveBtn();
+                    saveStateToStorage();
+                }
             }
 
-            // Изменение количества в селекте
+            // Изменение количества вручную
             if (target.classList.contains('item-select')) {
                 const row = target.closest('.item-row');
                 if (!row) return;
@@ -2126,22 +2169,22 @@
                 const listId = row.closest('.items-list')?.id;
                 if (!listId) return;
 
-                const qty = parseInt(target.value);
+                const qty = parseInt(target.value) || 0;
 
                 if (listId === 'matList') {
-                    const material = state.materials.find(m => String(m.id) === id);
+                    const material = state.materials.find(m => String(m.id).trim() === id.trim());
                     if (material) material.qty = qty;
                     updateModalFooterSum('matFooterSum', state.materials);
                 } else if (listId === 'svcList') {
-                    const service = state.services.find(s => String(s.id) === id);
+                    const service = state.services.find(s => String(s.id).trim() === id.trim());
                     if (service) service.qty = qty;
                     const filtered = filterServicesByWheels(state.services, state.wheels);
                     updateModalFooterSum('svcFooterSum', filtered);
                 }
 
-                // Синхронизация чекбокса и подсветки
                 const checkbox = row.querySelector('.item-checkbox');
                 if (checkbox) checkbox.checked = qty > 0;
+
                 row.classList.toggle('active', qty > 0);
                 row.classList.toggle('zero', qty === 0);
 
@@ -2152,7 +2195,7 @@
             }
         });
 
-        // Старый обработчик click для корзинки УДАЛЁН (корзинки больше нет)
+        // Старый обработчик click для корзинки УДАЛЁН
 
         document.getElementById('btnReset').addEventListener('click', async () => {
             if (await showConfirm('Сбросить форму?', 'Все введённые данные будут удалены.')) {
