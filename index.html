@@ -893,6 +893,55 @@
     const SETTINGS_PROXY_URL = 'https://1c-proxy-vercel.vercel.app/api/get-settings';
     const ORDER_PROXY_URL = 'https://1c-proxy-vercel.vercel.app/api/create-order';
 
+    // ========== Функция парсинга услуг ==========
+    function parseServices(services) {
+        return services.map(svc => {
+            const nameLower = svc.name.toLowerCase();
+            
+            // Parse radius if null
+            if (svc.radius === null) {
+                // Ищем точное число после R (например R14)
+                const matchExact = nameLower.match(/r(\d+)/);
+                if (matchExact) {
+                    svc.radius = Number(matchExact[1]);
+                } else {
+                    // Ищем диапазон R12-13
+                    const matchRange = nameLower.match(/r(\d+)-(\d+)/);
+                    if (matchRange) {
+                        svc.radius = `${matchRange[1]}-${matchRange[2]}`;
+                    } else if (nameLower.includes('и более')) {
+                        // Ищем минимальное число перед "и более"
+                        const matchMin = nameLower.match(/r(\d+)/);
+                        if (matchMin) {
+                            svc.radius = `${matchMin[1]} и более`;
+                        }
+                    }
+                }
+            }
+            
+            // Parse carType if null
+            if (svc.carType === null) {
+                if (nameLower.includes('легкового')) {
+                    svc.carType = 'light';
+                } else if (['джип', 'минивэн', 'кроссовер', 'паркетник', 'внедорожник'].some(word => nameLower.includes(word))) {
+                    svc.carType = 'jeep';
+                } else if (nameLower.includes('газель')) {
+                    svc.carType = 'jeep'; // или отдельный тип, но по твоему коду газель = jeep
+                }
+            }
+            
+            // Parse lowProfile / runflat if false
+            if (!svc.lowProfile && nameLower.includes('низкий профиль')) {
+                svc.lowProfile = true;
+            }
+            if (!svc.runflat && nameLower.includes('runflat')) {
+                svc.runflat = true;
+            }
+            
+            return svc;
+        });
+    }
+
     // ========== Функция загрузки настроек из 1С ==========
     async function loadSettingsFrom1C() {
         console.log('🔵 loadSettingsFrom1C вызвана');
@@ -923,6 +972,9 @@
                 MECHANICS = data.mechanics || [];
                 MATERIALS = data.materials || [];
                 SERVICES = data.services || [];
+                
+                // Парсим услуги для извлечения параметров из названий
+                SERVICES = parseServices(SERVICES);
                 
                 saveListsToStorage();
                 localStorage.setItem(STORAGE_KEYS.selectedSubdivision, subdivision);
@@ -960,6 +1012,8 @@
         const storedSvc = localStorage.getItem(STORAGE_KEYS.services);
         if (storedSvc) {
             try { SERVICES = JSON.parse(storedSvc); } catch(e){ SERVICES = []; }
+            // Парсим услуги
+            SERVICES = parseServices(SERVICES);
         }
         if (!SERVICES || !SERVICES.length) {
             SERVICES = [
@@ -974,6 +1028,7 @@
                 {id:9, name:'Съём и установка камеры', price:350, radius:null, carType:null, lowProfile:false, runflat:false},
                 {id:10, name:'Погрузка колеса в сборе', price:100, radius:null, carType:null, lowProfile:false, runflat:false}
             ];
+            SERVICES = parseServices(SERVICES);
         }
     }
 
@@ -1013,16 +1068,14 @@
 
     // Проверяет, соответствует ли одна услуга текущим параметрам колёс (для переменных услуг)
     function serviceMatchesWheels(svc, wheels) {
-        // Если у услуги все параметры null – это постоянная услуга, всегда подходит
-        const isConstant = svc.radius === null && svc.carType === null && svc.lowProfile === null && svc.runflat === null;
+        const isConstant = svc.radius === null && svc.carType === null && svc.lowProfile === false && svc.runflat === false;
         if (isConstant) return true;
 
-        // Проверка радиуса
+        // Radius check
         if (svc.radius !== null && wheels.radius) {
             const svcRadius = String(svc.radius);
             const wheelRadius = Number(wheels.radius);
-            
-            // Если радиус в услуге содержит диапазон (например "12-13")
+
             if (svcRadius.includes('-')) {
                 const parts = svcRadius.split('-').map(Number);
                 if (parts.length === 2) {
@@ -1031,66 +1084,49 @@
                         return false;
                     }
                 }
-            } 
-            // Если радиус в услуге содержит "и более" (например "21 и более")
-            else if (svcRadius.includes('более') || String(svc.name).includes('и более')) {
-                // Извлекаем число из строки
+            } else if (svcRadius.includes('более') || String(svc.name).includes('и более')) {
                 const match = String(svc.name).match(/R(\d+)/);
                 if (match) {
                     const minRadius = Number(match[1]);
                     if (wheelRadius < minRadius) {
                         return false;
                     }
-                } else if (Number(svc.radius) < wheelRadius) {
-                    return false;
+                } else {
+                    // Исправленный баг: если wheel < svc.radius, то false
+                    if (wheelRadius < Number(svc.radius)) {
+                        return false;
+                    }
                 }
-            }
-            // Обычный случай - точное совпадение
-            else if (Number(svc.radius) !== wheelRadius) {
+            } else if (Number(svcRadius) !== wheelRadius) {
                 return false;
             }
         }
 
-        // Проверка типа автомобиля
-        if (svc.carType || String(svc.name).toLowerCase().includes('легкового') || 
-            String(svc.name).toLowerCase().includes('джип') || 
-            String(svc.name).toLowerCase().includes('газель')) {
-            
-            const svcName = String(svc.name).toLowerCase();
-            const isLightSelected = wheels.types.light;
-            const isJeepSelected = wheels.types.jeep;
-            
-            // Определяем тип услуги по названию
-            const isLightService = svcName.includes('легкового') || svc.carType === 'light';
-            const isJeepService = svcName.includes('джип') || svcName.includes('минивэн') || 
-                                  svcName.includes('кроссовер') || svcName.includes('паркетник') || 
-                                  svcName.includes('внедорожник') || svc.carType === 'jeep';
-            const isGazelleService = svcName.includes('газель');
-            
-            // Если выбрана легковая, а услуга для джипа - не подходит
-            if (isLightSelected && isJeepService && !isLightService) return false;
-            
-            // Если выбран джип, а услуга для легковой - не подходит  
-            if (isJeepSelected && isLightService && !isJeepService) return false;
-            
-            // Если ничего не выбрано, но услуга имеет тип - не подходит
-            if (!isLightSelected && !isJeepSelected && (isLightService || isJeepService || isGazelleService)) {
-                return false;
-            }
-            
-            // Специальная обработка для ГАЗЕЛИ
-            if (isGazelleService && !isJeepSelected) {
-                return false;
-            }
+        // Car type check
+        const svcName = String(svc.name).toLowerCase();
+        const isLightService = svcName.includes('легкового') || svc.carType === 'light';
+        const isJeepService = svcName.includes('джип') || svcName.includes('минивэн') ||
+                              svcName.includes('кроссовер') || svcName.includes('паркетник') ||
+                              svcName.includes('внедорожник') || svc.carType === 'jeep';
+        const isGazelleService = svcName.includes('газель');
+
+        const isLightSelected = wheels.types.light;
+        const isJeepSelected = wheels.types.jeep;
+
+        if (isLightSelected && isJeepService && !isLightService) return false;
+        if (isJeepSelected && isLightService && !isJeepService) return false;
+        if (!isLightSelected && !isJeepSelected && (isLightService || isJeepService || isGazelleService)) {
+            return false;
+        }
+        if (isGazelleService && !isJeepSelected) {
+            return false;
         }
 
-        // Проверка низкого профиля
+        // Low profile and runflat
         if (wheels.types.lowProfile) {
             const svcName = String(svc.name).toLowerCase();
             if (!svc.lowProfile && !svcName.includes('низкий профиль')) return false;
         }
-
-        // Проверка Runflat
         if (wheels.types.runflat) {
             const svcName = String(svc.name).toLowerCase();
             if (!svc.runflat && !svcName.includes('runflat')) return false;
@@ -1102,7 +1138,7 @@
     // Фильтр для модального окна: показываем все постоянные + переменные, прошедшие фильтр
     function filterServicesByWheels(services, wheels) {
         return services.filter(svc => {
-            const isConstant = svc.radius === null && svc.carType === null && svc.lowProfile === null && svc.runflat === null;
+            const isConstant = svc.radius === null && svc.carType === null && svc.lowProfile === false && svc.runflat === false;
             if (isConstant) return true;
             
             // Для непостоянных услуг применяем расширенную проверку
@@ -1114,7 +1150,7 @@
     function resetInvalidServices() {
         let changed = false;
         state.services = state.services.map(svc => {
-            const isConstant = svc.radius === null && svc.carType === null && svc.lowProfile === null && svc.runflat === null;
+            const isConstant = svc.radius === null && svc.carType === null && svc.lowProfile === false && svc.runflat === false;
             if (!isConstant && svc.qty > 0 && !serviceMatchesWheels(svc, state.wheels)) {
                 svc.qty = 0;
                 changed = true;
@@ -1391,6 +1427,7 @@
                 {id:9, name:'Съём и установка камеры', price:350, radius:null, carType:null, lowProfile:false, runflat:false},
                 {id:10, name:'Погрузка колеса в сборе', price:100, radius:null, carType:null, lowProfile:false, runflat:false}
             ];
+            SERVICES = parseServices(SERVICES);
             buildSettingsModal();
         });
 
@@ -1433,6 +1470,7 @@
             newSvcs.push({ id, name, price, radius, carType, lowProfile, runflat });
         });
         SERVICES = newSvcs;
+        SERVICES = parseServices(SERVICES);
 
         saveListsToStorage();
         reconcileStateWithLists();
