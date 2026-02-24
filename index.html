@@ -893,13 +893,20 @@
     const SETTINGS_PROXY_URL = 'https://1c-proxy-vercel.vercel.app/api/get-settings';
     const ORDER_PROXY_URL = 'https://1c-proxy-vercel.vercel.app/api/create-order';
 
+    // ========== Функция определения постоянной услуги ==========
+    function isConstantService(svc) {
+        return (svc.radius === null || svc.radius === undefined) &&
+               (svc.carType === null || svc.carType === undefined || svc.carType === '') &&
+               !svc.lowProfile && !svc.runflat;
+    }
+
     // ========== Функция парсинга услуг ==========
     function parseServices(services) {
         return services.map(svc => {
             const nameLower = svc.name.toLowerCase();
             
             // Parse radius if null
-            if (svc.radius === null) {
+            if (svc.radius === null || svc.radius === undefined) {
                 // Ищем точное число после R (например R14)
                 const matchExact = nameLower.match(/r(\d+)/);
                 if (matchExact) {
@@ -920,13 +927,13 @@
             }
             
             // Parse carType if null
-            if (svc.carType === null) {
+            if (svc.carType === null || svc.carType === undefined) {
                 if (nameLower.includes('легкового')) {
                     svc.carType = 'light';
                 } else if (['джип', 'минивэн', 'кроссовер', 'паркетник', 'внедорожник'].some(word => nameLower.includes(word))) {
                     svc.carType = 'jeep';
                 } else if (nameLower.includes('газель')) {
-                    svc.carType = 'jeep'; // или отдельный тип, но по твоему коду газель = jeep
+                    svc.carType = 'jeep';
                 }
             }
             
@@ -1068,11 +1075,10 @@
 
     // Проверяет, соответствует ли одна услуга текущим параметрам колёс (для переменных услуг)
     function serviceMatchesWheels(svc, wheels) {
-        const isConstant = svc.radius === null && svc.carType === null && svc.lowProfile === false && svc.runflat === false;
-        if (isConstant) return true;
+        if (isConstantService(svc)) return true;
 
         // Radius check
-        if (svc.radius !== null && wheels.radius) {
+        if (svc.radius !== null && svc.radius !== undefined && wheels.radius) {
             const svcRadius = String(svc.radius);
             const wheelRadius = Number(wheels.radius);
 
@@ -1092,7 +1098,6 @@
                         return false;
                     }
                 } else {
-                    // Исправленный баг: если wheel < svc.radius, то false
                     if (wheelRadius < Number(svc.radius)) {
                         return false;
                     }
@@ -1138,10 +1143,7 @@
     // Фильтр для модального окна: показываем все постоянные + переменные, прошедшие фильтр
     function filterServicesByWheels(services, wheels) {
         return services.filter(svc => {
-            const isConstant = svc.radius === null && svc.carType === null && svc.lowProfile === false && svc.runflat === false;
-            if (isConstant) return true;
-            
-            // Для непостоянных услуг применяем расширенную проверку
+            if (isConstantService(svc)) return true;
             return serviceMatchesWheels(svc, wheels);
         });
     }
@@ -1150,8 +1152,7 @@
     function resetInvalidServices() {
         let changed = false;
         state.services = state.services.map(svc => {
-            const isConstant = svc.radius === null && svc.carType === null && svc.lowProfile === false && svc.runflat === false;
-            if (!isConstant && svc.qty > 0 && !serviceMatchesWheels(svc, state.wheels)) {
+            if (!isConstantService(svc) && svc.qty > 0 && !serviceMatchesWheels(svc, state.wheels)) {
                 svc.qty = 0;
                 changed = true;
             }
@@ -1159,7 +1160,6 @@
         });
         if (changed) {
             updateAllDisplays();
-            // Если модальное окно услуг открыто, обновляем его
             if (document.getElementById('mServices').classList.contains('active')) {
                 const filtered = filterServicesByWheels(state.services, state.wheels);
                 buildItemsModal('svcList', filtered);
@@ -1499,6 +1499,14 @@
             
             // после изменения параметров колёс сбрасываем несоответствующие услуги
             resetInvalidServices();
+            
+            // Предзаполняем qty для всех подходящих переменных услуг, у которых сейчас qty === 0
+            const wheelsQty = state.wheels.qty;
+            state.services.forEach(svc => {
+                if (!isConstantService(svc) && svc.qty === 0 && serviceMatchesWheels(svc, state.wheels)) {
+                    svc.qty = wheelsQty;
+                }
+            });
             
             // Обновляем отображение услуг на главном экране
             updateItemsDisp('dServices', state.services, 'Нет позиций');
@@ -1983,76 +1991,115 @@
             updateSaveBtn();
         });
 
-        // ИСПРАВЛЕННЫЙ ОБРАБОТЧИК applyAll
+        // Обработчик applyAll
         document.getElementById('applyAll')?.addEventListener('click', async () => {
             const qty = parseInt(document.getElementById('wQtyVal').textContent);
-            
-            // Применяем количество ко всем материалам
-            state.materials.forEach(m => m.qty = qty);
-            
-            // Для услуг применяем количество только к тем, которые соответствуют текущим параметрам колёс
-            const filteredServices = filterServicesByWheels(state.services, state.wheels);
-            filteredServices.forEach(svc => {
-                const service = state.services.find(s => s.id === svc.id);
-                if (service) service.qty = qty;
+
+            if (!(await showConfirm('Применить количество?', `Установить ${qty} шт для всех материалов и подходящих услуг?`))) {
+                return;
+            }
+
+            // Материалы — всегда всем
+            state.materials.forEach(m => { m.qty = qty; });
+
+            // Услуги: только постоянные + подходящие переменные
+            const filtered = filterServicesByWheels(state.services, state.wheels);
+            filtered.forEach(f => {
+                const realSvc = state.services.find(s => s.id === f.id);
+                if (realSvc) realSvc.qty = qty;
             });
-            
-            // Обновляем отображение
-            buildItemsModal('matList', state.materials);
-            buildItemsModal('svcList', filterServicesByWheels(state.services, state.wheels));
+
+            // Обновляем модалки, если открыты
+            if (document.getElementById('mMaterials').classList.contains('active')) {
+                buildItemsModal('matList', state.materials);
+                updateModalFooterSum('matFooterSum', state.materials);
+            }
+            if (document.getElementById('mServices').classList.contains('active')) {
+                const currentFiltered = filterServicesByWheels(state.services, state.wheels);
+                buildItemsModal('svcList', currentFiltered);
+                updateModalFooterSum('svcFooterSum', currentFiltered);
+            }
+
             updateItemsDisp('dMaterials', state.materials, 'Нет позиций');
             updateItemsDisp('dServices', state.services, 'Нет позиций');
             updateSaveBtn();
-            showToast(`Количество ${qty} применено к ${filteredServices.length} услугам и всем материалам`);
+            saveStateToStorage();
+            showToast(`Установлено ${qty} шт для всех материалов и ${filtered.length} услуг`);
         });
 
-        // делегированные обработчики для select и delete
+        // делегированные обработчики для select (с обновлением класса строки и суммы)
         document.addEventListener('change', function(e) {
-            if (e.target.classList.contains('item-select')) {
-                const row = e.target.closest('.item-row');
-                if (!row) return;
-                const id = row.dataset.id;
-                const listId = row.closest('.items-list')?.id;
-                if (!listId) return;
-                const qty = parseInt(e.target.value);
-                if (listId === 'matList') {
-                    const material = state.materials.find(m => String(m.id) === id);
-                    if (material) material.qty = qty;
+            if (!e.target.classList.contains('item-select')) return;
+            
+            const row = e.target.closest('.item-row');
+            if (!row) return;
+
+            const id = row.dataset.id;
+            const listId = row.closest('.items-list')?.id;
+            if (!listId) return;
+
+            const qty = parseInt(e.target.value);
+            
+            if (listId === 'matList') {
+                const material = state.materials.find(m => String(m.id) === id);
+                if (material) {
+                    material.qty = qty;
+                    // Обновляем класс строки
+                    row.classList.toggle('zero', qty === 0);
+                    // Обновляем сумму в футере материалов
                     updateModalFooterSum('matFooterSum', state.materials);
-                } else if (listId === 'svcList') {
-                    const service = state.services.find(s => String(s.id) === id);
-                    if (service) service.qty = qty;
-                    updateModalFooterSum('svcFooterSum', state.services);
                 }
-                updateSaveBtn();
+            } else if (listId === 'svcList') {
+                const service = state.services.find(s => String(s.id) === id);
+                if (service) {
+                    service.qty = qty;
+                    row.classList.toggle('zero', qty === 0);
+                    // Для услуг сумма считается по отфильтрованному списку
+                    const filtered = filterServicesByWheels(state.services, state.wheels);
+                    updateModalFooterSum('svcFooterSum', filtered);
+                }
             }
+            
+            updateSaveBtn();          // обновляем главную сумму
+            saveStateToStorage();     // сохраняем в localStorage
         });
 
+        // делегированные обработчики для кнопки удаления
         document.addEventListener('click', function(e) {
-            if (e.target.closest('.item-delete')) {
-                const btn = e.target.closest('.item-delete');
-                const row = btn.closest('.item-row');
-                if (!row) return;
-                const id = row.dataset.id;
-                const listId = row.closest('.items-list')?.id;
-                if (!listId) return;
-                if (listId === 'matList') {
-                    const material = state.materials.find(m => String(m.id) === id);
-                    if (material) material.qty = 0;
+            const deleteBtn = e.target.closest('.item-delete');
+            if (!deleteBtn) return;
+            
+            const row = deleteBtn.closest('.item-row');
+            if (!row) return;
+
+            const id = row.dataset.id;
+            const listId = row.closest('.items-list')?.id;
+            if (!listId) return;
+            
+            if (listId === 'matList') {
+                const material = state.materials.find(m => String(m.id) === id);
+                if (material) {
+                    material.qty = 0;
+                    row.classList.add('zero');
+                    // Сбрасываем select на 0
                     const select = row.querySelector('.item-select');
                     if (select) select.value = 0;
-                    row.classList.add('zero');
                     updateModalFooterSum('matFooterSum', state.materials);
-                } else if (listId === 'svcList') {
-                    const service = state.services.find(s => String(s.id) === id);
-                    if (service) service.qty = 0;
+                }
+            } else if (listId === 'svcList') {
+                const service = state.services.find(s => String(s.id) === id);
+                if (service) {
+                    service.qty = 0;
+                    row.classList.add('zero');
                     const select = row.querySelector('.item-select');
                     if (select) select.value = 0;
-                    row.classList.add('zero');
-                    updateModalFooterSum('svcFooterSum', state.services);
+                    const filtered = filterServicesByWheels(state.services, state.wheels);
+                    updateModalFooterSum('svcFooterSum', filtered);
                 }
-                updateSaveBtn();
             }
+            
+            updateSaveBtn();
+            saveStateToStorage();
         });
 
         document.getElementById('btnReset').addEventListener('click', async () => {
