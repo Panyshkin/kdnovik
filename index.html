@@ -1102,9 +1102,14 @@
         }));
     }
 
-    // Проверяет, соответствует ли одна услуга текущим параметрам колёс (для переменных услуг)
+    // УЛУЧШЕННАЯ функция проверки соответствия услуги параметрам колёс
     function serviceMatchesWheels(svc, wheels) {
+        const nameLower = String(svc.name).toLowerCase();
+        const isMyka = nameLower.includes('технологическая мойка');
+
         if (isConstantService(svc)) return true;
+
+        let matches = true;
 
         // Radius check
         if (svc.radius !== null && svc.radius !== undefined && wheels.radius) {
@@ -1112,61 +1117,51 @@
             const wheelRadius = Number(wheels.radius);
 
             if (svcRadius.includes('-')) {
-                const parts = svcRadius.split('-').map(Number);
-                if (parts.length === 2) {
-                    const [minRadius, maxRadius] = parts;
-                    if (wheelRadius < minRadius || wheelRadius > maxRadius) {
-                        return false;
-                    }
-                }
-            } else if (svcRadius.includes('более') || String(svc.name).includes('и более')) {
-                const match = String(svc.name).match(/R(\d+)/);
-                if (match) {
-                    const minRadius = Number(match[1]);
-                    if (wheelRadius < minRadius) {
-                        return false;
-                    }
-                } else {
-                    if (wheelRadius < Number(svc.radius)) {
-                        return false;
-                    }
-                }
+                const [minR, maxR] = svcRadius.split('-').map(Number);
+                if (wheelRadius < minR || wheelRadius > maxR) matches = false;
+            } else if (svcRadius.includes('и более') || nameLower.includes('и более')) {
+                const match = nameLower.match(/r(\d+)/);
+                const minR = match ? Number(match[1]) : Number(svcRadius);
+                if (wheelRadius < minR) matches = false;
             } else if (Number(svcRadius) !== wheelRadius) {
-                return false;
+                matches = false;
             }
         }
 
-        // Car type check
-        const svcName = String(svc.name).toLowerCase();
-        const isLightService = svcName.includes('легкового') || svc.carType === 'light';
-        const isJeepService = svcName.includes('джип') || svcName.includes('минивэн') ||
-                              svcName.includes('кроссовер') || svcName.includes('паркетник') ||
-                              svcName.includes('внедорожник') || svc.carType === 'jeep';
-        const isGazelleService = svcName.includes('газель');
+        // Car type check (для мойки — обязательно)
+        if (svc.carType || nameLower.includes('легкового') || nameLower.includes('джип') || nameLower.includes('газель')) {
+            const isLightService = nameLower.includes('легкового') || svc.carType === 'light';
+            const isJeepService = nameLower.includes('джип') || nameLower.includes('минивэн') ||
+                                  nameLower.includes('кроссовер') || nameLower.includes('паркетник') ||
+                                  nameLower.includes('внедорожник') || svc.carType === 'jeep';
+            const isGazelle = nameLower.includes('газель');
 
-        const isLightSelected = wheels.types.light;
-        const isJeepSelected = wheels.types.jeep;
+            const isLightSelected = wheels.types.light;
+            const isJeepSelected = wheels.types.jeep;
 
-        if (isLightSelected && isJeepService && !isLightService) return false;
-        if (isJeepSelected && isLightService && !isJeepService) return false;
-        if (!isLightSelected && !isJeepSelected && (isLightService || isJeepService || isGazelleService)) {
-            return false;
-        }
-        if (isGazelleService && !isJeepSelected) {
-            return false;
-        }
-
-        // Low profile and runflat
-        if (wheels.types.lowProfile) {
-            const svcName = String(svc.name).toLowerCase();
-            if (!svc.lowProfile && !svcName.includes('низкий профиль')) return false;
-        }
-        if (wheels.types.runflat) {
-            const svcName = String(svc.name).toLowerCase();
-            if (!svc.runflat && !svcName.includes('runflat')) return false;
+            if (isMyka) {
+                // Для мойки — строже: должен совпадать тип
+                if (isLightSelected && !isLightService) matches = false;
+                if (isJeepSelected && !isJeepService) matches = false;
+                if (!isLightSelected && !isJeepSelected) matches = false; // если ничего не выбрано — не показываем
+            } else {
+                // Обычная логика для других услуг
+                if (isLightSelected && isJeepService && !isLightService) matches = false;
+                if (isJeepSelected && isLightService && !isJeepService) matches = false;
+                if (!isLightSelected && !isJeepSelected && (isLightService || isJeepService || isGazelle)) {
+                    matches = false;
+                }
+                if (isGazelle && !isJeepSelected) matches = false;
+            }
         }
 
-        return true;
+        // LowProfile и Runflat — для мойки игнорируем
+        if (!isMyka) {
+            if (wheels.types.lowProfile && !svc.lowProfile && !nameLower.includes('низкий профиль')) matches = false;
+            if (wheels.types.runflat && !svc.runflat && !nameLower.includes('runflat')) matches = false;
+        }
+
+        return matches;
     }
 
     // Фильтр для модального окна: показываем все постоянные + переменные, прошедшие фильтр
@@ -2123,42 +2118,49 @@
             saveStateToStorage();     // сохраняем в localStorage
         });
 
-        // делегированные обработчики для кнопки удаления
+        // ЕДИНСТВЕННЫЙ ОБРАБОТЧИК ДЛЯ КНОПКИ УДАЛЕНИЯ (заменяет все предыдущие)
         document.addEventListener('click', function(e) {
             const deleteBtn = e.target.closest('.item-delete');
             if (!deleteBtn) return;
-            
+
+            e.stopPropagation(); // предотвращаем всплытие, если есть другие обработчики
+
             const row = deleteBtn.closest('.item-row');
             if (!row) return;
 
             const id = row.dataset.id;
             const listId = row.closest('.items-list')?.id;
             if (!listId) return;
-            
+
+            let item;
             if (listId === 'matList') {
-                const material = state.materials.find(m => String(m.id) === id);
-                if (material) {
-                    material.qty = 0;
-                    row.classList.add('zero');
-                    // Сбрасываем select на 0
-                    const select = row.querySelector('.item-select');
-                    if (select) select.value = 0;
-                    updateModalFooterSum('matFooterSum', state.materials);
-                }
+                item = state.materials.find(m => String(m.id) === id);
             } else if (listId === 'svcList') {
-                const service = state.services.find(s => String(s.id) === id);
-                if (service) {
-                    service.qty = 0;
-                    row.classList.add('zero');
-                    const select = row.querySelector('.item-select');
-                    if (select) select.value = 0;
+                item = state.services.find(s => String(s.id) === id);
+            }
+
+            if (item) {
+                item.qty = 0;
+
+                // Визуально обнуляем строку
+                row.classList.add('zero');
+
+                // Сбрасываем select на 0
+                const select = row.querySelector('.item-select');
+                if (select) select.value = 0;
+
+                // Обновляем сумму в футере модалки
+                if (listId === 'matList') {
+                    updateModalFooterSum('matFooterSum', state.materials);
+                } else if (listId === 'svcList') {
                     const filtered = filterServicesByWheels(state.services, state.wheels);
                     updateModalFooterSum('svcFooterSum', filtered);
                 }
+
+                updateSaveBtn();           // главная сумма
+                saveStateToStorage();      // сохраняем
+                showToast('Позиция обнулена');
             }
-            
-            updateSaveBtn();
-            saveStateToStorage();
         });
 
         document.getElementById('btnReset').addEventListener('click', async () => {
