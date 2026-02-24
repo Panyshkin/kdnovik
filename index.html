@@ -900,6 +900,30 @@
                !svc.lowProfile && !svc.runflat;
     }
 
+    // ========== Функция гарантированного добавления постоянной технологической мойки ==========
+    function ensureTechWash() {
+        const hasTechWash = SERVICES.some(s => 
+            s.name.includes('Технологическая мойка') && 
+            s.radius === null && 
+            (s.carType === null || s.carType === '') && 
+            !s.lowProfile && !s.runflat
+        );
+        if (!hasTechWash) {
+            // Создаём новую услугу с уникальным id
+            const newId = 'tech_wash_' + Date.now();
+            SERVICES.push({
+                id: newId,
+                name: '5 Технологическая мойка',
+                price: 200,
+                radius: null,
+                carType: null,
+                lowProfile: false,
+                runflat: false
+            });
+            console.log('➕ Добавлена постоянная услуга: Технологическая мойка');
+        }
+    }
+
     // ========== Функция парсинга услуг ==========
     function parseServices(services) {
         return services.map(svc => {
@@ -982,6 +1006,8 @@
                 
                 // Парсим услуги для извлечения параметров из названий
                 SERVICES = parseServices(SERVICES);
+                // Гарантируем наличие постоянной технологической мойки
+                ensureTechWash();
                 
                 saveListsToStorage();
                 localStorage.setItem(STORAGE_KEYS.selectedSubdivision, subdivision);
@@ -1021,6 +1047,8 @@
             try { SERVICES = JSON.parse(storedSvc); } catch(e){ SERVICES = []; }
             // Парсим услуги
             SERVICES = parseServices(SERVICES);
+            // Гарантируем наличие постоянной технологической мойки
+            ensureTechWash();
         }
         if (!SERVICES || !SERVICES.length) {
             SERVICES = [
@@ -1036,6 +1064,7 @@
                 {id:10, name:'Погрузка колеса в сборе', price:100, radius:null, carType:null, lowProfile:false, runflat:false}
             ];
             SERVICES = parseServices(SERVICES);
+            ensureTechWash();
         }
     }
 
@@ -1442,6 +1471,7 @@
                 {id:10, name:'Погрузка колеса в сборе', price:100, radius:null, carType:null, lowProfile:false, runflat:false}
             ];
             SERVICES = parseServices(SERVICES);
+            ensureTechWash();
             buildSettingsModal();
         });
 
@@ -1485,6 +1515,7 @@
         });
         SERVICES = newSvcs;
         SERVICES = parseServices(SERVICES);
+        ensureTechWash();
 
         saveListsToStorage();
         reconcileStateWithLists();
