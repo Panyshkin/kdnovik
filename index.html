@@ -741,7 +741,7 @@
             <div class="field-label">Тип</div>
             <div class="type-grid" id="typeGrid">
                 <div class="type-btn" data-type="light"><i class="fa-solid fa-car"></i> Легковая</div>
-                <div class="type-btn" data-type="jeep"><i class="fa-solid fa-truck-monster"></i> Джип</div>
+                <div class="type-btn" data-type="jeep"><i class="fa-solid fa-truck-monster"></i> Джип/минивэн/кроссовер</div>
                 <div class="type-btn" data-type="lowProfile"><i class="fa-solid fa-bolt"></i> Низкий профиль</div>
                 <div class="type-btn" data-type="runflat"><i class="fa-solid fa-shield-halved"></i> RunFlat</div>
             </div>
@@ -1017,18 +1017,97 @@
         const isConstant = svc.radius === null && svc.carType === null && svc.lowProfile === null && svc.runflat === null;
         if (isConstant) return true;
 
-        // Радиус: если у услуги указан, должен совпадать
-        if (svc.radius !== null && wheels.radius && svc.radius !== wheels.radius) return false;
-        // Тип автомобиля: если у услуги указан, должен совпадать
-        if (svc.carType) {
-            if (wheels.types.light && svc.carType !== 'light') return false;
-            if (wheels.types.jeep && svc.carType !== 'jeep') return false;
+        // Проверка радиуса
+        if (svc.radius !== null && wheels.radius) {
+            const svcRadius = String(svc.radius);
+            const wheelRadius = Number(wheels.radius);
+            
+            // Если радиус в услуге содержит диапазон (например "12-13")
+            if (svcRadius.includes('-')) {
+                const parts = svcRadius.split('-').map(Number);
+                if (parts.length === 2) {
+                    const [minRadius, maxRadius] = parts;
+                    if (wheelRadius < minRadius || wheelRadius > maxRadius) {
+                        return false;
+                    }
+                }
+            } 
+            // Если радиус в услуге содержит "и более" (например "21 и более")
+            else if (svcRadius.includes('более') || String(svc.name).includes('и более')) {
+                // Извлекаем число из строки
+                const match = String(svc.name).match(/R(\d+)/);
+                if (match) {
+                    const minRadius = Number(match[1]);
+                    if (wheelRadius < minRadius) {
+                        return false;
+                    }
+                } else if (Number(svc.radius) < wheelRadius) {
+                    return false;
+                }
+            }
+            // Обычный случай - точное совпадение
+            else if (Number(svc.radius) !== wheelRadius) {
+                return false;
+            }
         }
-        // Низкий профиль: если выбран, услуга должна его поддерживать
-        if (wheels.types.lowProfile && svc.lowProfile !== true) return false;
-        // Runflat: аналогично
-        if (wheels.types.runflat && svc.runflat !== true) return false;
+
+        // Проверка типа автомобиля
+        if (svc.carType || String(svc.name).toLowerCase().includes('легкового') || 
+            String(svc.name).toLowerCase().includes('джип') || 
+            String(svc.name).toLowerCase().includes('газель')) {
+            
+            const svcName = String(svc.name).toLowerCase();
+            const isLightSelected = wheels.types.light;
+            const isJeepSelected = wheels.types.jeep;
+            
+            // Определяем тип услуги по названию
+            const isLightService = svcName.includes('легкового') || svc.carType === 'light';
+            const isJeepService = svcName.includes('джип') || svcName.includes('минивэн') || 
+                                  svcName.includes('кроссовер') || svcName.includes('паркетник') || 
+                                  svcName.includes('внедорожник') || svc.carType === 'jeep';
+            const isGazelleService = svcName.includes('газель');
+            
+            // Если выбрана легковая, а услуга для джипа - не подходит
+            if (isLightSelected && isJeepService && !isLightService) return false;
+            
+            // Если выбран джип, а услуга для легковой - не подходит  
+            if (isJeepSelected && isLightService && !isJeepService) return false;
+            
+            // Если ничего не выбрано, но услуга имеет тип - не подходит
+            if (!isLightSelected && !isJeepSelected && (isLightService || isJeepService || isGazelleService)) {
+                return false;
+            }
+            
+            // Специальная обработка для ГАЗЕЛИ
+            if (isGazelleService && !isJeepSelected) {
+                return false;
+            }
+        }
+
+        // Проверка низкого профиля
+        if (wheels.types.lowProfile) {
+            const svcName = String(svc.name).toLowerCase();
+            if (!svc.lowProfile && !svcName.includes('низкий профиль')) return false;
+        }
+
+        // Проверка Runflat
+        if (wheels.types.runflat) {
+            const svcName = String(svc.name).toLowerCase();
+            if (!svc.runflat && !svcName.includes('runflat')) return false;
+        }
+
         return true;
+    }
+
+    // Фильтр для модального окна: показываем все постоянные + переменные, прошедшие фильтр
+    function filterServicesByWheels(services, wheels) {
+        return services.filter(svc => {
+            const isConstant = svc.radius === null && svc.carType === null && svc.lowProfile === null && svc.runflat === null;
+            if (isConstant) return true;
+            
+            // Для непостоянных услуг применяем расширенную проверку
+            return serviceMatchesWheels(svc, wheels);
+        });
     }
 
     // Сбрасывает количества переменных услуг, не соответствующих текущим параметрам
@@ -1048,15 +1127,6 @@
                 openModal('services');
             }
         }
-    }
-
-    // Фильтр для модального окна: показываем все постоянные + переменные, прошедшие фильтр
-    function filterServicesByWheels(services, wheels) {
-        return services.filter(svc => {
-            const isConstant = svc.radius === null && svc.carType === null && svc.lowProfile === null && svc.runflat === null;
-            if (isConstant) return true;
-            return serviceMatchesWheels(svc, wheels);
-        });
     }
 
     function fmtPrice(n) { return n.toLocaleString('ru-RU') + ' ₽'; }
@@ -1099,18 +1169,34 @@
         const w = state.wheels;
         el.className = 'card-subtitle has-tags';
         let tags = [`<span class="mini-tag" style="font-weight:700">R${w.radius}</span>`];
-        const typeLabels = {light:'Легковая',jeep:'Джип',lowProfile:'Низкий профиль',runflat:'RunFlat'};
+        const typeLabels = {light:'Легковая',jeep:'Джип/минивэн/кроссовер',lowProfile:'Низкий профиль',runflat:'RunFlat'};
         for (let k in w.types) if (w.types[k]) tags.push(`<span class="mini-tag">${typeLabels[k]}</span>`);
         tags.push(`<span class="mini-tag"><span class="cnt">${w.qty}</span> шт</span>`);
         el.innerHTML = tags.join('');
     }
+    
+    function formatServiceName(service) {
+        return service.name; // Используем полное название из базы данных
+    }
+    
     function updateItemsDisp(elId, items, emptyText) {
         const el = document.getElementById(elId);
         const active = items.filter(i=>i.qty>0);
-        if (!active.length) { el.className = 'card-subtitle'; el.textContent = emptyText; }
+        if (!active.length) { 
+            el.className = 'card-subtitle'; 
+            el.textContent = emptyText; 
+        }
         else {
             el.className = 'card-subtitle has-tags';
-            el.innerHTML = active.map(i => `<span class="mini-tag">${i.name.length>16?i.name.substring(0,14)+'…':i.name}<span class="cnt">${i.qty}</span></span>`).join('');
+            el.innerHTML = active.map(i => {
+                let displayName = i.name;
+                // Для услуг используем полное название
+                if (elId === 'dServices') {
+                    displayName = formatServiceName(i);
+                }
+                const shortName = displayName.length > 20 ? displayName.substring(0, 18) + '…' : displayName;
+                return `<span class="mini-tag">${shortName}<span class="cnt">${i.qty}</span></span>`;
+            }).join('');
         }
     }
     function updateAllDisplays() {
@@ -1148,10 +1234,17 @@
         el.innerHTML = items.map(item => {
             let priceLabel = fmtPrice(item.price);
             const id = item.id || item.name;
+            let displayName = item.name;
+            
+            // Для услуг используем полное название из базы
+            if (listId === 'svcList') {
+                displayName = formatServiceName(item);
+            }
+            
             return `
                 <div class="item-row${item.qty === 0 ? ' zero' : ''}" data-id="${id}">
                     <div class="item-name-block">
-                        <div class="item-name">${item.name}</div>
+                        <div class="item-name">${displayName}</div>
                         <div class="item-price-label">${priceLabel} / шт</div>
                     </div>
                     <div class="item-controls">
@@ -1219,6 +1312,8 @@
                 <input type="number" class="price-input svc-price" value="${svc.price}" min="0" step="1" placeholder="Цена" disabled style="opacity:0.5;">
                 <span style="color: var(--text-muted); font-size:0.8rem;">Радиус: ${svc.radius ?? 'любой'}</span>
                 <span style="color: var(--text-muted); font-size:0.8rem;">Тип: ${svc.carType ?? 'любой'}</span>
+                <span style="color: var(--text-muted); font-size:0.8rem;">LowProfile: ${svc.lowProfile ? 'да' : 'нет'}</span>
+                <span style="color: var(--text-muted); font-size:0.8rem;">Runflat: ${svc.runflat ? 'да' : 'нет'}</span>
                 <button class="settings-delete" data-type="svc"><i class="fa-solid fa-trash-can"></i></button>
             </div>`;
         });
@@ -1266,10 +1361,10 @@
             newItem.innerHTML = `
                 <input type="text" class="svc-name" value="Новая услуга" placeholder="Название">
                 <input type="number" class="price-input svc-price" value="200" min="0" step="1" placeholder="Цена">
-                <input type="number" class="svc-radius" placeholder="Радиус">
+                <input type="text" class="svc-radius" placeholder="Радиус (или диапазон)">
                 <select class="svc-car-type"><option value="">Любой</option><option value="light">Легковая</option><option value="jeep">Джип</option></select>
-                <input type="checkbox" class="svc-low-profile"> низкий профиль
-                <input type="checkbox" class="svc-runflat"> runflat
+                <label><input type="checkbox" class="svc-low-profile"> низкий профиль</label>
+                <label><input type="checkbox" class="svc-runflat"> runflat</label>
                 <button class="settings-delete" data-type="svc"><i class="fa-solid fa-trash-can"></i></button>`;
             section.insertBefore(newItem, document.getElementById('addSvc'));
             newItem.querySelector('.settings-delete').addEventListener('click', (e) => { e.stopPropagation(); newItem.remove(); });
@@ -1324,7 +1419,7 @@
             if (!name || isNaN(price) || price < 0) return;
 
             const radiusInput = row.querySelector('.svc-radius')?.value;
-            const radius = radiusInput ? parseInt(radiusInput, 10) : null;
+            const radius = radiusInput ? (isNaN(radiusInput) ? radiusInput : Number(radiusInput)) : null;
 
             const carTypeSelect = row.querySelector('.svc-car-type')?.value;
             const carType = carTypeSelect || null;
@@ -1366,7 +1461,7 @@
             // Если модальное окно услуг открыто, обновляем его содержимое
             const servicesModal = document.getElementById('mServices');
             if (servicesModal && servicesModal.classList.contains('active')) {
-                // Небольшая задержка, чтобы модальное окно успело обновиться после закрытия
+                // Небольшая задержка, чтобы модальное окно успело обновиться
                 setTimeout(() => {
                     const filtered = filterServicesByWheels(state.services, state.wheels);
                     buildItemsModal('svcList', filtered);
@@ -1674,15 +1769,7 @@
                 showToast(`✅ Заказ №${result.orderNumber} создан`);
                 localStorage.setItem('lastOrderNumber', result.orderNumber);
                 const servicesString = state.services.filter(s => s.qty > 0).map(s => {
-                    let str = `${s.name} x${s.qty}`;
-                    const params = [];
-                    if (s.radius) params.push(`R${s.radius}`);
-                    if (s.carType === 'light') params.push('легковая');
-                    if (s.carType === 'jeep') params.push('джип');
-                    if (s.lowProfile) params.push('низкий профиль');
-                    if (s.runflat) params.push('runflat');
-                    if (params.length) str += ` (${params.join(', ')})`;
-                    return str;
+                    return `${s.name} x${s.qty}`;
                 }).join(', ');
                 const materialsString = state.materials.filter(m => m.qty > 0).map(m => `${m.name} x${m.qty}`).join(', ');
                 addOrder({
