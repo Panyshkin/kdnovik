@@ -1123,8 +1123,11 @@
         });
         if (changed) {
             updateAllDisplays();
+            // Если модальное окно услуг открыто, обновляем его
             if (document.getElementById('mServices').classList.contains('active')) {
-                openModal('services');
+                const filtered = filterServicesByWheels(state.services, state.wheels);
+                buildItemsModal('svcList', filtered);
+                updateModalFooterSum('svcFooterSum', filtered);
             }
         }
     }
@@ -1455,18 +1458,19 @@
             });
             state.wheels.qty = parseInt(document.getElementById('wQtyVal').textContent);
             updateWheelsDisp();
+            
             // после изменения параметров колёс сбрасываем несоответствующие услуги
             resetInvalidServices();
+            
+            // Обновляем отображение услуг на главном экране
+            updateItemsDisp('dServices', state.services, 'Нет позиций');
             
             // Если модальное окно услуг открыто, обновляем его содержимое
             const servicesModal = document.getElementById('mServices');
             if (servicesModal && servicesModal.classList.contains('active')) {
-                // Небольшая задержка, чтобы модальное окно успело обновиться
-                setTimeout(() => {
-                    const filtered = filterServicesByWheels(state.services, state.wheels);
-                    buildItemsModal('svcList', filtered);
-                    updateModalFooterSum('svcFooterSum', filtered);
-                }, 50);
+                const filtered = filterServicesByWheels(state.services, state.wheels);
+                buildItemsModal('svcList', filtered);
+                updateModalFooterSum('svcFooterSum', filtered);
             }
         } else if (id === 'mMaterials') {
             document.querySelectorAll('#matList .item-row').forEach(row => {
@@ -1941,16 +1945,27 @@
             updateSaveBtn();
         });
 
+        // ИСПРАВЛЕННЫЙ ОБРАБОТЧИК applyAll
         document.getElementById('applyAll')?.addEventListener('click', async () => {
             const qty = parseInt(document.getElementById('wQtyVal').textContent);
+            
+            // Применяем количество ко всем материалам
             state.materials.forEach(m => m.qty = qty);
-            state.services.forEach(s => s.qty = qty);
+            
+            // Для услуг применяем количество только к тем, которые соответствуют текущим параметрам колёс
+            const filteredServices = filterServicesByWheels(state.services, state.wheels);
+            filteredServices.forEach(svc => {
+                const service = state.services.find(s => s.id === svc.id);
+                if (service) service.qty = qty;
+            });
+            
+            // Обновляем отображение
             buildItemsModal('matList', state.materials);
             buildItemsModal('svcList', filterServicesByWheels(state.services, state.wheels));
             updateItemsDisp('dMaterials', state.materials, 'Нет позиций');
             updateItemsDisp('dServices', state.services, 'Нет позиций');
             updateSaveBtn();
-            showToast(`Количество ${qty} применено`);
+            showToast(`Количество ${qty} применено к ${filteredServices.length} услугам и всем материалам`);
         });
 
         // делегированные обработчики для select и delete
