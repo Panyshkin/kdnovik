@@ -1148,6 +1148,18 @@
         });
     }
 
+    // Сортировка услуг: сначала постоянные (без префикса), потом переменные по порядку (по имени)
+    function sortServices(services) {
+        return services.sort((a, b) => {
+            const aConst = isConstantService(a);
+            const bConst = isConstantService(b);
+            if (aConst && !bConst) return -1;
+            if (!aConst && bConst) return 1;
+            // Если обе постоянные или обе переменные, сортируем по имени
+            return a.name.localeCompare(b.name);
+        });
+    }
+
     // Сбрасывает количества переменных услуг, не соответствующих текущим параметрам
     function resetInvalidServices() {
         let changed = false;
@@ -1270,7 +1282,9 @@
     
     function buildItemsModal(listId, items) {
         const el = document.getElementById(listId);
-        el.innerHTML = items.map(item => {
+        // Для услуг применяем сортировку
+        const sortedItems = listId === 'svcList' ? sortServices([...items]) : items;
+        el.innerHTML = sortedItems.map(item => {
             let priceLabel = fmtPrice(item.price);
             const id = item.id || item.name;
             let displayName = item.name;
@@ -1500,10 +1514,10 @@
             // после изменения параметров колёс сбрасываем несоответствующие услуги
             resetInvalidServices();
             
-            // Предзаполняем qty для всех подходящих переменных услуг, у которых сейчас qty === 0
+            // Предзаполняем qty для всех подходящих услуг (постоянные + переменные), у которых сейчас qty === 0
             const wheelsQty = state.wheels.qty;
             state.services.forEach(svc => {
-                if (!isConstantService(svc) && svc.qty === 0 && serviceMatchesWheels(svc, state.wheels)) {
+                if (svc.qty === 0 && (isConstantService(svc) || serviceMatchesWheels(svc, state.wheels))) {
                     svc.qty = wheelsQty;
                 }
             });
@@ -1991,29 +2005,42 @@
             updateSaveBtn();
         });
 
-        // Обработчик applyAll
+        // ФИНАЛЬНЫЙ ИСПРАВЛЕННЫЙ ОБРАБОТЧИК APPLY ALL
         document.getElementById('applyAll')?.addEventListener('click', async () => {
             const qty = parseInt(document.getElementById('wQtyVal').textContent);
 
-            if (!(await showConfirm('Применить количество?', `Установить ${qty} шт для всех материалов и подходящих услуг?`))) {
+            if (!(await showConfirm('Применить количество?', `Установить ${qty} шт для всех материалов + всех постоянных услуг + подходящих переменных услуг?`))) {
                 return;
             }
 
-            // Материалы — всегда всем
+            // 1. Все материалы — всегда
             state.materials.forEach(m => { m.qty = qty; });
 
-            // Услуги: только постоянные + подходящие переменные
-            const filtered = filterServicesByWheels(state.services, state.wheels);
-            filtered.forEach(f => {
-                const realSvc = state.services.find(s => s.id === f.id);
-                if (realSvc) realSvc.qty = qty;
+            // 2. Все постоянные услуги — всегда (независимо от колёс)
+            let constantCount = 0;
+            state.services.forEach(svc => {
+                if (isConstantService(svc)) {
+                    svc.qty = qty;
+                    constantCount++;
+                }
             });
 
-            // Обновляем модалки, если открыты
+            // 3. Переменные услуги — только те, что соответствуют текущим параметрам колёс
+            let variableCount = 0;
+            const filteredVariables = state.services.filter(svc => 
+                !isConstantService(svc) && serviceMatchesWheels(svc, state.wheels)
+            );
+            filteredVariables.forEach(svc => {
+                svc.qty = qty;
+                variableCount++;
+            });
+
+            // Обновляем UI модалок, если они открыты
             if (document.getElementById('mMaterials').classList.contains('active')) {
                 buildItemsModal('matList', state.materials);
                 updateModalFooterSum('matFooterSum', state.materials);
             }
+
             if (document.getElementById('mServices').classList.contains('active')) {
                 const currentFiltered = filterServicesByWheels(state.services, state.wheels);
                 buildItemsModal('svcList', currentFiltered);
@@ -2024,7 +2051,8 @@
             updateItemsDisp('dServices', state.services, 'Нет позиций');
             updateSaveBtn();
             saveStateToStorage();
-            showToast(`Установлено ${qty} шт для всех материалов и ${filtered.length} услуг`);
+
+            showToast(`Установлено ${qty} шт:\n• все материалы\n• ${constantCount} постоянных услуг\n• ${variableCount} переменных услуг`);
         });
 
         // делегированные обработчики для select (с обновлением класса строки и суммы)
