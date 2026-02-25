@@ -6,7 +6,6 @@
     <title>Шиномонтаж · заказ</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        /* Вставь сюда ВСЕ твои стили из предыдущего index.html */
         :root {
             --bg: #000000;
             --surface: #1c1c1e;
@@ -33,18 +32,822 @@
             --shadow-lg: 0 16px 48px rgba(0,0,0,0.6);
             --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        /* ... весь остальной CSS (body, .app, .modal, .item-row, .item-checkbox и т.д.) ... */
-        /* Просто скопируй весь <style> из твоего предыдущего index.html */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            min-height: 100dvh;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-font-smoothing: antialiased;
+        }
+        .app {
+            max-width: 520px;
+            margin: 0 auto;
+            padding: 12px;
+            padding-top: calc(env(safe-area-inset-top, 0px) + 12px);
+            padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 20px;
+            padding: 18px;
+            background: var(--surface);
+            border-radius: var(--radius-xl);
+        }
+        .header-icon {
+            width: 46px; height: 46px;
+            background: linear-gradient(135deg, #0a84ff, #5e5ce6);
+            border-radius: 13px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; color: white; flex-shrink: 0;
+            cursor: pointer;
+        }
+        .header h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            line-height: 1.2;
+            flex: 1;
+        }
+        .header-sub { font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px; }
+        .header-actions {
+            display: flex;
+            gap: 8px;
+            margin-left: auto;
+        }
+        .icon-btn {
+            width: 40px; height: 40px;
+            background: var(--surface-2);
+            border: none;
+            border-radius: 10px;
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all var(--transition);
+            flex-shrink: 0;
+        }
+        .icon-btn:active { background: var(--surface-3); color: var(--primary); transform: scale(0.92); }
+        .card-group {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            margin-bottom: 6px;
+        }
+        .card {
+            display: flex; align-items: center;
+            padding: 14px 16px;
+            cursor: pointer;
+            transition: background var(--transition);
+            min-height: 56px;
+        }
+        .card:active { background: var(--surface-2); }
+        .card + .card { border-top: 0.5px solid var(--border); }
+        .card-icon {
+            width: 32px; height: 32px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.85rem; color: white; flex-shrink: 0; margin-right: 12px;
+        }
+        .card-icon.blue { background: #0a84ff; }
+        .card-icon.orange { background: #ff9f0a; }
+        .card-icon.green { background: #30d158; }
+        .card-icon.purple { background: #bf5af2; }
+        .card-icon.red { background: #ff453a; }
+        .card-content { flex: 1; min-width: 0; }
+        .card-title { font-size: 0.95rem; font-weight: 500; color: var(--text); line-height: 1.3; }
+        .card-subtitle {
+            font-size: 0.8rem; color: var(--text-secondary);
+            margin-top: 2px; line-height: 1.3;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .card-subtitle.has-tags {
+            white-space: normal; display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;
+        }
+        .mini-tag {
+            display: inline-flex; align-items: center; gap: 3px;
+            background: var(--surface-2); padding: 2px 8px; border-radius: 20px;
+            font-size: 0.75rem; color: var(--text-secondary); white-space: nowrap;
+        }
+        .mini-tag .cnt {
+            background: var(--primary-soft); color: var(--primary);
+            font-weight: 700; padding: 0 5px; border-radius: 8px; font-size: 0.7rem;
+        }
+        .card-chevron { color: var(--text-muted); font-size: 0.75rem; margin-left: 8px; flex-shrink: 0; }
+        .footer-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .btn {
+            padding: 15px; border-radius: var(--radius); border: none;
+            font-size: 0.95rem; font-weight: 600; cursor: pointer;
+            text-align: center; transition: all var(--transition);
+            display: flex; align-items: center; justify-content: center;
+            gap: 8px; font-family: inherit;
+        }
+        .btn:active { transform: scale(0.97); }
+        .btn-reset { background: var(--surface); color: var(--text-secondary); }
+        .btn-reset:active { background: var(--surface-2); }
+        .btn-submit { background: var(--primary); color: white; flex-direction: column; gap: 2px; }
+        .btn-submit:active { background: var(--primary-hover); }
+        .btn-submit-main {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 0.95rem; font-weight: 600;
+        }
+        .btn-submit-sum {
+            font-size: 0.78rem; font-weight: 500; opacity: 0.8;
+        }
+        /* MODAL base */
+        .modal-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            z-index: 1000;
+            display: flex; align-items: flex-end; justify-content: center;
+            opacity: 0; visibility: hidden; transition: all 0.3s ease;
+        }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal {
+            background: var(--surface);
+            border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+            width: 100%; max-width: 520px;
+            max-height: 92vh; max-height: 92dvh;
+            display: flex; flex-direction: column;
+            transform: translateY(100%);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .modal-overlay.active .modal { transform: translateY(0); }
+        .modal-handle {
+            width: 36px; height: 5px; background: var(--surface-3);
+            border-radius: 3px; margin: 8px auto 0; flex-shrink: 0;
+        }
+        .modal-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px 10px; flex-shrink: 0;
+        }
+        .modal-head h2 {
+            font-size: 1.15rem; font-weight: 700;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .modal-head h2 i { color: var(--primary); font-size: 1rem; }
+        .modal-close-btn {
+            width: 32px; height: 32px; border-radius: 50%; border: none;
+            background: var(--surface-3); color: var(--text-secondary);
+            font-size: 0.85rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all var(--transition);
+        }
+        .modal-close-btn:active { background: var(--border-hover); transform: scale(0.9); }
+        .modal-body {
+            flex: 1; overflow-y: auto; padding: 0 16px 16px;
+            overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+        }
+        .modal-footer {
+            padding: 10px 16px;
+            padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+            border-top: 0.5px solid var(--border);
+            flex-shrink: 0;
+            display: flex;
+            gap: 8px;
+        }
+        .modal-footer .btn-done {
+            flex: 1;
+            padding: 12px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .modal-footer .btn-done:active { background: var(--primary-hover); transform: scale(0.98); }
+        .modal-footer .btn-secondary {
+            flex: 1;
+            padding: 12px;
+            background: var(--surface-2);
+            color: var(--text-secondary);
+            border: none;
+            border-radius: var(--radius);
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .modal-footer .btn-secondary:active { background: var(--surface-3); transform: scale(0.98); }
+        /* Стили для полей ввода на форме клиента */
+        .field-input {
+            width: 100%;
+            background: var(--surface-2);
+            border: none;
+            border-radius: var(--radius);
+            padding: 13px 14px;
+            font-size: 1rem;
+            color: var(--text);
+            outline: none;
+            transition: box-shadow var(--transition);
+            font-family: inherit;
+        }
+        .field-input:focus {
+            box-shadow: 0 0 0 3px var(--primary-glow), inset 0 0 0 1px var(--primary);
+        }
+        .field-input::placeholder {
+            color: var(--text-muted);
+        }
+        .field-label {
+            font-size: 0.78rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            padding-left: 4px;
+        }
+        /* Стили для истории заказов */
+        .history-filters {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            padding: 0 4px;
+        }
+        .filter-btn {
+            flex: 1;
+            padding: 8px;
+            background: var(--surface-2);
+            border: none;
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+        .filter-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+        .filter-btn:active { transform: scale(0.95); }
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .history-item {
+            background: var(--surface-2);
+            border-radius: var(--radius);
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .history-item-paid {
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+        .history-item-paid.paid {
+            background: var(--success-soft);
+            color: var(--success);
+        }
+        .history-item-paid.unpaid {
+            background: var(--danger-soft);
+            color: var(--danger);
+        }
+        .history-item-content {
+            flex: 1;
+        }
+        .history-item-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .history-item-number {
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .history-item-date {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+        .history-item-client {
+            font-weight: 500;
+            font-size: 0.9rem;
+            margin-bottom: 2px;
+        }
+        .history-item-mechanics {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+        .history-item-amount {
+            font-weight: 700;
+            color: var(--text);
+            font-size: 0.95rem;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        /* settings specific styles */
+        .settings-section {
+            margin-bottom: 24px;
+        }
+        .settings-section-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .settings-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+        .settings-item input, .settings-item select {
+            background: var(--surface-2);
+            border: none;
+            border-radius: var(--radius-sm);
+            padding: 8px 10px;
+            font-size: 0.85rem;
+            color: var(--text);
+            font-family: inherit;
+        }
+        .settings-item input:focus, .settings-item select:focus {
+            box-shadow: 0 0 0 2px var(--primary-glow), inset 0 0 0 1px var(--primary);
+            outline: none;
+        }
+        .settings-item .svc-name { flex: 2; min-width: 140px; }
+        .settings-item .svc-price { width: 70px; }
+        .settings-item .svc-radius { width: 80px; }
+        .settings-item .svc-car-type { width: 100px; }
+        .settings-item .svc-flag { width: 80px; }
+        .settings-delete {
+            width: 36px; height: 36px;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .settings-delete:active {
+            background: var(--danger-soft);
+            color: var(--danger);
+        }
+        .settings-add-btn {
+            background: var(--surface-2);
+            border: none;
+            border-radius: var(--radius-sm);
+            padding: 10px;
+            color: var(--primary);
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            width: 100%;
+            margin-top: 6px;
+            cursor: pointer;
+        }
+        .settings-add-btn:active {
+            background: var(--surface-3);
+        }
+        .settings-reset-defaults {
+            background: transparent;
+            border: 0.5px dashed var(--border);
+            border-radius: var(--radius-sm);
+            padding: 12px;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 16px;
+            cursor: pointer;
+        }
+        .settings-reset-defaults:active {
+            background: var(--surface-2);
+        }
+        .modal-footer-sum {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 4px 6px;
+        }
+        .modal-footer-sum-label {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        .modal-footer-sum-value {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--success);
+        }
+        /* other styles */
+        .mech-list { display: flex; flex-direction: column; background: var(--surface-2); border-radius: var(--radius); overflow: hidden; }
+        .mech-item { display: flex; align-items: center; gap: 12px; padding: 13px 14px; cursor: pointer; transition: background var(--transition); user-select: none; }
+        .mech-item + .mech-item { border-top: 0.5px solid var(--border); }
+        .mech-item:active { background: var(--surface-3); }
+        .mech-check { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--text-muted); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all var(--transition); font-size: 0.65rem; color: transparent; }
+        .mech-item.selected .mech-check { background: var(--primary); border-color: var(--primary); color: white; }
+        .mech-name { font-weight: 500; font-size: 0.95rem; }
+        .radius-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 16px; }
+        .radius-btn { padding: 12px 0; border-radius: var(--radius); border: none; background: var(--surface-2); color: var(--text); font-size: 1rem; font-weight: 600; cursor: pointer; text-align: center; transition: all var(--transition); }
+        .radius-btn:active { transform: scale(0.94); }
+        .radius-btn.active { background: var(--primary); color: white; }
+        .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 16px; }
+        .type-btn { padding: 12px 10px; border-radius: var(--radius); border: none; background: var(--surface-2); color: var(--text-secondary); font-size: 0.85rem; font-weight: 600; cursor: pointer; text-align: center; transition: all var(--transition); display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .type-btn:active { transform: scale(0.96); }
+        .type-btn.active { background: var(--primary-soft); color: var(--primary); }
+        .qty-row { display: flex; align-items: center; justify-content: space-between; background: var(--surface-2); border-radius: var(--radius); padding: 10px 14px; margin-bottom: 12px; }
+        .qty-row-label { font-weight: 600; font-size: 0.9rem; color: var(--text); display: flex; align-items: center; gap: 8px; }
+        .qty-stepper { display: flex; align-items: center; background: var(--surface-3); border-radius: 10px; overflow: hidden; }
+        .qty-stepper button { width: 38px; height: 38px; border: none; background: transparent; color: var(--primary); font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background var(--transition); }
+        .qty-stepper button:active { background: var(--primary-soft); }
+        .qty-stepper .qty-val { width: 40px; text-align: center; font-size: 1.1rem; font-weight: 700; color: var(--text); }
+        .apply-all-bar { display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: var(--primary-soft); border-radius: var(--radius); cursor: pointer; transition: all var(--transition); }
+        .apply-all-bar:active { transform: scale(0.98); opacity: 0.8; }
+        .items-list { display: flex; flex-direction: column; background: var(--surface-2); border-radius: var(--radius); overflow: hidden; }
+        .item-row {
+            display: flex;
+            align-items: center;
+            padding: 10px 14px;
+            gap: 10px;
+            transition: background 0.2s, opacity 0.2s;
+        }
+        .item-row + .item-row { border-top: 0.5px solid var(--border); }
+        .item-row.active {
+            background: rgba(10, 132, 255, 0.12);
+            opacity: 1;
+        }
+        .item-row.zero {
+            opacity: 0.4;
+            background: transparent;
+        }
+        .item-name-block { flex: 1; min-width: 0; }
+        .item-name { font-weight: 500; font-size: 0.88rem; color: var(--text); line-height: 1.3; }
+        .item-price-label { font-size: 0.75rem; color: var(--text-muted); margin-top: 1px; }
+        .item-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+        .item-select-wrap { position: relative; flex-shrink: 0; }
+        .item-select { appearance: none; -webkit-appearance: none; background: var(--surface-3); color: var(--primary); border: none; border-radius: 8px; padding: 6px 28px 6px 10px; font-size: 0.95rem; font-weight: 700; font-family: inherit; cursor: pointer; outline: none; min-width: 58px; text-align: center; }
+        .item-select-arrow { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 0.6rem; color: var(--text-muted); pointer-events: none; }
+        /* Кастомный чекбокс в стиле приложения */
+        .item-checkbox-wrap {
+            position: relative;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .item-checkbox {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--text-muted);
+            border-radius: 6px;
+            background: var(--surface-3);
+            outline: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .item-checkbox:checked {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+        .item-checkbox:checked::after {
+            content: '\f00c'; /* fa-check */
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            color: white;
+            font-size: 14px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .item-checkbox:focus {
+            box-shadow: 0 0 0 3px var(--primary-glow);
+        }
+        .toast { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 16px); left: 50%; transform: translateX(-50%) translateY(-80px); background: var(--surface-2); color: var(--text); padding: 13px 22px; border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); z-index: 2000; opacity: 0; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 0.9rem; white-space: nowrap; backdrop-filter: blur(20px); border: 0.5px solid var(--border); }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .confirm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(20px); z-index: 3000; display: flex; align-items: center; justify-content: center; padding: 40px; opacity: 0; visibility: hidden; transition: all 0.25s ease; }
+        .confirm-overlay.active { opacity: 1; visibility: visible; }
+        .confirm-dialog { background: var(--surface-2); border-radius: 14px; width: 100%; max-width: 300px; text-align: center; overflow: hidden; transform: scale(0.9); transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
+        .confirm-overlay.active .confirm-dialog { transform: scale(1); }
+        .confirm-body { padding: 22px 20px 16px; }
+        .confirm-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 8px; }
+        .confirm-text { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4; white-space: pre-line; }
+        .confirm-actions { border-top: 0.5px solid var(--border); display: flex; }
+        .confirm-actions button { flex: 1; padding: 14px; border: none; background: transparent; font-size: 1rem; font-family: inherit; cursor: pointer; transition: background var(--transition); }
+        .confirm-actions button:active { background: var(--surface-3); }
+        .confirm-actions .confirm-cancel { color: var(--primary); font-weight: 400; border-right: 0.5px solid var(--border); }
+        .confirm-actions .confirm-ok { color: var(--primary); font-weight: 700; }
+        @media (min-width: 520px) {
+            .modal { border-radius: var(--radius-xl); margin: auto; max-height: 85vh; }
+            .modal-overlay { align-items: center; padding: 20px; }
+        }
     </style>
 </head>
 <body>
-    <!-- ВСЁ твоё тело приложения (header, cards, модалки, toast, confirm) -->
-    <div class="app">
-        <!-- ... весь HTML-контент из твоего предыдущего index.html ... -->
-        <!-- Убедись, что есть #toast, #confirmOverlay и все id, которые используются -->
+<div class="app">
+    <div class="header">
+        <div class="header-icon" id="btnSettings">
+            <i class="fa-solid fa-gear"></i>
+        </div>
+        <div>
+            <h1>Шиномонтаж</h1>
+            <div class="header-sub">Оформление заказа</div>
+        </div>
+        <div class="header-actions">
+            <button class="icon-btn" id="btnHistory" title="История заказов">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+            </button>
+        </div>
     </div>
+    <!-- main cards -->
+    <div class="card-group">
+        <div class="card" data-modal="mechanics">
+            <div class="card-icon blue"><i class="fa-solid fa-users"></i></div>
+            <div class="card-content">
+                <div class="card-title">Механики</div>
+                <div class="card-subtitle" id="dMechanics">Выберите механиков</div>
+            </div>
+            <span class="card-chevron"><i class="fa-solid fa-chevron-right"></i></span>
+        </div>
+        <div class="card" data-modal="client">
+            <div class="card-icon orange"><i class="fa-solid fa-user"></i></div>
+            <div class="card-content">
+                <div class="card-title">Клиент</div>
+                <div class="card-subtitle" id="dClient">Добавить информацию</div>
+            </div>
+            <span class="card-chevron"><i class="fa-solid fa-chevron-right"></i></span>
+        </div>
+    </div>
+    <div class="card-group">
+        <div class="card" data-modal="wheels">
+            <div class="card-icon green"><i class="fa-solid fa-circle-dot"></i></div>
+            <div class="card-content">
+                <div class="card-title">Параметры колёс</div>
+                <div class="card-subtitle" id="dWheels">Не выбраны</div>
+            </div>
+            <span class="card-chevron"><i class="fa-solid fa-chevron-right"></i></span>
+        </div>
+    </div>
+    <div class="card-group">
+        <div class="card" data-modal="materials">
+            <div class="card-icon purple"><i class="fa-solid fa-box-open"></i></div>
+            <div class="card-content">
+                <div class="card-title">Материалы</div>
+                <div class="card-subtitle" id="dMaterials">Нет позиций</div>
+            </div>
+            <span class="card-chevron"><i class="fa-solid fa-chevron-right"></i></span>
+        </div>
+        <div class="card" data-modal="services">
+            <div class="card-icon red"><i class="fa-solid fa-wrench"></i></div>
+            <div class="card-content">
+                <div class="card-title">Услуги</div>
+                <div class="card-subtitle" id="dServices">Нет позиций</div>
+            </div>
+            <span class="card-chevron"><i class="fa-solid fa-chevron-right"></i></span>
+        </div>
+    </div>
+    <div class="footer-actions">
+        <button class="btn btn-reset" id="btnReset"><i class="fa-solid fa-rotate-left"></i> Сбросить</button>
+        <button class="btn btn-submit" id="btnCreateOrder">
+            <span class="btn-submit-main"><i class="fa-solid fa-check"></i> Создать заказ</span>
+            <span class="btn-submit-sum" id="btnSaveSum"></span>
+        </button>
+    </div>
+</div>
+<!-- Modals -->
+<div class="modal-overlay" id="mMechanics">
+    <div class="modal">
+        <div class="modal-handle"></div>
+        <div class="modal-head">
+            <h2><i class="fa-solid fa-users"></i> Механики</h2>
+            <button class="modal-close-btn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="mech-list" id="mechList"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-done"><i class="fa-solid fa-check"></i> Готово</button>
+        </div>
+    </div>
+</div>
+<!-- МОДАЛКА КЛИЕНТА С КАМЕРОЙ -->
+<div class="modal-overlay" id="mClient">
+    <div class="modal">
+        <div class="modal-handle"></div>
+        <div class="modal-head">
+            <h2><i class="fa-solid fa-user"></i> Клиент</h2>
+            <button class="modal-close-btn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="field">
+                <div class="field-label" style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>ФИО</span>
+                    <button class="icon-btn" id="btnScanPlate" title="Сканировать номер автомобиля" style="width: 32px; height: 32px;">
+                        <i class="fa-solid fa-camera"></i>
+                    </button>
+                </div>
+                <input class="field-input" id="inName" type="text" placeholder="Иванов Иван Иванович">
+                <div id="cameraContainer" style="display: none; margin-top: 10px; position: relative;">
+                    <video id="video" autoplay playsinline style="width: 100%; height: 200px; object-fit: cover; border-radius: var(--radius); background: #000;"></video>
+                    <canvas id="canvas" style="display: none;"></canvas>
+                    <div style="display: flex; gap: 8px; margin-top: 8px;">
+                        <button class="btn-done" id="captureBtn" style="flex: 1;">📸 Сделать снимок</button>
+                        <button class="btn-secondary" id="cancelCameraBtn" style="flex: 1;">Отмена</button>
+                    </div>
+                    <div id="ocrStatus" style="margin-top: 8px; font-size: 0.85rem; color: var(--text-secondary);"></div>
+                </div>
+            </div>
+            <div class="field">
+                <div class="field-label">Телефон</div>
+                <input class="field-input" id="inPhone" type="tel" placeholder="+7 (999) 123-45-67">
+            </div>
+            <div class="field">
+                <div class="field-label">Автомобиль</div>
+                <input class="field-input" id="inCar" type="text" placeholder="Toyota Camry, А123БВ">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-done"><i class="fa-solid fa-check"></i> Готово</button>
+        </div>
+    </div>
+</div>
+<div class="modal-overlay" id="mWheels">
+    <div class="modal">
+        <div class="modal-handle"></div>
+        <div class="modal-head">
+            <h2><i class="fa-solid fa-circle-dot"></i> Колёса</h2>
+            <button class="modal-close-btn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="field-label">Радиус</div>
+            <div class="radius-grid" id="radiusGrid"></div>
+            <div class="field-label">Тип</div>
+            <div class="type-grid" id="typeGrid">
+                <div class="type-btn" data-type="light"><i class="fa-solid fa-car"></i> Легковая</div>
+                <div class="type-btn" data-type="jeep"><i class="fa-solid fa-truck-monster"></i> Джип/минивэн/кроссовер</div>
+                <div class="type-btn" data-type="lowProfile"><i class="fa-solid fa-bolt"></i> Низкий профиль</div>
+                <div class="type-btn" data-type="runflat"><i class="fa-solid fa-shield-halved"></i> RunFlat</div>
+            </div>
+            <div class="qty-row">
+                <div class="qty-row-label"><i class="fa-solid fa-layer-group"></i> Количество</div>
+                <div class="qty-stepper">
+                    <button id="wQtyMinus"><i class="fa-solid fa-minus"></i></button>
+                    <span class="qty-val" id="wQtyVal">4</span>
+                    <button id="wQtyPlus"><i class="fa-solid fa-plus"></i></button>
+                </div>
+            </div>
+            <div class="apply-all-bar" id="applyAll">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <span>Применить ко всем позициям</span>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-done"><i class="fa-solid fa-check"></i> Готово</button>
+        </div>
+    </div>
+</div>
+<!-- МОДАЛКА МАТЕРИАЛОВ -->
+<div class="modal-overlay" id="mMaterials">
+    <div class="modal">
+        <div class="modal-handle"></div>
+        <div class="modal-head">
+            <h2><i class="fa-solid fa-box-open"></i> Материалы</h2>
+            <button class="modal-close-btn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="items-list" id="matList"></div>
+        </div>
+        <div class="modal-footer">
+            <div class="modal-footer-sum" id="matFooterSum"></div>
+            <button class="btn-done"><i class="fa-solid fa-check"></i> Готово</button>
+        </div>
+    </div>
+</div>
+<!-- МОДАЛКА УСЛУГ С КНОПКОЙ КОМПЛЕКС -->
+<div class="modal-overlay" id="mServices">
+    <div class="modal">
+        <div class="modal-handle"></div>
+        <div class="modal-head">
+            <h2><i class="fa-solid fa-wrench"></i> Услуги</h2>
+            <div style="display:flex; align-items:center; gap:12px;">
+                <button class="icon-btn" id="btnComplexServices" title="Выбрать комплекс услуг (1–5)">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                </button>
+                <button class="modal-close-btn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+        </div>
+        <div class="modal-body">
+            <div class="items-list" id="svcList"></div>
+        </div>
+        <div class="modal-footer">
+            <div class="modal-footer-sum" id="svcFooterSum"></div>
+            <button class="btn-done"><i class="fa-solid fa-check"></i> Готово</button>
+        </div>
+    </div>
+</div>
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="mSettings">
+    <div class="modal">
+        <div class="modal-handle"></div>
+        <div class="modal-head">
+            <h2><i class="fa-solid fa-sliders"></i> Настройка списков</h2>
+            <button class="modal-close-btn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body" id="settingsBody"></div>
+        <div class="modal-footer" style="flex-direction: column; gap: 8px;">
+            <button class="btn-done" id="settingsSave"><i class="fa-solid fa-check"></i> Сохранить</button>
+        </div>
+    </div>
+</div>
+<!-- HISTORY MODAL -->
+<div class="modal-overlay" id="mHistory">
+    <div class="modal">
+        <div class="modal-handle"></div>
+        <div class="modal-head">
+            <h2><i class="fa-solid fa-clock-rotate-left"></i> История заказов</h2>
+            <button class="modal-close-btn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="history-filters">
+                <button class="filter-btn active" data-filter="today">Сегодня</button>
+                <button class="filter-btn" data-filter="week">Неделя</button>
+                <button class="filter-btn" data-filter="month">Месяц</button>
+                <button class="filter-btn" data-filter="all">Все</button>
+            </div>
+            <div class="history-list" id="historyList"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-done" id="checkPaymentsBtn"><i class="fa-solid fa-rotate"></i> Проверить оплату</button>
+            <button class="btn-secondary" id="clearHistoryBtn"><i class="fa-solid fa-trash"></i> Очистить</button>
+        </div>
+    </div>
+</div>
+<div class="toast" id="toast"><i class="fa-solid fa-circle-check"></i> <span id="toastMsg"></span></div>
+<div class="confirm-overlay" id="confirmOverlay">
+    <div class="confirm-dialog">
+        <div class="confirm-body">
+            <div class="confirm-title" id="confirmTitle"></div>
+            <div class="confirm-text" id="confirmText"></div>
+        </div>
+        <div class="confirm-actions">
+            <button class="confirm-cancel" id="confirmCancel">Отмена</button>
+            <button class="confirm-ok" id="confirmOk">OK</button>
+        </div>
+    </div>
+</div>
 
-    <!-- Запуск модуля — без inline-кода -->
-    <script type="module" src="./js/main.js"></script>
+<!-- Запуск приложения -->
+<script type="module" src="./js/main.js"></script>
 </body>
 </html>
