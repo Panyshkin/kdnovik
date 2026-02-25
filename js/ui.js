@@ -13,10 +13,12 @@ export function updateSaveBtn(state) {
   const el = document.getElementById('btnSaveSum');
   if (el) {
     el.textContent = sum > 0 ? fmtPrice(sum) : '';
+  } else {
+    console.warn('Элемент #btnSaveSum не найден');
   }
 }
 
-// Подсчёт общей суммы (только по selected)
+// Подсчёт общей суммы (только по selected и qty > 0)
 export function calcTotal(state) {
   let sum = 0;
   sum += state.materials.reduce((s, i) => s + (i.selected && i.qty > 0 ? i.price * i.qty : 0), 0);
@@ -31,13 +33,12 @@ export function updateMechanicsDisp(state) {
     console.warn('Элемент #dMechanics не найден');
     return;
   }
-
   if (!state.mechanics.length) {
     el.className = 'card-subtitle';
     el.textContent = 'Выберите механиков';
   } else {
     el.className = 'card-subtitle has-tags';
-    el.innerHTML = state.mechanics.map(n => 
+    el.innerHTML = state.mechanics.map(n =>
       `<span class="mini-tag"><i class="fa-solid fa-user-gear"></i> ${n}</span>`
     ).join('');
   }
@@ -50,7 +51,6 @@ export function updateClientDisp(state) {
     console.warn('Элемент #dClient не найден');
     return;
   }
-
   const c = state.client;
   el.className = 'card-subtitle';
   if (!c.name && !c.phone && !c.car) {
@@ -67,7 +67,6 @@ export function updateWheelsDisp(state) {
     console.warn('Элемент #dWheels не найден');
     return;
   }
-
   const w = state.wheels;
   el.className = 'card-subtitle has-tags';
   let tags = [`<span class="mini-tag" style="font-weight:700">R${w.radius}</span>`];
@@ -96,7 +95,6 @@ export function updateItemsDisp(elId, items, emptyText) {
     console.warn(`Элемент #${elId} не найден`);
     return;
   }
-
   const active = items.filter(i => i.selected && i.qty > 0);
   if (!active.length) {
     el.className = 'card-subtitle';
@@ -127,8 +125,10 @@ export function updateAllDisplays(state) {
 // Построение модалки механиков
 export function buildMechanicsModal(state) {
   const el = document.getElementById('mechList');
-  if (!el) return;
-
+  if (!el) {
+    console.warn('Элемент #mechList не найден');
+    return;
+  }
   el.innerHTML = MECHANICS.map(name => {
     const sel = state.mechanics.includes(name);
     return `<div class="mech-item${sel ? ' selected' : ''}" data-name="${name}">
@@ -143,16 +143,14 @@ export function fillClientModal(state) {
   const nameEl = document.getElementById('inName');
   const phoneEl = document.getElementById('inPhone');
   const carEl = document.getElementById('inCar');
-
-  if (nameEl) nameEl.value = state.client.name;
-  if (phoneEl) phoneEl.value = state.client.phone;
-  if (carEl) carEl.value = state.client.car;
+  if (nameEl) nameEl.value = state.client.name || '';
+  if (phoneEl) phoneEl.value = state.client.phone || '';
+  if (carEl) carEl.value = state.client.car || '';
 }
 
 // Построение модалки параметров колёс
 export function buildWheelsModal(state) {
   const RADII = [13,14,15,16,17,18,19,20,21,22,23,24];
-
   const grid = document.getElementById('radiusGrid');
   if (grid) {
     grid.innerHTML = RADII.map(r => `
@@ -225,13 +223,13 @@ export function buildItemsModal(listId, items, state) {
 export function updateModalFooterSum(footerId, items) {
   const el = document.getElementById(footerId);
   if (!el) return;
-
   let sum = items.reduce((s, i) => s + (i.selected && i.qty > 0 ? i.price * i.qty : 0), 0);
-  el.innerHTML = sum > 0 
+  el.innerHTML = sum > 0
     ? `<span class="modal-footer-sum-label">Сумма:</span><span class="modal-footer-sum-value">${fmtPrice(sum)}</span>`
     : '';
 }
 
+// Открытие модалки + привязка обработчиков закрытия и сохранения
 export function openModal(name, state) {
   const modalMap = {
     mechanics: 'mMechanics',
@@ -273,11 +271,10 @@ export function openModal(name, state) {
   overlay.classList.add('active');
   document.body.style.overflow = 'hidden';
 
-  // Привязываем обработчики ЗАКРЫТИЯ (каждый раз при открытии!)
+  // Закрытие модалки
   const closeModalHandler = () => {
     overlay.classList.remove('active');
     document.body.style.overflow = '';
-    // Удаляем слушатели, чтобы не накапливались
     overlay.removeEventListener('click', bgCloseHandler);
     document.removeEventListener('keydown', escCloseHandler);
   };
@@ -297,12 +294,16 @@ export function openModal(name, state) {
   // Кнопка крестик
   overlay.querySelector('.modal-close-btn')?.addEventListener('click', closeModalHandler);
 
-  // Кнопки «Готово» и «Отмена» в футере (если есть)
-  overlay.querySelectorAll('.modal-footer .btn-done, .modal-footer .btn-secondary').forEach(btn => {
-    btn.addEventListener('click', () => {
-      // Если нужно сохранить данные — добавь логику здесь
-      closeModalHandler();
-    });
+  // Кнопка «Готово» — сохраняем + закрываем
+  overlay.querySelector('.modal-footer .btn-done')?.addEventListener('click', () => {
+    saveCurrentModal(overlay, state);
+    closeModalHandler();
+    showToast('Данные сохранены');
+  });
+
+  // Кнопка «Отмена» — просто закрываем
+  overlay.querySelectorAll('.modal-footer .btn-secondary').forEach(btn => {
+    btn.addEventListener('click', closeModalHandler);
   });
 
   // Фон и Esc
@@ -310,4 +311,73 @@ export function openModal(name, state) {
   document.addEventListener('keydown', escCloseHandler);
 
   console.log(`Модалка ${name} открыта`);
+}
+
+// Функция сохранения данных из модалки (вызывается при «Готово»)
+export function saveCurrentModal(overlay, state) {
+  const id = overlay.id;
+
+  if (id === 'mMechanics') {
+    state.mechanics = [...overlay.querySelectorAll('#mechList .mech-item.selected')].map(el => el.dataset.name);
+    updateMechanicsDisp(state);
+  }
+
+  if (id === 'mClient') {
+    state.client.name = overlay.querySelector('#inName')?.value.trim() || '';
+    state.client.phone = overlay.querySelector('#inPhone')?.value.trim() || '';
+    state.client.car = overlay.querySelector('#inCar')?.value.trim() || '';
+    updateClientDisp(state);
+  }
+
+  if (id === 'mWheels') {
+    const activeR = overlay.querySelector('#radiusGrid .radius-btn.active');
+    if (activeR) state.wheels.radius = parseInt(activeR.dataset.r);
+
+    overlay.querySelectorAll('#typeGrid .type-btn').forEach(btn => {
+      state.wheels.types[btn.dataset.type] = btn.classList.contains('active');
+    });
+
+    const qtyEl = overlay.querySelector('#wQtyVal');
+    if (qtyEl) state.wheels.qty = parseInt(qtyEl.textContent) || 4;
+
+    updateWheelsDisp(state);
+  }
+
+  if (id === 'mMaterials') {
+    overlay.querySelectorAll('#matList .item-row').forEach(row => {
+      const itemId = row.dataset.id;
+      const select = row.querySelector('.item-select');
+      if (itemId && select) {
+        const qty = parseInt(select.value) || 0;
+        const material = state.materials.find(m => String(m.id).trim() === String(itemId).trim());
+        if (material) {
+          material.qty = qty;
+          material.selected = qty > 0;
+        }
+      }
+    });
+    updateItemsDisp('dMaterials', state.materials, 'Нет позиций');
+    updateModalFooterSum('matFooterSum', state.materials);
+  }
+
+  if (id === 'mServices') {
+    overlay.querySelectorAll('#svcList .item-row').forEach(row => {
+      const itemId = row.dataset.id;
+      const select = row.querySelector('.item-select');
+      if (itemId && select) {
+        const qty = parseInt(select.value) || 0;
+        const service = state.services.find(s => String(s.id).trim() === String(itemId).trim());
+        if (service) {
+          service.qty = qty;
+          service.selected = qty > 0;
+        }
+      }
+    });
+    updateItemsDisp('dServices', state.services, 'Нет позиций');
+    updateModalFooterSum('svcFooterSum', state.services);
+  }
+
+  // Обновляем главную страницу и сохраняем состояние
+  updateSaveBtn(state);
+  saveStateToStorage(state);
 }
