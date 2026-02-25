@@ -90,3 +90,7 @@ export function reconcileStateWithLists(state) {
         selected: serviceMap.has(src.id) ? serviceMap.get(src.id).selected : false
     }));
 }
+
+window.MECHANICS = MECHANICS;
+window.MATERIALS = MATERIALS;
+window.SERVICES = SERVICES;
