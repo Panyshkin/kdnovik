@@ -232,7 +232,6 @@ export function updateModalFooterSum(footerId, items) {
     : '';
 }
 
-// Открытие модалки
 export function openModal(name, state) {
   const modalMap = {
     mechanics: 'mMechanics',
@@ -253,7 +252,7 @@ export function openModal(name, state) {
     return;
   }
 
-  // Заполняем модалку в зависимости от типа
+  // Заполняем содержимое модалки
   if (name === 'mechanics') buildMechanicsModal(state);
   if (name === 'client') fillClientModal(state);
   if (name === 'wheels') buildWheelsModal(state);
@@ -270,14 +269,45 @@ export function openModal(name, state) {
   // if (name === 'settings') buildSettingsModal(state);
   // if (name === 'history') renderHistoryList('today');
 
+  // Показываем модалку
   overlay.classList.add('active');
   document.body.style.overflow = 'hidden';
-}
 
-// Закрытие модалки
-export function closeModal(overlay) {
-  if (overlay) {
+  // Привязываем обработчики ЗАКРЫТИЯ (каждый раз при открытии!)
+  const closeModalHandler = () => {
     overlay.classList.remove('active');
     document.body.style.overflow = '';
-  }
+    // Удаляем слушатели, чтобы не накапливались
+    overlay.removeEventListener('click', bgCloseHandler);
+    document.removeEventListener('keydown', escCloseHandler);
+  };
+
+  const bgCloseHandler = (e) => {
+    if (e.target === overlay && name !== 'settings' && name !== 'history') {
+      closeModalHandler();
+    }
+  };
+
+  const escCloseHandler = (e) => {
+    if (e.key === 'Escape') {
+      closeModalHandler();
+    }
+  };
+
+  // Кнопка крестик
+  overlay.querySelector('.modal-close-btn')?.addEventListener('click', closeModalHandler);
+
+  // Кнопки «Готово» и «Отмена» в футере (если есть)
+  overlay.querySelectorAll('.modal-footer .btn-done, .modal-footer .btn-secondary').forEach(btn => {
+    btn.addEventListener('click', () => {
+      // Если нужно сохранить данные — добавь логику здесь
+      closeModalHandler();
+    });
+  });
+
+  // Фон и Esc
+  overlay.addEventListener('click', bgCloseHandler);
+  document.addEventListener('keydown', escCloseHandler);
+
+  console.log(`Модалка ${name} открыта`);
 }
