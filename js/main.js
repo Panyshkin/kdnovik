@@ -19,6 +19,18 @@ import { initHandlers } from './handlers.js';
 
 import { showToast, showConfirm } from './utils.js';
 
+// Глобальный Esc для закрытия любой активной модалки
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const activeModal = document.querySelector('.modal-overlay.active');
+    if (activeModal) {
+      activeModal.classList.remove('active');
+      document.body.style.overflow = '';
+      console.log('Модалка закрыта по Esc');
+    }
+  }
+});
+
 // Глобальное состояние
 export let state = {
   mechanics: [],
