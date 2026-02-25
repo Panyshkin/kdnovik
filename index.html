@@ -935,7 +935,7 @@
     let SERVICES = [];
 
     // ------------------------------------------------------------------
-    //  состояние заказа (текущие выбранные количества)
+    //  состояние заказа (текущие выбранные количества и выделение)
     // ------------------------------------------------------------------
     let state = {
         mechanics: [],
@@ -1130,19 +1130,22 @@
         localStorage.setItem(STORAGE_KEYS.state, JSON.stringify(state));
     }
 
+    // Синхронизация state с эталонными списками, сохраняем qty и selected
     function reconcileStateWithLists() {
         state.mechanics = state.mechanics.filter(name => MECHANICS.includes(name));
 
         const materialMap = new Map(state.materials.map(m => [m.id, m]));
         state.materials = MATERIALS.map(src => ({
             ...src,
-            qty: materialMap.has(src.id) ? materialMap.get(src.id).qty : 0
+            qty: materialMap.has(src.id) ? materialMap.get(src.id).qty : 0,
+            selected: materialMap.has(src.id) ? materialMap.get(src.id).selected : false
         }));
 
         const serviceMap = new Map(state.services.map(s => [s.id, s]));
         state.services = SERVICES.map(src => ({
             ...src,
-            qty: serviceMap.has(src.id) ? serviceMap.get(src.id).qty : 0
+            qty: serviceMap.has(src.id) ? serviceMap.get(src.id).qty : 0,
+            selected: serviceMap.has(src.id) ? serviceMap.get(src.id).selected : false
         }));
     }
 
@@ -1227,18 +1230,13 @@
         });
     }
 
-    // Функция для подсчёта суммы отфильтрованных услуг
-    function calcFilteredServicesSum(services, wheels) {
-        const filtered = filterServicesByWheels(services, wheels);
-        return filtered.reduce((sum, svc) => sum + (svc.qty > 0 ? svc.price * svc.qty : 0), 0);
-    }
-
     // Сбрасывает количества переменных услуг, не соответствующих текущим параметрам
     function resetInvalidServices() {
         let changed = false;
         state.services = state.services.map(svc => {
             if (!isConstantService(svc) && svc.qty > 0 && !serviceMatchesWheels(svc, state.wheels)) {
                 svc.qty = 0;
+                svc.selected = false;
                 changed = true;
             }
             return svc;
@@ -1258,13 +1256,8 @@
     
     function calcTotal() {
         let sum = 0;
-        sum += state.materials.reduce((s, i) => s + (i.qty > 0 ? i.price * i.qty : 0), 0);
-        // Сумма услуг считается по всем услугам (не только отфильтрованным)
-        state.services.forEach(svc => {
-            if (svc.qty > 0) {
-                sum += svc.price * svc.qty;
-            }
-        });
+        sum += state.materials.reduce((s, i) => s + (i.selected && i.qty > 0 ? i.price * i.qty : 0), 0);
+        sum += state.services.reduce((s, i) => s + (i.selected && i.qty > 0 ? i.price * i.qty : 0), 0);
         return sum;
     }
     
@@ -1305,7 +1298,7 @@
     
     function updateItemsDisp(elId, items, emptyText) {
         const el = document.getElementById(elId);
-        const active = items.filter(i=>i.qty>0);
+        const active = items.filter(i => i.selected && i.qty > 0);
         if (!active.length) { 
             el.className = 'card-subtitle'; 
             el.textContent = emptyText; 
@@ -1352,7 +1345,7 @@
         document.getElementById('wQtyVal').textContent = state.wheels.qty;
     }
     
-    // Функция buildItemsModal с кастомным чекбоксом
+    // Функция buildItemsModal с кастомным чекбоксом и полем selected
     function buildItemsModal(listId, items) {
         const el = document.getElementById(listId);
         // Для услуг применяем сортировку по префиксу
@@ -1367,7 +1360,7 @@
             }
             
             return `
-                <div class="item-row${item.qty > 0 ? ' active' : ' zero'}" data-id="${id}">
+                <div class="item-row${item.selected ? ' active' : ' zero'}" data-id="${id}">
                     <div class="item-name-block">
                         <div class="item-name">${displayName}</div>
                         <div class="item-price-label">${priceLabel} / шт</div>
@@ -1380,7 +1373,7 @@
                             <span class="item-select-arrow"><i class="fa-solid fa-chevron-down"></i></span>
                         </div>
                         <div class="item-checkbox-wrap">
-                            <input type="checkbox" class="item-checkbox" data-id="${id}" ${item.qty > 0 ? 'checked' : ''}>
+                            <input type="checkbox" class="item-checkbox" data-id="${id}" ${item.selected ? 'checked' : ''}>
                         </div>
                     </div>
                 </div>
@@ -1390,12 +1383,9 @@
         // Синхронизация классов с чекбоксами
         el.querySelectorAll('.item-row').forEach(row => {
             const checkbox = row.querySelector('.item-checkbox');
-            const select = row.querySelector('.item-select');
-            if (checkbox && select) {
-                const qty = parseInt(select.value) || 0;
-                checkbox.checked = qty > 0;
-                row.classList.toggle('active', qty > 0);
-                row.classList.toggle('zero', qty === 0);
+            if (checkbox) {
+                row.classList.toggle('active', checkbox.checked);
+                row.classList.toggle('zero', !checkbox.checked);
             }
         });
     }
@@ -1403,8 +1393,7 @@
     function updateModalFooterSum(footerId, items) {
         const el = document.getElementById(footerId);
         if (!el) return;
-        // Для услуг сумма считается по переданным items (уже отфильтрованным)
-        let sum = items.reduce((s, i) => s + (i.qty > 0 ? i.price * i.qty : 0), 0);
+        let sum = items.reduce((s, i) => s + (i.selected && i.qty > 0 ? i.price * i.qty : 0), 0);
         el.innerHTML = sum > 0 ? `<span class="modal-footer-sum-label">Сумма:</span><span class="modal-footer-sum-value">${fmtPrice(sum)}</span>` : '';
     }
 
@@ -1625,7 +1614,10 @@
                 if (id && select) {
                     const qty = parseInt(select.value);
                     const material = state.materials.find(m => String(m.id).trim() === String(id).trim());
-                    if (material) material.qty = qty;
+                    if (material) {
+                        material.qty = qty;
+                        material.selected = qty > 0;
+                    }
                 }
             });
             updateItemsDisp('dMaterials', state.materials, 'Нет позиций');
@@ -1636,7 +1628,10 @@
                 if (id && select) {
                     const qty = parseInt(select.value);
                     const service = state.services.find(s => String(s.id).trim() === String(id).trim());
-                    if (service) service.qty = qty;
+                    if (service) {
+                        service.qty = qty;
+                        service.selected = qty > 0;
+                    }
                 }
             });
             updateItemsDisp('dServices', state.services, 'Нет позиций');
@@ -1865,7 +1860,7 @@
             showToast('Заполните ФИО, телефон и авто клиента');
             return;
         }
-        if (!state.services.some(s => s.qty > 0)) {
+        if (!state.services.some(s => s.selected && s.qty > 0)) {
             showToast('Добавьте хотя бы одну услугу');
             return;
         }
@@ -1885,13 +1880,13 @@
                 types: state.wheels.types,
                 qty: state.wheels.qty
             },
-            materials: state.materials.filter(m => m.qty > 0).map(m => ({
+            materials: state.materials.filter(m => m.selected).map(m => ({
                 id: m.id,
                 name: m.name,
                 price: m.price,
                 qty: m.qty
             })),
-            services: state.services.filter(s => s.qty > 0).map(s => ({
+            services: state.services.filter(s => s.selected).map(s => ({
                 id: s.id,
                 name: s.name,
                 price: s.price,
@@ -1919,10 +1914,10 @@
             if (result.success) {
                 showToast(`✅ Заказ №${result.orderNumber} создан`);
                 localStorage.setItem('lastOrderNumber', result.orderNumber);
-                const servicesString = state.services.filter(s => s.qty > 0).map(s => {
+                const servicesString = state.services.filter(s => s.selected).map(s => {
                     return `${s.name} x${s.qty}`;
                 }).join(', ');
-                const materialsString = state.materials.filter(m => m.qty > 0).map(m => `${m.name} x${m.qty}`).join(', ');
+                const materialsString = state.materials.filter(m => m.selected).map(m => `${m.name} x${m.qty}`).join(', ');
                 addOrder({
                     client: state.client,
                     manager: state.mechanics.join(', '),
@@ -2098,29 +2093,34 @@
                 return;
             }
 
-            // 1. Все материалы
-            state.materials.forEach(m => { m.qty = qty; });
+            // Материалы
+            state.materials.forEach(m => {
+                m.qty = qty;
+                m.selected = false;  // чекбокс false
+            });
 
-            // 2. Все постоянные услуги (всегда, независимо от фильтрации)
+            // Постоянные услуги
             let constantCount = 0;
             state.services.forEach(svc => {
                 if (isConstantService(svc)) {
                     svc.qty = qty;
+                    svc.selected = false;
                     constantCount++;
                 }
             });
 
-            // 3. Переменные услуги, соответствующие параметрам колёс
+            // Переменные услуги (отфильтрованные)
             let variableCount = 0;
             const filteredVariables = state.services.filter(svc => 
                 !isConstantService(svc) && serviceMatchesWheels(svc, state.wheels)
             );
             filteredVariables.forEach(svc => {
                 svc.qty = qty;
+                svc.selected = false;
                 variableCount++;
             });
 
-            // Обновляем модалки, если открыты
+            // Обновляем UI
             if (document.getElementById('mMaterials').classList.contains('active')) {
                 buildItemsModal('matList', state.materials);
                 updateModalFooterSum('matFooterSum', state.materials);
@@ -2138,7 +2138,7 @@
             updateSaveBtn();
             saveStateToStorage();
 
-            showToast(`Установлено ${qty} шт:\n• все материалы\n• ${constantCount} постоянных услуг\n• ${variableCount} переменных услуг`);
+            showToast(`Подготовлено ${qty} шт для выбора:\nматериалы + ${constantCount} постоянных + ${variableCount} переменных услуг`);
         });
 
         // ИСПРАВЛЕННЫЙ ОБРАБОТЧИК для кнопки «Комплекс»
@@ -2159,11 +2159,16 @@
                 return;
             }
 
-            // Сбрасываем qty у всех услуг (кроме постоянных? - по условию комплекса не трогаем постоянные)
-            // Но по логике кнопки "Комплекс" - отмечаем только услуги с префиксом 1-5, остальные обнуляем
+            // Сбрасываем qty и selected у всех услуг, затем отмечаем комплексные
             state.services.forEach(svc => {
                 const isInComplex = complexInFiltered.some(c => c.id === svc.id);
-                svc.qty = isInComplex ? wheelsQty : 0;
+                if (isInComplex) {
+                    svc.qty = wheelsQty;
+                    svc.selected = true;
+                } else {
+                    svc.qty = 0;
+                    svc.selected = false;
+                }
             });
 
             // Обновляем модалку услуг
@@ -2180,88 +2185,74 @@
             showToast(`Комплекс (1–5) отмечен: ${complexInFiltered.length} услуг`);
         });
 
-        // НОВЫЙ ОБРАБОТЧИК change (объединяет чекбоксы и селекты) с правильным обновлением суммы
+        // НОВЫЙ ОБРАБОТЧИК change с полем selected
         document.addEventListener('change', function(e) {
             const target = e.target;
 
-            // Чекбокс "Выполнено"
+            // Чекбокс
             if (target.classList.contains('item-checkbox')) {
                 const row = target.closest('.item-row');
                 if (!row) return;
                 const id = row.dataset.id;
                 const listId = row.closest('.items-list')?.id;
                 if (!listId) return;
-
                 const checked = target.checked;
-                const qty = checked ? state.wheels.qty : 0;
-
-                let updated = false;
-
                 if (listId === 'matList') {
                     const material = state.materials.find(m => String(m.id).trim() === String(id).trim());
                     if (material) {
-                        material.qty = qty;
-                        updated = true;
+                        material.selected = checked;
+                        if (checked && material.qty === 0) material.qty = state.wheels.qty;  // если qty был 0 — ставим
+                        if (!checked) material.qty = 0;
                         updateModalFooterSum('matFooterSum', state.materials);
-                        console.log('Материал:', material.name, 'qty →', qty);
                     }
                 } else if (listId === 'svcList') {
                     const service = state.services.find(s => String(s.id).trim() === String(id).trim());
                     if (service) {
-                        service.qty = qty;
-                        updated = true;
-                        // Для суммы используем отфильтрованный список
+                        service.selected = checked;
+                        if (checked && service.qty === 0) service.qty = state.wheels.qty;
+                        if (!checked) service.qty = 0;
                         const filtered = filterServicesByWheels(state.services, state.wheels);
                         updateModalFooterSum('svcFooterSum', filtered);
-                        console.log('Услуга:', service.name, 'qty →', qty);
                     }
                 }
-
-                if (updated) {
-                    // Обновляем класс строки
-                    row.classList.toggle('active', checked);
-                    row.classList.toggle('zero', !checked);
-
-                    // Синхронизируем селект
-                    const select = row.querySelector('.item-select');
-                    if (select) select.value = qty;
-
-                    updateItemsDisp('dMaterials', state.materials, 'Нет позиций');
-                    updateItemsDisp('dServices', state.services, 'Нет позиций');
-                    updateSaveBtn();
-                    saveStateToStorage();
-                }
+                row.classList.toggle('active', checked);
+                row.classList.toggle('zero', !checked);
+                const select = row.querySelector('.item-select');
+                if (select) select.value = checked ? state.wheels.qty : 0;
+                updateItemsDisp('dMaterials', state.materials, 'Нет позиций');
+                updateItemsDisp('dServices', state.services, 'Нет позиций');
+                updateSaveBtn();
+                saveStateToStorage();
             }
 
-            // Изменение количества в селекте
+            // Селект
             if (target.classList.contains('item-select')) {
                 const row = target.closest('.item-row');
                 if (!row) return;
                 const id = row.dataset.id;
                 const listId = row.closest('.items-list')?.id;
                 if (!listId) return;
-
                 const qty = parseInt(target.value) || 0;
-
                 if (listId === 'matList') {
                     const material = state.materials.find(m => String(m.id).trim() === String(id).trim());
-                    if (material) material.qty = qty;
-                    updateModalFooterSum('matFooterSum', state.materials);
+                    if (material) {
+                        material.qty = qty;
+                        material.selected = qty > 0;
+                        updateModalFooterSum('matFooterSum', state.materials);
+                    }
                 } else if (listId === 'svcList') {
                     const service = state.services.find(s => String(s.id).trim() === String(id).trim());
-                    if (service) service.qty = qty;
-                    const filtered = filterServicesByWheels(state.services, state.wheels);
-                    updateModalFooterSum('svcFooterSum', filtered);
+                    if (service) {
+                        service.qty = qty;
+                        service.selected = qty > 0;
+                        const filtered = filterServicesByWheels(state.services, state.wheels);
+                        updateModalFooterSum('svcFooterSum', filtered);
+                    }
                 }
-
-                // Синхронизируем чекбокс
                 const checkbox = row.querySelector('.item-checkbox');
                 if (checkbox) checkbox.checked = qty > 0;
-
-                // Обновляем класс строки
                 row.classList.toggle('active', qty > 0);
                 row.classList.toggle('zero', qty === 0);
-
                 updateItemsDisp('dMaterials', state.materials, 'Нет позиций');
                 updateItemsDisp('dServices', state.services, 'Нет позиций');
                 updateSaveBtn();
@@ -2275,8 +2266,8 @@
                     mechanics: [],
                     client: {name:'',phone:'',car:''},
                     wheels: {radius:17, types:{light:false,jeep:false,lowProfile:false,runflat:false}, qty:4},
-                    materials: MATERIALS.map(m=>({...m, qty:0})),
-                    services: SERVICES.map(s=>({...s, qty:0}))
+                    materials: MATERIALS.map(m=>({...m, qty:0, selected:false})),
+                    services: SERVICES.map(s=>({...s, qty:0, selected:false}))
                 };
                 updateAllDisplays();
                 saveStateToStorage();
