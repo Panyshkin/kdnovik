@@ -1210,7 +1210,7 @@
         });
     }
 
-    // Новая функция сортировки услуг по префиксу 1–5
+    // Функция сортировки услуг по префиксу 1–5
     function sortServicesByPrefix(services) {
         return [...services].sort((a, b) => {
             const aName = a.name.trim();
@@ -1225,6 +1225,12 @@
             if (aPrefix !== bPrefix) return aPrefix - bPrefix;
             return aName.localeCompare(bName);
         });
+    }
+
+    // Функция для подсчёта суммы отфильтрованных услуг
+    function calcFilteredServicesSum(services, wheels) {
+        const filtered = filterServicesByWheels(services, wheels);
+        return filtered.reduce((sum, svc) => sum + (svc.qty > 0 ? svc.price * svc.qty : 0), 0);
     }
 
     // Сбрасывает количества переменных услуг, не соответствующих текущим параметрам
@@ -1243,7 +1249,7 @@
                 const filtered = filterServicesByWheels(state.services, state.wheels);
                 const sorted = sortServicesByPrefix(filtered);
                 buildItemsModal('svcList', sorted);
-                updateModalFooterSum('svcFooterSum', sorted);
+                updateModalFooterSum('svcFooterSum', filtered);
             }
         }
     }
@@ -1253,6 +1259,7 @@
     function calcTotal() {
         let sum = 0;
         sum += state.materials.reduce((s, i) => s + (i.qty > 0 ? i.price * i.qty : 0), 0);
+        // Сумма услуг считается по всем услугам (не только отфильтрованным)
         state.services.forEach(svc => {
             if (svc.qty > 0) {
                 sum += svc.price * svc.qty;
@@ -1345,7 +1352,7 @@
         document.getElementById('wQtyVal').textContent = state.wheels.qty;
     }
     
-    // НОВАЯ функция buildItemsModal с кастомным чекбоксом (всегда выключен)
+    // Функция buildItemsModal с кастомным чекбоксом
     function buildItemsModal(listId, items) {
         const el = document.getElementById(listId);
         // Для услуг применяем сортировку по префиксу
@@ -1373,19 +1380,20 @@
                             <span class="item-select-arrow"><i class="fa-solid fa-chevron-down"></i></span>
                         </div>
                         <div class="item-checkbox-wrap">
-                            <input type="checkbox" class="item-checkbox" data-id="${id}" >
+                            <input type="checkbox" class="item-checkbox" data-id="${id}" ${item.qty > 0 ? 'checked' : ''}>
                         </div>
                     </div>
                 </div>
             `;
         }).join('');
 
-        // дополнительная синхронизация классов
+        // Синхронизация классов с чекбоксами
         el.querySelectorAll('.item-row').forEach(row => {
             const checkbox = row.querySelector('.item-checkbox');
-            if (checkbox) {
-                // чекбокс всегда выключен, но классы определяем по qty
-                const qty = parseInt(row.querySelector('.item-select')?.value) || 0;
+            const select = row.querySelector('.item-select');
+            if (checkbox && select) {
+                const qty = parseInt(select.value) || 0;
+                checkbox.checked = qty > 0;
                 row.classList.toggle('active', qty > 0);
                 row.classList.toggle('zero', qty === 0);
             }
@@ -1395,6 +1403,7 @@
     function updateModalFooterSum(footerId, items) {
         const el = document.getElementById(footerId);
         if (!el) return;
+        // Для услуг сумма считается по переданным items (уже отфильтрованным)
         let sum = items.reduce((s, i) => s + (i.qty > 0 ? i.price * i.qty : 0), 0);
         el.innerHTML = sum > 0 ? `<span class="modal-footer-sum-label">Сумма:</span><span class="modal-footer-sum-value">${fmtPrice(sum)}</span>` : '';
     }
@@ -1607,7 +1616,7 @@
                 const filtered = filterServicesByWheels(state.services, state.wheels);
                 const sorted = sortServicesByPrefix(filtered);
                 buildItemsModal('svcList', sorted);
-                updateModalFooterSum('svcFooterSum', sorted);
+                updateModalFooterSum('svcFooterSum', filtered);
             }
         } else if (id === 'mMaterials') {
             document.querySelectorAll('#matList .item-row').forEach(row => {
@@ -1653,7 +1662,7 @@
             const filtered = filterServicesByWheels(state.services, state.wheels);
             const sorted = sortServicesByPrefix(filtered);
             buildItemsModal('svcList', sorted);
-            updateModalFooterSum('svcFooterSum', sorted);
+            updateModalFooterSum('svcFooterSum', filtered);
         }
         if (name === 'settings') buildSettingsModal();
         if (name === 'history') renderHistoryList('today');
@@ -2034,7 +2043,7 @@
                 });
                 const sorted = sortServicesByPrefix(filtered);
                 buildItemsModal('svcList', sorted);
-                updateModalFooterSum('svcFooterSum', sorted);
+                updateModalFooterSum('svcFooterSum', filtered);
             }
         });
 
@@ -2064,7 +2073,7 @@
                 });
                 const sorted = sortServicesByPrefix(filtered);
                 buildItemsModal('svcList', sorted);
-                updateModalFooterSum('svcFooterSum', sorted);
+                updateModalFooterSum('svcFooterSum', filtered);
             }
         });
 
@@ -2081,7 +2090,7 @@
             updateSaveBtn();
         });
 
-        // ФИНАЛЬНЫЙ ИСПРАВЛЕННЫЙ ОБРАБОТЧИК APPLY ALL
+        // ИСПРАВЛЕННЫЙ ОБРАБОТЧИК APPLY ALL
         document.getElementById('applyAll')?.addEventListener('click', async () => {
             const qty = parseInt(document.getElementById('wQtyVal').textContent);
 
@@ -2089,8 +2098,10 @@
                 return;
             }
 
+            // 1. Все материалы
             state.materials.forEach(m => { m.qty = qty; });
 
+            // 2. Все постоянные услуги (всегда, независимо от фильтрации)
             let constantCount = 0;
             state.services.forEach(svc => {
                 if (isConstantService(svc)) {
@@ -2099,6 +2110,7 @@
                 }
             });
 
+            // 3. Переменные услуги, соответствующие параметрам колёс
             let variableCount = 0;
             const filteredVariables = state.services.filter(svc => 
                 !isConstantService(svc) && serviceMatchesWheels(svc, state.wheels)
@@ -2108,6 +2120,7 @@
                 variableCount++;
             });
 
+            // Обновляем модалки, если открыты
             if (document.getElementById('mMaterials').classList.contains('active')) {
                 buildItemsModal('matList', state.materials);
                 updateModalFooterSum('matFooterSum', state.materials);
@@ -2117,7 +2130,7 @@
                 const currentFiltered = filterServicesByWheels(state.services, state.wheels);
                 const sorted = sortServicesByPrefix(currentFiltered);
                 buildItemsModal('svcList', sorted);
-                updateModalFooterSum('svcFooterSum', sorted);
+                updateModalFooterSum('svcFooterSum', currentFiltered);
             }
 
             updateItemsDisp('dMaterials', state.materials, 'Нет позиций');
@@ -2128,40 +2141,46 @@
             showToast(`Установлено ${qty} шт:\n• все материалы\n• ${constantCount} постоянных услуг\n• ${variableCount} переменных услуг`);
         });
 
-        // НОВЫЙ ОБРАБОТЧИК для кнопки «Комплекс»
+        // ИСПРАВЛЕННЫЙ ОБРАБОТЧИК для кнопки «Комплекс»
         document.getElementById('btnComplexServices')?.addEventListener('click', () => {
             const wheelsQty = state.wheels.qty || 4;
-            const complexServices = state.services.filter(svc => {
+            
+            // Получаем текущий отфильтрованный список услуг
+            const filtered = filterServicesByWheels(state.services, state.wheels);
+            
+            // Из отфильтрованных выбираем те, у которых префикс 1-5
+            const complexInFiltered = filtered.filter(svc => {
                 const name = svc.name.trim();
-                return /^[1-5]\s/.test(name); // начинается с "1 ", "2 ", ..., "5 "
+                return /^[1-5]\s/.test(name);
             });
 
-            if (complexServices.length === 0) {
-                showToast('Комплекс услуг (1–5) не найден');
+            if (complexInFiltered.length === 0) {
+                showToast('В текущем списке нет услуг комплекса (1–5)');
                 return;
             }
 
-            // Отмечаем только эти услуги
+            // Сбрасываем qty у всех услуг (кроме постоянных? - по условию комплекса не трогаем постоянные)
+            // Но по логике кнопки "Комплекс" - отмечаем только услуги с префиксом 1-5, остальные обнуляем
             state.services.forEach(svc => {
-                const isComplex = complexServices.some(c => c.id === svc.id);
-                svc.qty = isComplex ? wheelsQty : 0;
+                const isInComplex = complexInFiltered.some(c => c.id === svc.id);
+                svc.qty = isInComplex ? wheelsQty : 0;
             });
 
             // Обновляем модалку услуг
-            const filtered = filterServicesByWheels(state.services, state.wheels);
-            const sorted = sortServicesByPrefix(filtered);
+            const newFiltered = filterServicesByWheels(state.services, state.wheels);
+            const sorted = sortServicesByPrefix(newFiltered);
             buildItemsModal('svcList', sorted);
-            updateModalFooterSum('svcFooterSum', sorted);
+            updateModalFooterSum('svcFooterSum', newFiltered);
 
             // Обновляем главный экран и сумму
             updateItemsDisp('dServices', state.services, 'Нет позиций');
             updateSaveBtn();
             saveStateToStorage();
 
-            showToast(`Комплекс (1–5) отмечен: ${complexServices.length} услуг`);
+            showToast(`Комплекс (1–5) отмечен: ${complexInFiltered.length} услуг`);
         });
 
-        // НОВЫЙ ОБРАБОТЧИК change (объединяет чекбоксы и селекты) с усиленным поиском по id
+        // НОВЫЙ ОБРАБОТЧИК change (объединяет чекбоксы и селекты) с правильным обновлением суммы
         document.addEventListener('change', function(e) {
             const target = e.target;
 
@@ -2191,17 +2210,19 @@
                     if (service) {
                         service.qty = qty;
                         updated = true;
+                        // Для суммы используем отфильтрованный список
                         const filtered = filterServicesByWheels(state.services, state.wheels);
-                        const sorted = sortServicesByPrefix(filtered);
-                        updateModalFooterSum('svcFooterSum', sorted);
+                        updateModalFooterSum('svcFooterSum', filtered);
                         console.log('Услуга:', service.name, 'qty →', qty);
                     }
                 }
 
                 if (updated) {
+                    // Обновляем класс строки
                     row.classList.toggle('active', checked);
                     row.classList.toggle('zero', !checked);
 
+                    // Синхронизируем селект
                     const select = row.querySelector('.item-select');
                     if (select) select.value = qty;
 
@@ -2230,13 +2251,14 @@
                     const service = state.services.find(s => String(s.id).trim() === String(id).trim());
                     if (service) service.qty = qty;
                     const filtered = filterServicesByWheels(state.services, state.wheels);
-                    const sorted = sortServicesByPrefix(filtered);
-                    updateModalFooterSum('svcFooterSum', sorted);
+                    updateModalFooterSum('svcFooterSum', filtered);
                 }
 
+                // Синхронизируем чекбокс
                 const checkbox = row.querySelector('.item-checkbox');
                 if (checkbox) checkbox.checked = qty > 0;
 
+                // Обновляем класс строки
                 row.classList.toggle('active', qty > 0);
                 row.classList.toggle('zero', qty === 0);
 
@@ -2246,8 +2268,6 @@
                 saveStateToStorage();
             }
         });
-
-        // Старый обработчик click для корзинки УДАЛЁН
 
         document.getElementById('btnReset').addEventListener('click', async () => {
             if (await showConfirm('Сбросить форму?', 'Все введённые данные будут удалены.')) {
