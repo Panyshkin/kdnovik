@@ -1,18 +1,21 @@
 // handlers.js — все обработчики событий приложения
 
 import { saveStateToStorage } from './storage.js';
-import { updateAllDisplays, buildItemsModal, updateModalFooterSum, updateItemsDisp, updateSaveBtn } from './ui.js';
+import { 
+  updateAllDisplays, 
+  updateItemsDisp, 
+  updateSaveBtn,
+  buildItemsModal,          // ← теперь экспортируется из ui.js
+  updateModalFooterSum 
+} from './ui.js';
 import { filterServicesByWheels, sortServicesByPrefix, isConstantService, serviceMatchesWheels } from './services.js';
 import { showToast, showConfirm } from './utils.js';
-
-// Глобальные переменные (если нужны)
-let currentFilter = 'today';
 
 // Основная функция привязки всех обработчиков
 export function initHandlers(state) {
   // Кнопка "Применить ко всем" (количество колёс → материалы + услуги)
   document.getElementById('applyAll')?.addEventListener('click', async () => {
-    const qty = parseInt(document.getElementById('wQtyVal').textContent) || 4;
+    const qty = parseInt(document.getElementById('wQtyVal')?.textContent) || 4;
     if (!(await showConfirm('Применить количество?', `Установить ${qty} шт для всех материалов + всех постоянных услуг + подходящих переменных услуг?`))) {
       return;
     }
@@ -20,7 +23,7 @@ export function initHandlers(state) {
     // Материалы
     state.materials.forEach(m => {
       m.qty = qty;
-      m.selected = false; // чекбокс false
+      m.selected = false;
     });
 
     // Постоянные услуги
@@ -33,7 +36,7 @@ export function initHandlers(state) {
       }
     });
 
-    // Переменные услуги (отфильтрованные)
+    // Переменные услуги
     let variableCount = 0;
     const filteredVariables = state.services.filter(svc => 
       !isConstantService(svc) && serviceMatchesWheels(svc, state.wheels)
@@ -44,7 +47,7 @@ export function initHandlers(state) {
       variableCount++;
     });
 
-    // Обновляем UI модалок, если они открыты
+    // Обновляем модалки, если они открыты
     if (document.getElementById('mMaterials')?.classList.contains('active')) {
       buildItemsModal('matList', state.materials, state);
       updateModalFooterSum('matFooterSum', state.materials);
@@ -77,7 +80,7 @@ export function initHandlers(state) {
       return;
     }
 
-    // Отмечаем только комплексные, остальные обнуляем
+    // Отмечаем комплексные, остальные обнуляем
     state.services.forEach(svc => {
       const isInComplex = complexInFiltered.some(c => c.id === svc.id);
       svc.qty = isInComplex ? wheelsQty : 0;
@@ -98,7 +101,7 @@ export function initHandlers(state) {
     showToast(`Комплекс (1–5) отмечен: ${complexInFiltered.length} услуг`);
   });
 
-  // Общий обработчик изменения чекбоксов и селектов
+  // Обработчик изменения чекбоксов и селектов (в модалках материалов и услуг)
   document.addEventListener('change', function(e) {
     const target = e.target;
 
@@ -240,7 +243,7 @@ export function initHandlers(state) {
     updateSaveBtn(state);
   });
 
-  // Кнопка "Сбросить" (уже есть в main.js, но если нужно — дублируем здесь)
+  // Кнопка "Сбросить"
   document.getElementById('btnReset')?.addEventListener('click', async () => {
     if (await showConfirm('Сбросить форму?', 'Все данные будут удалены.')) {
       state = {
