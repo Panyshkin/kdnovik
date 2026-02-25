@@ -3,6 +3,7 @@
 import { filterServicesByWheels, sortServicesByPrefix } from './services.js';
 import { saveStateToStorage } from './storage.js';
 import { MECHANICS, MATERIALS, SERVICES } from './storage.js';   // ← правильный импорт
+import { showToast } from './utils.js';
 
 // Вспомогательная функция форматирования цены
 function fmtPrice(n) {
