@@ -1,37 +1,10 @@
-// main.js — точка входа приложения (kdnovik)
+// main.js — точка входа
 
-// Импорты
-import { 
-  loadListsFromStorage, 
-  loadStateFromStorage, 
-  reconcileStateWithLists, 
-  saveStateToStorage 
-} from './storage.js';
-
-import { 
-  updateAllDisplays, 
-  openModal,
-  updateItemsDisp,
-  updateSaveBtn
-} from './ui.js';
-
+import { loadListsFromStorage, loadStateFromStorage, reconcileStateWithLists, saveStateToStorage } from './storage.js';
+import { updateAllDisplays, openModal, updateItemsDisp, updateSaveBtn } from './ui.js';
 import { initHandlers } from './handlers.js';
-
 import { showToast, showConfirm } from './utils.js';
 
-// Глобальный Esc для закрытия любой активной модалки
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    const activeModal = document.querySelector('.modal-overlay.active');
-    if (activeModal) {
-      activeModal.classList.remove('active');
-      document.body.style.overflow = '';
-      console.log('Модалка закрыта по Esc');
-    }
-  }
-});
-
-// Глобальное состояние
 export let state = {
   mechanics: [],
   client: { name: '', phone: '', car: '' },
@@ -40,24 +13,17 @@ export let state = {
   services: []
 };
 
-// Создание заказа (заглушка — потом подключишь fetch)
 async function createOrder() {
   if (state.mechanics.length === 0) return showToast('Выберите механика');
-  if (!state.client.name || !state.client.phone || !state.client.car) {
-    return showToast('Заполните данные клиента');
-  }
-  if (!state.services.some(s => s.selected)) {
-    return showToast('Отметьте хотя бы одну услугу');
-  }
+  if (!state.client.name || !state.client.phone || !state.client.car) return showToast('Заполните клиента');
+  if (!state.services.some(s => s.selected)) return showToast('Отметьте услугу');
 
-  const confirmed = await showConfirm('Создать заказ?', 'Отправить в 1С?');
-  if (!confirmed) return;
+  if (!(await showConfirm('Создать заказ?', 'Отправить в 1С?'))) return;
 
   showToast('Отправка...');
-  // Здесь будет fetch(...)
+  // fetch(...) — твой код отправки
 }
 
-// Инициализация
 function init() {
   console.log('🚀 Инициализация приложения — kdnovik v2');
 
@@ -65,8 +31,7 @@ function init() {
   loadStateFromStorage(state);
   reconcileStateWithLists(state);
 
-  // Ждём, пока браузер отрисует все карточки (самый надёжный способ)
-  const tryRender = () => {
+  const tryRender = (attempt = 0) => {
     const required = ['dMechanics', 'dClient', 'dWheels', 'dMaterials', 'dServices'];
     const missing = required.filter(id => !document.getElementById(id));
 
@@ -75,7 +40,6 @@ function init() {
       updateAllDisplays(state);
       initHandlers(state);
 
-      // Слушатели
       document.querySelectorAll('.card[data-modal]').forEach(card => {
         card.addEventListener('click', () => openModal(card.dataset.modal, state));
       });
@@ -86,13 +50,7 @@ function init() {
 
       document.getElementById('btnReset')?.addEventListener('click', async () => {
         if (await showConfirm('Сбросить?', 'Все данные удалятся')) {
-          state = {
-            mechanics: [],
-            client: { name: '', phone: '', car: '' },
-            wheels: { radius: 17, types: { light: false, jeep: false, lowProfile: false, runflat: false }, qty: 4 },
-            materials: MATERIALS.map(m => ({ ...m, qty: 0, selected: false })),
-            services: SERVICES.map(s => ({ ...s, qty: 0, selected: false }))
-          };
+          state = { /* дефолт */ };
           updateAllDisplays(state);
           saveStateToStorage(state);
           showToast('Сброшено');
@@ -100,16 +58,17 @@ function init() {
       });
 
       console.log('Приложение полностью готово');
+    } else if (attempt < 30) {
+      console.log(`Попытка ${attempt + 1}: ждём карточки`);
+      setTimeout(() => tryRender(attempt + 1), 100);
     } else {
-      console.log(`Ещё не все карточки: ${missing.join(', ')} — пробуем снова через 100 мс`);
-      setTimeout(tryRender, 100);
+      console.warn('Карточки не появились после 30 попыток');
     }
   };
 
-  tryRender(); // Запускаем проверку
+  tryRender();
 }
 
-// Запуск после загрузки DOM
 document.addEventListener('DOMContentLoaded', () => {
   console.log('DOM загружен — стартуем');
   init();
