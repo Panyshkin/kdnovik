@@ -222,7 +222,9 @@
         }
 
         .modal-head {
-            display: flex; align-items: center; justify-content: space-between;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             padding: 14px 20px 10px; flex-shrink: 0;
         }
 
@@ -845,13 +847,18 @@
     </div>
 </div>
 
-<!-- МОДАЛКА УСЛУГ -->
+<!-- МОДАЛКА УСЛУГ С КНОПКОЙ КОМПЛЕКС -->
 <div class="modal-overlay" id="mServices">
     <div class="modal">
         <div class="modal-handle"></div>
         <div class="modal-head">
             <h2><i class="fa-solid fa-wrench"></i> Услуги</h2>
-            <button class="modal-close-btn"><i class="fa-solid fa-xmark"></i></button>
+            <div style="display:flex; align-items:center; gap:12px;">
+                <button class="icon-btn" id="btnComplexServices" title="Выбрать комплекс услуг (1–5)">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                </button>
+                <button class="modal-close-btn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
         </div>
         <div class="modal-body">
             <div class="items-list" id="svcList"></div>
@@ -1205,16 +1212,24 @@
         });
     }
 
-    function sortServices(services) {
-        return services.sort((a, b) => {
-            const aConst = isConstantService(a);
-            const bConst = isConstantService(b);
-            if (aConst && !bConst) return -1;
-            if (!aConst && bConst) return 1;
-            return a.name.localeCompare(b.name);
+    // Новая функция сортировки услуг по префиксу 1–5
+    function sortServicesByPrefix(services) {
+        return [...services].sort((a, b) => {
+            const aName = a.name.trim();
+            const bName = b.name.trim();
+
+            const aMatch = aName.match(/^([1-5])\s/);
+            const bMatch = bName.match(/^([1-5])\s/);
+
+            const aPrefix = aMatch ? parseInt(aMatch[1]) : 999;
+            const bPrefix = bMatch ? parseInt(bMatch[1]) : 999;
+
+            if (aPrefix !== bPrefix) return aPrefix - bPrefix;
+            return aName.localeCompare(bName);
         });
     }
 
+    // Сбрасывает количества переменных услуг, не соответствующих текущим параметрам
     function resetInvalidServices() {
         let changed = false;
         state.services = state.services.map(svc => {
@@ -1228,8 +1243,9 @@
             updateAllDisplays();
             if (document.getElementById('mServices').classList.contains('active')) {
                 const filtered = filterServicesByWheels(state.services, state.wheels);
-                buildItemsModal('svcList', filtered);
-                updateModalFooterSum('svcFooterSum', filtered);
+                const sorted = sortServicesByPrefix(filtered);
+                buildItemsModal('svcList', sorted);
+                updateModalFooterSum('svcFooterSum', sorted);
             }
         }
     }
@@ -1334,7 +1350,8 @@
     // НОВАЯ функция buildItemsModal с кастомным чекбоксом
     function buildItemsModal(listId, items) {
         const el = document.getElementById(listId);
-        const sortedItems = listId === 'svcList' ? sortServices([...items]) : items;
+        // Для услуг применяем сортировку по префиксу
+        const sortedItems = listId === 'svcList' ? sortServicesByPrefix(items) : items;
         el.innerHTML = sortedItems.map(item => {
             let priceLabel = fmtPrice(item.price);
             const id = item.id || item.name;
@@ -1589,8 +1606,9 @@
             const servicesModal = document.getElementById('mServices');
             if (servicesModal && servicesModal.classList.contains('active')) {
                 const filtered = filterServicesByWheels(state.services, state.wheels);
-                buildItemsModal('svcList', filtered);
-                updateModalFooterSum('svcFooterSum', filtered);
+                const sorted = sortServicesByPrefix(filtered);
+                buildItemsModal('svcList', sorted);
+                updateModalFooterSum('svcFooterSum', sorted);
             }
         } else if (id === 'mMaterials') {
             document.querySelectorAll('#matList .item-row').forEach(row => {
@@ -1634,8 +1652,9 @@
         if (name === 'materials') { buildItemsModal('matList', state.materials); updateModalFooterSum('matFooterSum', state.materials); }
         if (name === 'services') {
             const filtered = filterServicesByWheels(state.services, state.wheels);
-            buildItemsModal('svcList', filtered);
-            updateModalFooterSum('svcFooterSum', filtered);
+            const sorted = sortServicesByPrefix(filtered);
+            buildItemsModal('svcList', sorted);
+            updateModalFooterSum('svcFooterSum', sorted);
         }
         if (name === 'settings') buildSettingsModal();
         if (name === 'history') renderHistoryList('today');
@@ -2014,8 +2033,9 @@
                     ...state.wheels,
                     radius: newRadius
                 });
-                buildItemsModal('svcList', filtered);
-                updateModalFooterSum('svcFooterSum', filtered);
+                const sorted = sortServicesByPrefix(filtered);
+                buildItemsModal('svcList', sorted);
+                updateModalFooterSum('svcFooterSum', sorted);
             }
         });
 
@@ -2043,8 +2063,9 @@
                     ...state.wheels,
                     types: newTypes
                 });
-                buildItemsModal('svcList', filtered);
-                updateModalFooterSum('svcFooterSum', filtered);
+                const sorted = sortServicesByPrefix(filtered);
+                buildItemsModal('svcList', sorted);
+                updateModalFooterSum('svcFooterSum', sorted);
             }
         });
 
@@ -2095,8 +2116,9 @@
 
             if (document.getElementById('mServices').classList.contains('active')) {
                 const currentFiltered = filterServicesByWheels(state.services, state.wheels);
-                buildItemsModal('svcList', currentFiltered);
-                updateModalFooterSum('svcFooterSum', currentFiltered);
+                const sorted = sortServicesByPrefix(currentFiltered);
+                buildItemsModal('svcList', sorted);
+                updateModalFooterSum('svcFooterSum', sorted);
             }
 
             updateItemsDisp('dMaterials', state.materials, 'Нет позиций');
@@ -2105,6 +2127,39 @@
             saveStateToStorage();
 
             showToast(`Установлено ${qty} шт:\n• все материалы\n• ${constantCount} постоянных услуг\n• ${variableCount} переменных услуг`);
+        });
+
+        // НОВЫЙ ОБРАБОТЧИК для кнопки «Комплекс»
+        document.getElementById('btnComplexServices')?.addEventListener('click', () => {
+            const wheelsQty = state.wheels.qty || 4;
+            const complexServices = state.services.filter(svc => {
+                const name = svc.name.trim();
+                return /^[1-5]\s/.test(name); // начинается с "1 ", "2 ", ..., "5 "
+            });
+
+            if (complexServices.length === 0) {
+                showToast('Комплекс услуг (1–5) не найден');
+                return;
+            }
+
+            // Отмечаем только эти услуги
+            state.services.forEach(svc => {
+                const isComplex = complexServices.some(c => c.id === svc.id);
+                svc.qty = isComplex ? wheelsQty : 0;
+            });
+
+            // Обновляем модалку услуг
+            const filtered = filterServicesByWheels(state.services, state.wheels);
+            const sorted = sortServicesByPrefix(filtered);
+            buildItemsModal('svcList', sorted);
+            updateModalFooterSum('svcFooterSum', sorted);
+
+            // Обновляем главный экран и сумму
+            updateItemsDisp('dServices', state.services, 'Нет позиций');
+            updateSaveBtn();
+            saveStateToStorage();
+
+            showToast(`Комплекс (1–5) отмечен: ${complexServices.length} услуг`);
         });
 
         // НОВЫЙ ОБРАБОТЧИК change (объединяет чекбоксы и селекты) с усиленным поиском по id
@@ -2140,7 +2195,8 @@
                         service.qty = qty;
                         updated = true;
                         const filtered = filterServicesByWheels(state.services, state.wheels);
-                        updateModalFooterSum('svcFooterSum', filtered);
+                        const sorted = sortServicesByPrefix(filtered);
+                        updateModalFooterSum('svcFooterSum', sorted);
                         console.log('Услуга обновлена:', service.name, 'qty=', qty);
                     } else {
                         console.warn('Услуга не найдена по id:', id);
@@ -2179,7 +2235,8 @@
                     const service = state.services.find(s => String(s.id).trim() === id.trim());
                     if (service) service.qty = qty;
                     const filtered = filterServicesByWheels(state.services, state.wheels);
-                    updateModalFooterSum('svcFooterSum', filtered);
+                    const sorted = sortServicesByPrefix(filtered);
+                    updateModalFooterSum('svcFooterSum', sorted);
                 }
 
                 const checkbox = row.querySelector('.item-checkbox');
